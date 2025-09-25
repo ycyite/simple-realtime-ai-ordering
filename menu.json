@@ -1,0 +1,242 @@
+{
+  "categories": [
+    {
+      "id": "pizzas",
+      "name": "Pizzas",
+      "description": "Freshly baked pizzas"
+    },
+    {
+      "id": "burgers",
+      "name": "Burgers",
+      "description": "Juicy burgers and sandwiches"
+    },
+    {
+      "id": "beverages",
+      "name": "Beverages",
+      "description": "Cold drinks and hot beverages"
+    },
+    {
+      "id": "sides",
+      "name": "Sides",
+      "description": "Appetizers and side dishes"
+    },
+    {
+      "id": "desserts",
+      "name": "Desserts",
+      "description": "Sweet treats"
+    },
+    {
+      "id": "Sandwich",
+      "name": "Sandwich",
+      "description": ""
+    }
+  ],
+  "items": [
+    {
+      "id": "pizza_margherita_small",
+      "name": "Margherita Pizza",
+      "category": "pizzas",
+      "price": 12.99,
+      "size": "Small",
+      "description": "Classic tomato, mozzarella, and basil",
+      "keywords": [
+        "margherita",
+        "pizza",
+        "small",
+        "cheese"
+      ]
+    },
+    {
+      "id": "pizza_margherita_large",
+      "name": "Margherita Pizza",
+      "category": "pizzas",
+      "price": 18.99,
+      "size": "Large",
+      "description": "Classic tomato, mozzarella, and basil",
+      "keywords": [
+        "margherita",
+        "pizza",
+        "large",
+        "cheese"
+      ]
+    },
+    {
+      "id": "pizza_pepperoni_small",
+      "name": "Pepperoni Pizza",
+      "category": "pizzas",
+      "price": 14.99,
+      "size": "Small",
+      "description": "Pepperoni and mozzarella cheese",
+      "keywords": [
+        "pepperoni",
+        "pizza",
+        "small",
+        "meat"
+      ]
+    },
+    {
+      "id": "pizza_pepperoni_large",
+      "name": "Pepperoni Pizza",
+      "category": "pizzas",
+      "price": 21.99,
+      "size": "Large",
+      "description": "Pepperoni and mozzarella cheese",
+      "keywords": [
+        "pepperoni",
+        "pizza",
+        "large",
+        "meat"
+      ]
+    },
+    {
+      "id": "cheeseburger",
+      "name": "Cheeseburger",
+      "category": "burgers",
+      "price": 9.99,
+      "description": "Beef patty with cheese, lettuce, tomato",
+      "keywords": [
+        "cheeseburger",
+        "burger",
+        "cheese",
+        "beef"
+      ]
+    },
+    {
+      "id": "chicken_burger",
+      "name": "Chicken Burger",
+      "category": "burgers",
+      "price": 10.99,
+      "description": "Grilled chicken breast with mayo and lettuce",
+      "keywords": [
+        "chicken",
+        "burger",
+        "grilled"
+      ]
+    },
+    {
+      "id": "coke",
+      "name": "Coca-Cola",
+      "category": "beverages",
+      "price": 2.99,
+      "description": "Classic Coca-Cola",
+      "keywords": [
+        "coke",
+        "cola",
+        "drink",
+        "soda",
+        "coca"
+      ]
+    },
+    {
+      "id": "water",
+      "name": "Bottled Water",
+      "category": "beverages",
+      "price": 1.99,
+      "description": "500ml bottled water",
+      "keywords": [
+        "water",
+        "bottle",
+        "drink"
+      ]
+    },
+    {
+      "id": "lemonade",
+      "name": "Fresh Lemonade",
+      "category": "beverages",
+      "price": 3.99,
+      "description": "Freshly squeezed lemonade",
+      "keywords": [
+        "lemonade",
+        "lemon",
+        "drink",
+        "fresh"
+      ]
+    },
+    {
+      "id": "fries",
+      "name": "French Fries",
+      "category": "sides",
+      "price": 4.99,
+      "description": "Crispy golden french fries",
+      "keywords": [
+        "fries",
+        "french",
+        "potato",
+        "side"
+      ]
+    },
+    {
+      "id": "onion_rings",
+      "name": "Onion Rings",
+      "category": "sides",
+      "price": 5.99,
+      "description": "Crispy battered onion rings",
+      "keywords": [
+        "onion",
+        "rings",
+        "side",
+        "fried"
+      ]
+    },
+    {
+      "id": "ice_cream",
+      "name": "Vanilla Ice Cream",
+      "category": "desserts",
+      "price": 4.99,
+      "description": "Creamy vanilla ice cream",
+      "keywords": [
+        "ice",
+        "cream",
+        "vanilla",
+        "dessert"
+      ]
+    },
+    {
+      "id": "bacon_cheeseburger",
+      "name": "Bacon Cheeseburger",
+      "category": "burgers",
+      "price": 12.99,
+      "description": "Juicy beef patty with bacon, cheese, lettuce, and tomato",
+      "keywords": [
+        "bacon",
+        "cheeseburger",
+        "burger",
+        "beef",
+        "cheese"
+      ]
+    },
+    {
+      "id": "fish_tacos",
+      "name": "Fish Tacos",
+      "category": "sides",
+      "price": 9.99,
+      "description": "Fresh fish tacos with lime",
+      "keywords": [
+        "fish",
+        "tacos",
+        "taco",
+        "lime"
+      ]
+    },
+    {
+      "id": "chicken_wings",
+      "name": "Chicken Wings",
+      "category": "sides",
+      "price": 8.99,
+      "description": "Spicy buffalo chicken wings",
+      "keywords": [
+        "wings",
+        "chicken",
+        "buffalo",
+        "spicy"
+      ]
+    },
+    {
+      "id": "Chicken Sandwich",
+      "name": "Chicken Sandwich",
+      "category": "Sandwich",
+      "price": 10.0,
+      "keywords": []
+    }
+  ]
+}
