@@ -23,21 +23,6 @@ def menu_management():
     """Menu Management Interface"""
     return render_template('menu_management.html')
 
-@app.route('/conversation')
-def conversation():
-    """Conversational Ordering Interface"""
-    return render_template('conversational_ordering.html')
-
-@app.route('/automation')
-def automation():
-    """Automation Testing Interface"""
-    return render_template('automation.html')
-
-@app.route('/manual')
-def manual():
-    """Manual Testing Interface"""
-    return render_template('index.html')
-
 # Menu API endpoints
 @app.route('/api/menu/full', methods=['GET'])
 def get_full_menu():
@@ -226,7 +211,4 @@ if __name__ == '__main__':
     print("📱 Interfaces available:")
     print("   🎙️ Realtime Ordering: http://localhost:5000")
     print("   🍽️ Menu Management: http://localhost:5000/menu")
-    print("   💬 Conversation: http://localhost:5000/conversation")
-    print("   🤖 Automation: http://localhost:5000/automation")
-    print("   🔧 Manual Testing: http://localhost:5000/manual")
     app.run(debug=True, host='0.0.0.0', port=5000)
