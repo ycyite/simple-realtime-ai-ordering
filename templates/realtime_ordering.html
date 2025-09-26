@@ -627,7 +627,9 @@ CRITICAL ORDER MANAGEMENT RULES:
 5. When changing quantities: Update the specific item's quantity
 6. When clearing: Return empty items array and total: 0
 
-RESPONSE FORMAT - You MUST respond with JSON in this exact format:
+⚠️ IMPORTANT: Your response must be ONLY valid JSON - no text before or after!
+
+RESPONSE FORMAT - Return ONLY this JSON structure (no additional text):
 {
   "message": "Your conversational response to customer (1-2 sentences)",
   "order": {
@@ -689,8 +691,18 @@ MENU MATCHING:
 
                 // Parse JSON response
                 try {
-                    const parsedResponse = JSON.parse(aiResponse);
-                    console.log('AI Response:', parsedResponse); // Debug log
+                    let cleanedResponse = aiResponse.trim();
+
+                    // If response contains text before JSON, try to extract just the JSON part
+                    const jsonStart = cleanedResponse.indexOf('{');
+                    const jsonEnd = cleanedResponse.lastIndexOf('}');
+
+                    if (jsonStart !== -1 && jsonEnd !== -1 && jsonStart < jsonEnd) {
+                        cleanedResponse = cleanedResponse.substring(jsonStart, jsonEnd + 1);
+                    }
+
+                    const parsedResponse = JSON.parse(cleanedResponse);
+                    console.log('AI Response parsed:', parsedResponse);
 
                     // COMPLETELY REPLACE the order from AI response
                     if (parsedResponse.order) {
@@ -734,14 +746,27 @@ MENU MATCHING:
 
                 } catch (error) {
                     console.error('Failed to parse AI response:', error);
-                    console.log('Raw AI response:', aiResponse); // Debug log
+                    console.log('Raw AI response:', aiResponse);
 
-                    // Fallback to original response if JSON parsing fails
+                    // Show user-friendly error message
+                    const errorMsg = 'AI response format error - order may not be updated correctly';
+                    this.addMessage('system', `⚠️ ${errorMsg}`);
+
+                    // Try to extract just the conversational part if JSON parsing failed
+                    let fallbackResponse = aiResponse;
+                    const jsonStart = aiResponse.indexOf('{');
+                    if (jsonStart > 0) {
+                        // Use text before JSON as the message
+                        fallbackResponse = aiResponse.substring(0, jsonStart).trim();
+                    }
+
+                    // Add to conversation history
                     this.conversationHistory.push({
                         role: 'assistant',
-                        content: aiResponse
+                        content: fallbackResponse || 'I had trouble processing your request. Please try again.'
                     });
-                    return aiResponse;
+
+                    return fallbackResponse || 'I had trouble processing your request. Please try again.';
                 }
             }
 
