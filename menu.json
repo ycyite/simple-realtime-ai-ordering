@@ -29,6 +29,11 @@
       "id": "Sandwich",
       "name": "Sandwich",
       "description": ""
+    },
+    {
+      "id": "Hot Dog",
+      "name": "Hot Dog",
+      "description": ""
     }
   ],
   "items": [
@@ -246,6 +251,29 @@
       "keywords": [
         "fish",
         "burger"
+      ]
+    },
+    {
+      "id": "Turkey Burger",
+      "name": "Turkey Burger",
+      "category": "burgers",
+      "price": 9.98,
+      "keywords": [
+        "Turkey",
+        "Burger",
+        "Turkey Burger"
+      ]
+    },
+    {
+      "id": "Hot Dog",
+      "name": "Polish Sausage Hot Dog",
+      "category": "Hot Dog",
+      "price": 8.99,
+      "keywords": [
+        "Polish",
+        "Sausage",
+        "Hot",
+        "Dog"
       ]
     }
   ]
