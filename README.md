@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-# 🎙️ AI Audio Ordering System - STABLE BRANCH
+# 🎙️ AI Audio Ordering System - STABLE RELEASE
 
-**✅ STABLE BRANCH - Production-ready version (v1.0.0-stable)**
-=======
-# 🎙️ AI Audio Ordering System - DEVELOPMENT BRANCH
->>>>>>> development
-
-**⚠️ DEVELOPMENT BRANCH - Active development for new features and improvements**
+**✅ STABLE RELEASE v2.0.0 - Production-ready version with advanced features**
 
 A sophisticated conversational AI ordering system that combines speech-to-text, RAG (Retrieval-Augmented Generation), and ChatGPT for natural language food ordering. Features complete order state management, dedicated menu management interface, and robust JSON response handling.
 
@@ -176,7 +170,7 @@ The system uses a sophisticated **3-tier approach** for natural language menu pr
 - **RAG** - Retrieval-Augmented Generation
 - **JavaScript** - Real-time audio processing
 
-## 🆕 Recent Improvements (Development Branch)
+## 🆕 New Features in v2.0.0 (Stable Release)
 
 ### **🔧 Order Management Overhaul:**
 - **Complete State Updates**: LLM now manages entire order state instead of incremental changes
