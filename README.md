@@ -1,8 +1,14 @@
+<<<<<<< HEAD
 # 🎙️ AI Audio Ordering System - STABLE BRANCH
 
 **✅ STABLE BRANCH - Production-ready version (v1.0.0-stable)**
+=======
+# 🎙️ AI Audio Ordering System - DEVELOPMENT BRANCH
+>>>>>>> development
 
-A conversational AI ordering system that combines speech-to-text, RAG (Retrieval-Augmented Generation), and ChatGPT for natural language food ordering.
+**⚠️ DEVELOPMENT BRANCH - Active development for new features and improvements**
+
+A sophisticated conversational AI ordering system that combines speech-to-text, RAG (Retrieval-Augmented Generation), and ChatGPT for natural language food ordering. Features complete order state management, dedicated menu management interface, and robust JSON response handling.
 
 ## 🚀 Quick Start
 
@@ -22,10 +28,8 @@ A conversational AI ordering system that combines speech-to-text, RAG (Retrieval
    ```
 
 4. **Access the interfaces:**
-   - **🎙️ Realtime AI Restaurant:** http://localhost:5000/realtime
-   - **🎙️ Conversational Ordering:** http://localhost:5000/conversation
-   - **🤖 Automation Testing:** http://localhost:5000/automation
-   - **🔧 Manual Testing:** http://localhost:5000
+   - **🎙️ Realtime AI Restaurant:** http://localhost:5000
+   - **🍽️ Menu Management:** http://localhost:5000/menu
 
 ## 📁 Project Structure
 
@@ -43,39 +47,42 @@ A conversational AI ordering system that combines speech-to-text, RAG (Retrieval
 ├── .env                     # Environment variables (API keys)
 ├── requirements.txt         # Python dependencies
 ├── templates/               # HTML templates
-│   ├── index.html          # Manual testing interface
-│   ├── automation.html     # Automation testing
-│   ├── conversational_ordering.html  # Enhanced conversation
-│   └── realtime_ordering.html        # Realtime AI Restaurant (Main)
+│   ├── realtime_ordering.html  # Realtime AI Restaurant (Main)
+│   └── menu_management.html    # Menu Management Interface
 ├── static/                  # CSS and JavaScript files
 └── uploads/                 # Temporary audio files
 ```
 
 ## 🎯 Features
 
-### **Conversational Ordering Flow:**
+### **🔄 Advanced Order Management:**
+- **Complete State Updates**: LLM manages entire order state (not incremental changes)
+- **Automatic Total Validation**: Validates and corrects order totals in real-time
+- **Robust JSON Processing**: Handles mixed text+JSON responses from LLM
+- **Visual Feedback**: Real-time order updates with animations and highlighting
+
+### **🎙️ Voice Ordering Flow:**
 1. **Audio Input** → Speech-to-text (OpenAI Whisper)
-2. **Text Processing** → RAG semantic search
-3. **AI Response** → ChatGPT conversational responses
-4. **Order Building** → Context-aware order management
-5. **Order Completion** → Final order summary
+2. **Semantic Search** → RAG finds relevant menu items
+3. **Order Processing** → LLM returns complete order state
+4. **Visual Updates** → Real-time order display with validation
+5. **Order Completion** → Final summary with accurate totals
 
-### **Three Interfaces:**
+### **Two Core Interfaces:**
 
-1. **🎙️ Conversational Ordering** (`/conversation`)
-   - Natural voice conversations
-   - Context-aware responses
-   - Real-time order building
+#### **🎙️ Realtime Ordering** (`/`)
+- **Voice Recognition**: OpenAI Whisper speech-to-text
+- **Natural Conversation**: ChatGPT with menu context
+- **Smart Order Updates**: Complete state management by LLM
+- **Real-time Display**: Visual order tracking with animations
+- **Error Recovery**: Robust handling of malformed responses
 
-2. **🤖 Automation Testing** (`/automation`)
-   - Pre-defined test scenarios
-   - Batch testing capabilities
-   - Performance metrics
-
-3. **🔧 Manual Testing** (`/`)
-   - Direct audio upload/recording
-   - Menu management
-   - System debugging
+#### **🍽️ Menu Management** (`/menu`)
+- **CRUD Operations**: Add, edit, delete categories and items
+- **Visual Organization**: Category-based menu display
+- **Data Export**: Download menu as JSON
+- **AI Integration**: Refresh embeddings for better understanding
+- **Responsive Design**: Works on desktop and mobile
 
 ## 🔧 Configuration
 
@@ -89,17 +96,24 @@ A conversational AI ordering system that combines speech-to-text, RAG (Retrieval
 
 ## 🎨 Usage Examples
 
-### Conversational Flow:
+### **Realtime Ordering Flow:**
 ```
-User: "I want something spicy for lunch"
+Customer: [Speaks] "I want something spicy for lunch"
 AI: "Great! I'd recommend our Chicken Wings - they're spicy buffalo wings for $8.99. Would you like those?"
 
-User: "Yes, and add a coke too"
+Customer: [Speaks] "Yes, and add a coke too"
 AI: "Perfect! So that's 1x Chicken Wings and 1x Coca-Cola. Your total is $11.98. Anything else?"
 
-User: "That's all"
-AI: "Excellent! Let me finalize your order."
+Customer: [Speaks] "That's all"
+AI: "Excellent! Your order is ready for checkout."
 ```
+
+### **Menu Management Examples:**
+- **Categories**: Create "Appetizers", "Main Dishes", "Beverages", "Desserts"
+- **Items**: Add "Cheeseburger ($9.99)", "Large Pizza ($18.99)", etc.
+- **Bulk Operations**: Edit multiple items, delete entire categories
+- **Export/Import**: Download menu as JSON, refresh AI embeddings
+- **Real-time Updates**: Changes immediately available to ordering system
 
 ## 🏗️ Architecture
 
@@ -136,10 +150,12 @@ The system uses a sophisticated **3-tier approach** for natural language menu pr
 - **Order State Tracking**: Maintains current order state across interactions
 
 ### **Key Design Patterns:**
-- **Semantic Understanding**: Instead of exact keyword matching, uses embeddings to understand intent like "something spicy" → finds relevant items
-- **Multi-Modal Context**: Combines menu embeddings, conversation history, current order state, and customer preferences
-- **Structured Output**: Forces LLM to output JSON for reliable order processing while maintaining natural conversation
-- **Fallback Layers**: If semantic search fails, falls back to keyword matching; if LangChain fails, uses direct API
+- **Complete State Management**: LLM returns entire order state, not incremental changes
+- **Semantic Understanding**: Embeddings understand intent like "something spicy" → finds relevant items
+- **JSON Response Processing**: Robust parsing handles mixed text+JSON responses
+- **Real-time Validation**: Automatic total calculation and error correction
+- **Multi-Modal Context**: Combines menu embeddings, conversation history, and current order state
+- **Fallback Layers**: Graceful degradation when components fail
 
 ### **Technical Stack:**
 - **Frontend:** HTML/CSS/JavaScript with real-time audio recording
@@ -159,5 +175,33 @@ The system uses a sophisticated **3-tier approach** for natural language menu pr
 - **FAISS** - Vector similarity search
 - **RAG** - Retrieval-Augmented Generation
 - **JavaScript** - Real-time audio processing
+
+## 🆕 Recent Improvements (Development Branch)
+
+### **🔧 Order Management Overhaul:**
+- **Complete State Updates**: LLM now manages entire order state instead of incremental changes
+- **Total Validation**: Automatic calculation verification and correction
+- **Robust JSON Parsing**: Handles mixed text+JSON responses from LLM
+- **Enhanced Error Recovery**: Graceful handling of malformed responses
+
+### **🎨 User Experience:**
+- **Visual Feedback**: Order updates with animations and highlighting
+- **Better Navigation**: Simplified interface with clear separation of concerns
+- **Responsive Design**: Works seamlessly on desktop and mobile
+- **Real-time Updates**: Immediate visual feedback for all order changes
+
+### **🍽️ Menu Management:**
+- **Dedicated Interface**: Separate menu management page (`/menu`)
+- **Full CRUD Operations**: Add, edit, delete categories and items
+- **AI Integration**: Refresh embeddings for better natural language understanding
+- **Data Export**: Download complete menu as JSON
+
+### **🔄 System Reliability:**
+- **Simplified Architecture**: Focused on two core interfaces
+- **Better Error Handling**: User-friendly error messages and recovery
+- **Debug Logging**: Comprehensive console logging for troubleshooting
+- **State Validation**: Multiple layers of order validation
+
+---
 
 Ready to order with AI! 🎉

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Management - AI Restaurant</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .nav-link {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .nav-link:hover {
+            background: #0056b3;
+        }
+        .nav-link.current {
+            background: #28a745;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .panel h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        select.form-control {
+            cursor: pointer;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #0056b3; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover:not(:disabled) { background: #1e7e34; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover:not(:disabled) { background: #c82333; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover:not(:disabled) { background: #e0a800; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover:not(:disabled) { background: #545b62; }
+
+        .menu-display {
+            grid-column: 1 / -1;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .category-section {
+            margin-bottom: 30px;
+        }
+        .category-title {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .item-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+            position: relative;
+        }
+        .item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .item-price {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .item-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .item-size {
+            color: #007bff;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .item-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .item-actions button {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+
+        .hidden { display: none; }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .nav-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍽️ Menu Management</h1>
+        <p>Manage restaurant menu items and categories</p>
+        <div class="nav-links">
+            <a href="/" class="nav-link">🎙️ Realtime Ordering</a>
+            <a href="/menu" class="nav-link current">🍽️ Menu Management</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Category Management -->
+        <div class="panel">
+            <h2>📂 Category Management</h2>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryId">Category ID:</label>
+                    <input type="text" id="categoryId" class="form-control"
+                           placeholder="e.g., appetizers" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoryName">Category Name:</label>
+                    <input type="text" id="categoryName" class="form-control"
+                           placeholder="e.g., Appetizers" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Description:</label>
+                    <textarea id="categoryDescription" class="form-control"
+                              placeholder="Brief description of this category"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">➕ Add Category</button>
+                <button type="button" id="clearCategoryForm" class="btn btn-secondary">🗑️ Clear</button>
+            </form>
+        </div>
+
+        <!-- Item Management -->
+        <div class="panel">
+            <h2>🍕 Item Management</h2>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label for="itemId">Item ID:</label>
+                    <input type="text" id="itemId" class="form-control"
+                           placeholder="e.g., burger_classic" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemName">Item Name:</label>
+                    <input type="text" id="itemName" class="form-control"
+                           placeholder="e.g., Classic Burger" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemCategory">Category:</label>
+                    <select id="itemCategory" class="form-control" required>
+                        <option value="">Select a category...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Price ($):</label>
+                    <input type="number" id="itemPrice" class="form-control"
+                           step="0.01" min="0" placeholder="12.99" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemSize">Size (optional):</label>
+                    <input type="text" id="itemSize" class="form-control"
+                           placeholder="e.g., Large, Small, Medium">
+                </div>
+                <div class="form-group">
+                    <label for="itemDescription">Description:</label>
+                    <textarea id="itemDescription" class="form-control"
+                              placeholder="Brief description of the item"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="itemKeywords">Keywords (comma-separated):</label>
+                    <input type="text" id="itemKeywords" class="form-control"
+                           placeholder="burger, beef, cheese">
+                </div>
+                <button type="submit" class="btn btn-primary">➕ Add Item</button>
+                <button type="button" id="updateItemBtn" class="btn btn-warning hidden">📝 Update Item</button>
+                <button type="button" id="clearItemForm" class="btn btn-secondary">🗑️ Clear</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menu Display -->
+    <div class="menu-display">
+        <h2>🍽️ Current Menu</h2>
+        <div class="menu-actions" style="margin-bottom: 20px;">
+            <button id="refreshMenuBtn" class="btn btn-success">🔄 Refresh Menu</button>
+            <button id="exportMenuBtn" class="btn btn-secondary">📤 Export Menu JSON</button>
+            <button id="refreshEmbeddingsBtn" class="btn btn-warning">🔄 Refresh AI Embeddings</button>
+        </div>
+        <div id="menuDisplay">Loading menu...</div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="statusContainer"></div>
+
+    <script>
+        class MenuManager {
+            constructor() {
+                this.categories = [];
+                this.items = [];
+                this.currentEditingItem = null;
+
+                this.initializeEventListeners();
+                this.loadMenu();
+            }
+
+            initializeEventListeners() {
+                // Category form
+                document.getElementById('categoryForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addCategory();
+                });
+                document.getElementById('clearCategoryForm').addEventListener('click', () => {
+                    this.clearCategoryForm();
+                });
+
+                // Item form
+                document.getElementById('itemForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (this.currentEditingItem) {
+                        this.updateItem();
+                    } else {
+                        this.addItem();
+                    }
+                });
+                document.getElementById('updateItemBtn').addEventListener('click', () => {
+                    this.updateItem();
+                });
+                document.getElementById('clearItemForm').addEventListener('click', () => {
+                    this.clearItemForm();
+                });
+
+                // Menu actions
+                document.getElementById('refreshMenuBtn').addEventListener('click', () => {
+                    this.loadMenu();
+                });
+                document.getElementById('exportMenuBtn').addEventListener('click', () => {
+                    this.exportMenu();
+                });
+                document.getElementById('refreshEmbeddingsBtn').addEventListener('click', () => {
+                    this.refreshEmbeddings();
+                });
+            }
+
+            showStatus(message, type = 'success') {
+                const container = document.getElementById('statusContainer');
+                const statusDiv = document.createElement('div');
+                statusDiv.className = `status-message status-${type}`;
+                statusDiv.textContent = message;
+
+                container.appendChild(statusDiv);
+
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    container.removeChild(statusDiv);
+                }, 5000);
+            }
+
+            async loadMenu() {
+                try {
+                    const response = await fetch('/api/menu/full');
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.categories = result.menu.categories;
+                        this.items = result.menu.items;
+                        this.updateCategoryDropdown();
+                        this.displayMenu();
+                        this.showStatus('Menu loaded successfully');
+                    } else {
+                        this.showStatus('Failed to load menu: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    console.error('Menu load error:', error);
+                    this.showStatus('Failed to load menu: ' + error.message, 'error');
+                }
+            }
+
+            updateCategoryDropdown() {
+                const dropdown = document.getElementById('itemCategory');
+                dropdown.innerHTML = '<option value="">Select a category...</option>';
+
+                this.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    dropdown.appendChild(option);
+                });
+            }
+
+            displayMenu() {
+                const menuDisplay = document.getElementById('menuDisplay');
+
+                if (this.categories.length === 0) {
+                    menuDisplay.innerHTML = '<p style="text-align: center; color: #666;">No categories found. Add some categories and items to get started!</p>';
+                    return;
+                }
+
+                let html = '';
+                this.categories.forEach(category => {
+                    const categoryItems = this.items.filter(item => item.category === category.id);
+
+                    html += `
+                        <div class="category-section">
+                            <div class="category-title">
+                                ${category.name}
+                                <span style="font-weight: normal; color: #666; font-size: 14px;">
+                                    (${categoryItems.length} items)
+                                </span>
+                                <button class="btn btn-danger btn-sm" onclick="menuManager.deleteCategory('${category.id}')"
+                                        style="float: right; padding: 4px 8px; font-size: 12px;">
+                                    🗑️ Delete Category
+                                </button>
+                            </div>
+                    `;
+
+                    if (categoryItems.length > 0) {
+                        html += '<div class="items-grid">';
+                        categoryItems.forEach(item => {
+                            html += `
+                                <div class="item-card">
+                                    <div class="item-actions">
+                                        <button class="btn btn-warning btn-sm" onclick="menuManager.editItem('${item.id}')">
+                                            ✏️ Edit
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="menuManager.deleteItem('${item.id}')">
+                                            🗑️ Delete
+                                        </button>
+                                    </div>
+                                    <div class="item-name">${item.name}</div>
+                                    <div class="item-price">$${item.price.toFixed(2)}</div>
+                                    ${item.size ? `<div class="item-size">Size: ${item.size}</div>` : ''}
+                                    ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
+                                    ${item.keywords ? `<div style="font-size: 12px; color: #888;">Keywords: ${item.keywords.join(', ')}</div>` : ''}
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                    } else {
+                        html += '<p style="text-align: center; color: #666; font-style: italic;">No items in this category yet.</p>';
+                    }
+
+                    html += '</div>';
+                });
+
+                menuDisplay.innerHTML = html;
+            }
+
+            async addCategory() {
+                const id = document.getElementById('categoryId').value.trim();
+                const name = document.getElementById('categoryName').value.trim();
+                const description = document.getElementById('categoryDescription').value.trim();
+
+                if (!id || !name) {
+                    this.showStatus('Category ID and Name are required', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/menu/category', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id, name, description })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showStatus('Category added successfully');
+                        this.clearCategoryForm();
+                        this.loadMenu();
+                    } else {
+                        this.showStatus('Failed to add category: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Failed to add category: ' + error.message, 'error');
+                }
+            }
+
+            async addItem() {
+                const itemData = this.getItemFormData();
+                if (!itemData) return;
+
+                try {
+                    const response = await fetch('/api/menu/item', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(itemData)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showStatus('Item added successfully');
+                        this.clearItemForm();
+                        this.loadMenu();
+                    } else {
+                        this.showStatus('Failed to add item: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Failed to add item: ' + error.message, 'error');
+                }
+            }
+
+            async updateItem() {
+                const itemData = this.getItemFormData();
+                if (!itemData || !this.currentEditingItem) return;
+
+                try {
+                    const response = await fetch(`/api/menu/item/${this.currentEditingItem}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(itemData)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showStatus('Item updated successfully');
+                        this.clearItemForm();
+                        this.loadMenu();
+                    } else {
+                        this.showStatus('Failed to update item: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Failed to update item: ' + error.message, 'error');
+                }
+            }
+
+            getItemFormData() {
+                const id = document.getElementById('itemId').value.trim();
+                const name = document.getElementById('itemName').value.trim();
+                const category = document.getElementById('itemCategory').value;
+                const price = parseFloat(document.getElementById('itemPrice').value);
+                const size = document.getElementById('itemSize').value.trim();
+                const description = document.getElementById('itemDescription').value.trim();
+                const keywords = document.getElementById('itemKeywords').value.trim();
+
+                if (!id || !name || !category || isNaN(price)) {
+                    this.showStatus('ID, Name, Category, and Price are required', 'error');
+                    return null;
+                }
+
+                return {
+                    id,
+                    name,
+                    category,
+                    price,
+                    size: size || undefined,
+                    description: description || undefined,
+                    keywords: keywords ? keywords.split(',').map(k => k.trim()) : []
+                };
+            }
+
+            editItem(itemId) {
+                const item = this.items.find(i => i.id === itemId);
+                if (!item) return;
+
+                // Populate form
+                document.getElementById('itemId').value = item.id;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemCategory').value = item.category;
+                document.getElementById('itemPrice').value = item.price;
+                document.getElementById('itemSize').value = item.size || '';
+                document.getElementById('itemDescription').value = item.description || '';
+                document.getElementById('itemKeywords').value = item.keywords ? item.keywords.join(', ') : '';
+
+                // Switch to edit mode
+                this.currentEditingItem = itemId;
+                document.getElementById('itemForm').querySelector('button[type="submit"]').style.display = 'none';
+                document.getElementById('updateItemBtn').classList.remove('hidden');
+
+                // Scroll to form
+                document.getElementById('itemForm').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            async deleteItem(itemId) {
+                if (!confirm('Are you sure you want to delete this item?')) return;
+
+                try {
+                    const response = await fetch(`/api/menu/item/${itemId}`, { method: 'DELETE' });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showStatus('Item deleted successfully');
+                        this.loadMenu();
+                    } else {
+                        this.showStatus('Failed to delete item: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Failed to delete item: ' + error.message, 'error');
+                }
+            }
+
+            async deleteCategory(categoryId) {
+                const categoryItems = this.items.filter(item => item.category === categoryId);
+                if (categoryItems.length > 0) {
+                    if (!confirm(`This category contains ${categoryItems.length} items. Deleting the category will also delete all items in it. Continue?`)) {
+                        return;
+                    }
+                }
+
+                try {
+                    const response = await fetch(`/api/menu/category/${categoryId}`, { method: 'DELETE' });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showStatus('Category deleted successfully');
+                        this.loadMenu();
+                    } else {
+                        this.showStatus('Failed to delete category: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Failed to delete category: ' + error.message, 'error');
+                }
+            }
+
+            clearCategoryForm() {
+                document.getElementById('categoryId').value = '';
+                document.getElementById('categoryName').value = '';
+                document.getElementById('categoryDescription').value = '';
+            }
+
+            clearItemForm() {
+                document.getElementById('itemId').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemCategory').value = '';
+                document.getElementById('itemPrice').value = '';
+                document.getElementById('itemSize').value = '';
+                document.getElementById('itemDescription').value = '';
+                document.getElementById('itemKeywords').value = '';
+
+                // Reset to add mode
+                this.currentEditingItem = null;
+                document.getElementById('itemForm').querySelector('button[type="submit"]').style.display = 'inline-block';
+                document.getElementById('updateItemBtn').classList.add('hidden');
+            }
+
+            exportMenu() {
+                const menuData = {
+                    categories: this.categories,
+                    items: this.items
+                };
+
+                const blob = new Blob([JSON.stringify(menuData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'menu.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                this.showStatus('Menu exported successfully');
+            }
+
+            async refreshEmbeddings() {
+                this.showStatus('Refreshing AI embeddings...', 'warning');
+
+                try {
+                    const response = await fetch('/api/menu/refresh-embeddings', { method: 'POST' });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.showStatus('AI embeddings refreshed successfully');
+                    } else {
+                        this.showStatus('Failed to refresh embeddings: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('Failed to refresh embeddings: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Initialize menu manager
+        const menuManager = new MenuManager();
+    </script>
+</body>
+</html>
