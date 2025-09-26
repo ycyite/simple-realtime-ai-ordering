@@ -158,6 +158,15 @@
             width: 0%;
             transition: width 0.1s;
         }
+
+        .order-summary {
+            transition: all 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -424,34 +433,41 @@
             }
 
             updateOrderDisplay() {
-                console.log('Updating order display:', this.currentOrder); // Debug log
+                console.log('🔄 Updating order display:', this.currentOrder);
 
                 if (!this.currentOrder || !this.currentOrder.items || this.currentOrder.items.length === 0) {
-                    this.orderItems.innerHTML = '<div class="order-item">No items yet</div>';
+                    this.orderItems.innerHTML = '<div class="order-item" style="text-align: center; color: #666;">No items in your order yet</div>';
                     this.orderTotal.textContent = '$0.00';
                 } else {
-                    const itemsHtml = this.currentOrder.items.map(item => {
-                        const itemPrice = item.price || 0;
-                        const itemQuantity = item.quantity || 1;
+                    const itemsHtml = this.currentOrder.items.map((item, index) => {
+                        const itemPrice = parseFloat(item.price) || 0;
+                        const itemQuantity = parseInt(item.quantity) || 1;
                         const itemTotal = (itemQuantity * itemPrice).toFixed(2);
 
-                        return `<div class="order-item">
-                            <span>${itemQuantity}x ${item.name}</span>
-                            <span>$${itemTotal}</span>
+                        return `<div class="order-item" style="animation: fadeIn 0.3s ease-in;">
+                            <span><strong>${itemQuantity}x</strong> ${item.name}</span>
+                            <span style="color: #28a745; font-weight: 600;">$${itemTotal}</span>
                         </div>`;
                     }).join('');
 
                     this.orderItems.innerHTML = itemsHtml;
                     this.orderTotal.textContent = `$${(this.currentOrder.total || 0).toFixed(2)}`;
 
-                    // Add visual feedback for updates
-                    this.orderSummary.style.border = '2px solid #28a745';
+                    // Add visual feedback for updates with a green flash
+                    this.orderSummary.style.border = '3px solid #28a745';
+                    this.orderSummary.style.backgroundColor = '#f8fff9';
+                    this.orderSummary.style.transform = 'scale(1.02)';
+
                     setTimeout(() => {
                         this.orderSummary.style.border = '2px solid #28a745';
-                    }, 500);
+                        this.orderSummary.style.backgroundColor = '#f8fff9';
+                        this.orderSummary.style.transform = 'scale(1.0)';
+                    }, 600);
+
+                    console.log('✅ Order display updated successfully');
                 }
 
-                // Make sure the order summary is visible when there are items
+                // Make sure the order summary is visible when there are items or when ordering is active
                 if (this.isOrderActive) {
                     this.orderSummary.style.display = 'block';
                 }
@@ -600,8 +616,16 @@ RESTAURANT INFO:
 - Hours: 11 AM - 10 PM daily
 - Menu: ${this.generateMenuText()}
 
-CURRENT ORDER:
+CURRENT ORDER STATE:
 ${JSON.stringify(this.currentOrder)}
+
+CRITICAL ORDER MANAGEMENT RULES:
+1. ALWAYS return the COMPLETE FINAL order state in your response
+2. Calculate the total by adding (price × quantity) for ALL items
+3. When adding items: Include ALL previous items PLUS the new item(s)
+4. When removing items: Include ALL remaining items AFTER removal
+5. When changing quantities: Update the specific item's quantity
+6. When clearing: Return empty items array and total: 0
 
 RESPONSE FORMAT - You MUST respond with JSON in this exact format:
 {
@@ -610,30 +634,34 @@ RESPONSE FORMAT - You MUST respond with JSON in this exact format:
     "items": [
       {"name": "Item Name", "price": 12.99, "quantity": 1}
     ],
-    "total": 12.99
+    "total": 25.98
   },
   "action": "add|remove|clear|complete"
 }
 
-INSTRUCTIONS:
-- Keep conversational messages friendly and concise
-- Update the order array based on what customer said
-- Use "add" when adding items, "remove" when removing, "clear" to reset order, "complete" when finalizing
-- Always return the COMPLETE current order in the response
-- If customer says "that's all" or wants to finish, use action: "complete"
+ORDER UPDATE EXAMPLES:
 
-MENU ITEM MATCHING RULES:
-- Match customer requests to exact menu items with correct names, sizes, and prices
-- If customer says "burger", clarify which specific burger (Cheeseburger, Chicken Burger, Bacon Cheeseburger)
-- If customer says "pizza" without size, ask "small or large?"
-- Always use the exact item names and prices from the menu above
-
-Examples:
+Current Order: {"items": [], "total": 0}
 Customer: "I want a cheeseburger"
 Response: {"message": "Great! I've added a Cheeseburger to your order. Anything else?", "order": {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 1}], "total": 9.99}, "action": "add"}
 
-Customer: "Remove the cheeseburger"
-Response: {"message": "I've removed the Cheeseburger from your order.", "order": {"items": [], "total": 0}, "action": "remove"}`
+Current Order: {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 1}], "total": 9.99}
+Customer: "Add fries too"
+Response: {"message": "I've added French Fries to your order.", "order": {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 1}, {"name": "French Fries", "price": 4.99, "quantity": 1}], "total": 14.98}, "action": "add"}
+
+Current Order: {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 1}, {"name": "French Fries", "price": 4.99, "quantity": 1}], "total": 14.98}
+Customer: "Remove the fries"
+Response: {"message": "I've removed the French Fries from your order.", "order": {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 1}], "total": 9.99}, "action": "remove"}
+
+Current Order: {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 1}], "total": 9.99}
+Customer: "Make that 2 cheeseburgers"
+Response: {"message": "I've updated your order to 2 Cheeseburgers.", "order": {"items": [{"name": "Cheeseburger", "price": 9.99, "quantity": 2}], "total": 19.98}, "action": "add"}
+
+MENU MATCHING:
+- Use exact item names and prices from the menu above
+- If customer says "burger", ask which specific burger
+- If customer says "pizza" without size, ask "small or large?"
+- Match keywords to find the closest menu item`
                     },
                     ...this.conversationHistory
                 ];
@@ -664,17 +692,28 @@ Response: {"message": "I've removed the Cheeseburger from your order.", "order":
                     const parsedResponse = JSON.parse(aiResponse);
                     console.log('AI Response:', parsedResponse); // Debug log
 
-                    // Update order from AI response - ensure proper structure
+                    // COMPLETELY REPLACE the order from AI response
                     if (parsedResponse.order) {
-                        // Ensure the order has the correct structure
+                        // Completely replace the order state - don't merge
                         this.currentOrder = {
-                            items: parsedResponse.order.items || [],
-                            total: parsedResponse.order.total || 0
+                            items: Array.isArray(parsedResponse.order.items) ? parsedResponse.order.items : [],
+                            total: typeof parsedResponse.order.total === 'number' ? parsedResponse.order.total : 0
                         };
+
+                        // Validate total calculation
+                        const calculatedTotal = this.currentOrder.items.reduce((sum, item) => {
+                            return sum + ((item.price || 0) * (item.quantity || 1));
+                        }, 0);
+
+                        if (Math.abs(calculatedTotal - this.currentOrder.total) > 0.01) {
+                            console.warn('Total mismatch - AI:', this.currentOrder.total, 'Calculated:', calculatedTotal);
+                            // Use calculated total if there's a discrepancy
+                            this.currentOrder.total = Math.round(calculatedTotal * 100) / 100;
+                        }
 
                         // Force immediate visual update
                         this.updateOrderDisplay();
-                        console.log('Order updated:', this.currentOrder); // Debug log
+                        console.log('Order completely replaced:', this.currentOrder);
                     }
 
                     // Add AI message to conversation history

@@ -237,6 +237,16 @@
       "category": "Sandwich",
       "price": 10.0,
       "keywords": []
+    },
+    {
+      "id": "Fish Burger",
+      "name": "Fish Burger",
+      "category": "burgers",
+      "price": 10,
+      "keywords": [
+        "fish",
+        "burger"
+      ]
     }
   ]
 }
