@@ -1,4 +1,6 @@
-# 🎙️ AI Audio Ordering System
+# 🎙️ AI Audio Ordering System - STABLE BRANCH
+
+**✅ STABLE BRANCH - Production-ready version (v1.0.0-stable)**
 
 A conversational AI ordering system that combines speech-to-text, RAG (Retrieval-Augmented Generation), and ChatGPT for natural language food ordering.
 
