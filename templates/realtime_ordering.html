@@ -163,6 +163,13 @@
 <body>
     <div class="container">
         <h1>🎙️ Realtime AI Restaurant</h1>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/" style="color: #28a745; font-weight: 500; margin: 0 10px;">🎙️ Realtime Ordering</a> |
+            <a href="/conversation" style="color: #007bff; margin: 0 10px;">💬 Conversation</a> |
+            <a href="/automation" style="color: #007bff; margin: 0 10px;">🤖 Automation</a> |
+            <a href="/manual" style="color: #007bff; margin: 0 10px;">🔧 Manual Testing</a> |
+            <a href="/menu" style="color: #007bff; margin: 0 10px;">🍽️ Menu Management</a>
+        </div>
 
         <div>
             <input type="password" id="apiKey" class="api-key-input" placeholder="Enter your OpenAI API Key (sk-...)">
@@ -218,7 +225,6 @@
                 this.menuData = null;
 
                 this.initializeUI();
-                this.loadMenu();
             }
 
             initializeUI() {
@@ -260,14 +266,14 @@
                 });
             }
 
-            async loadMenu() {
+            async loadMenuForOrdering() {
                 try {
                     const response = await fetch('/api/menu/full');
                     if (response.ok) {
                         const result = await response.json();
                         if (result.success) {
                             this.menuData = result.menu;
-                            console.log('Menu loaded:', this.menuData.items.length, 'items');
+                            console.log('Menu loaded for ordering:', this.menuData.items.length, 'items');
                         }
                     }
                 } catch (error) {
@@ -332,7 +338,7 @@
                     return;
                 }
 
-                this.updateStatus('connecting', 'Connecting to AI...');
+                this.updateStatus('connecting', 'Connecting to AI and loading menu...');
 
                 // Simple test connection by making a basic request
                 try {
@@ -347,13 +353,16 @@
                         throw new Error('Invalid API key');
                     }
 
+                    // Load menu for ordering
+                    await this.loadMenuForOrdering();
+
                     this.isConnected = true;
                     this.updateStatus('ready', '✅ Connected! Click "Start Order" to begin');
                     this.connectBtn.disabled = true;
                     this.startOrderBtn.disabled = false;
                     this.clearBtn.disabled = false;
 
-                    this.addMessage('system', 'AI connected! Click "Start Order" when you\'re ready to place your order.');
+                    this.addMessage('system', 'AI connected and menu loaded! Click "Start Order" when you\'re ready to place your order.');
 
                 } catch (error) {
                     console.error('Connection failed:', error);
