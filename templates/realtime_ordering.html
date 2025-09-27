@@ -42,6 +42,32 @@
             gap: 15px;
             margin: 30px 0;
         }
+        .conversation-mode {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .vad-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        .vad-indicator.speaking {
+            background: #28a745;
+            animation: pulse 0.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
         .btn {
             padding: 12px 24px;
             border: none;
@@ -185,10 +211,19 @@
 
         <div class="controls">
             <button id="connectBtn" class="btn btn-primary">Connect to AI</button>
-            <button id="startOrderBtn" class="btn btn-success" disabled>🍽️ Start Order</button>
+            <button id="startOrderBtn" class="btn btn-success" disabled>🍽️ Start Conversation</button>
             <button id="talkBtn" class="btn btn-success" disabled style="display: none;">🎙️ Hold to Talk</button>
+            <button id="pauseConversationBtn" class="btn btn-warning" disabled style="display: none;">⏸️ Pause Conversation</button>
             <button id="endOrderBtn" class="btn btn-warning" disabled style="display: none;">✅ End Order</button>
             <button id="clearBtn" class="btn btn-danger" disabled>Clear Chat</button>
+        </div>
+
+        <div class="conversation-mode" id="conversationMode" style="display: none;">
+            <div class="vad-indicator" id="vadIndicator"></div>
+            <span id="conversationStatus">Listening for your voice...</span>
+            <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                Speak naturally - I'll detect when you start and finish talking
+            </div>
         </div>
 
         <div class="volume-indicator">
@@ -229,6 +264,19 @@
                     total: 0
                 };
                 this.menuData = null;
+                this.isAutoConversation = false;
+                this.vadAnalyser = null;
+                this.vadDataArray = null;
+                this.silenceStart = null;
+                this.speechStart = null;
+                this.isProcessingResponse = false;
+                this.isSpeaking = false; // Track when AI is speaking
+                this.isListeningActive = false; // Track if microphone is actively listening
+                this.audioStream = null; // Store the audio stream
+                this.vadThreshold = 10; // Voice activity threshold
+                this.silenceThreshold = 800; // 0.8 seconds of silence to end speech
+                this.minSpeechDuration = 500; // 0.5 seconds minimum speech
+                this.isCurrentlyRecording = false; // Track if we're actively recording
 
                 this.initializeUI();
             }
@@ -243,6 +291,10 @@
                 this.clearBtn = document.getElementById('clearBtn');
                 this.clearOrderBtn = document.getElementById('clearOrderBtn');
                 this.replaceOrderBtn = document.getElementById('replaceOrderBtn');
+                this.pauseConversationBtn = document.getElementById('pauseConversationBtn');
+                this.conversationMode = document.getElementById('conversationMode');
+                this.vadIndicator = document.getElementById('vadIndicator');
+                this.conversationStatus = document.getElementById('conversationStatus');
                 this.conversation = document.getElementById('conversation');
                 this.orderSummary = document.getElementById('orderSummary');
                 this.orderItems = document.getElementById('orderItems');
@@ -250,7 +302,8 @@
                 this.volumeBar = document.getElementById('volumeBar');
 
                 this.connectBtn.addEventListener('click', () => this.connect());
-                this.startOrderBtn.addEventListener('click', () => this.startOrder());
+                this.startOrderBtn.addEventListener('click', () => this.startAutoConversation());
+                this.pauseConversationBtn.addEventListener('click', () => this.pauseConversation());
                 this.endOrderBtn.addEventListener('click', () => this.endOrder());
                 this.clearBtn.addEventListener('click', () => this.clearConversation());
                 this.clearOrderBtn.addEventListener('click', () => this.clearOrder());
@@ -346,7 +399,7 @@
 
                 this.updateStatus('connecting', 'Connecting to AI and loading menu...');
 
-                // Simple test connection by making a basic request
+                // Test connection
                 try {
                     const response = await fetch('https://api.openai.com/v1/models', {
                         headers: {
@@ -376,39 +429,78 @@
                 }
             }
 
-            startOrder() {
+            async startAutoConversation() {
                 if (!this.isConnected) return;
 
                 this.isOrderActive = true;
+                this.isAutoConversation = true;
                 this.conversationHistory = [];
                 this.currentOrder = { items: [], total: 0 };
 
-                this.updateStatus('ready', '🎙️ Order started! Hold button to talk');
+                this.updateStatus('ready', '🎙️ Conversation started! Speak naturally');
                 this.startOrderBtn.style.display = 'none';
-                this.talkBtn.style.display = 'inline-block';
+                this.pauseConversationBtn.style.display = 'inline-block';
                 this.endOrderBtn.style.display = 'inline-block';
-                this.talkBtn.disabled = false;
+                this.pauseConversationBtn.disabled = false;
                 this.endOrderBtn.disabled = false;
                 this.clearOrderBtn.disabled = false;
                 this.replaceOrderBtn.disabled = false;
+                this.conversationMode.style.display = 'block';
 
-                this.addMessage('system', '🍽️ Order session started! I\'m listening for your order. Hold the button and tell me what you\'d like to eat.');
+                // Initialize audio context but don't start listening yet
+                await this.initializeAudioContext();
+
+                this.addMessage('system', '🍽️ Conversation started! AI will speak first, then listen for your response.');
                 this.orderSummary.style.display = 'block';
                 this.updateOrderDisplay();
+
+                // AI starts the conversation
+                setTimeout(async () => {
+                    await this.speak("Hello! Welcome to our restaurant. I'm ready to take your order. What would you like to eat today?");
+                    // After AI finishes speaking, start listening
+                    this.startListening();
+                }, 1000);
+            }
+
+            pauseConversation() {
+                if (!this.isAutoConversation) return;
+
+                this.isAutoConversation = false;
+                this.cleanupAudio();
+                this.updateStatus('ready', '⏸️ Conversation paused');
+                this.conversationMode.style.display = 'none';
+                this.startOrderBtn.style.display = 'inline-block';
+                this.startOrderBtn.textContent = '▶️ Resume Conversation';
+                this.pauseConversationBtn.style.display = 'none';
+                this.talkBtn.style.display = 'inline-block';
+                this.talkBtn.disabled = false;
+
+                this.addMessage('system', '⏸️ Conversation paused. You can resume automatic conversation or use manual hold-to-talk.');
+            }
+
+            startOrder() {
+                // Legacy method - redirect to auto conversation
+                this.startAutoConversation();
             }
 
             async endOrder() {
                 if (!this.isOrderActive) return;
 
                 this.isOrderActive = false;
-                this.updateStatus('ready', '✅ Order completed! Click "Start Order" for a new order');
+                this.isAutoConversation = false;
+                this.cleanupAudio();
+                this.updateStatus('ready', '✅ Order completed! Click "Start Conversation" for a new order');
 
                 this.startOrderBtn.style.display = 'inline-block';
+                this.startOrderBtn.textContent = '🍽️ Start Conversation';
                 this.talkBtn.style.display = 'none';
                 this.endOrderBtn.style.display = 'none';
+                this.pauseConversationBtn.style.display = 'none';
+                this.conversationMode.style.display = 'none';
                 this.startOrderBtn.disabled = false;
                 this.talkBtn.disabled = true;
                 this.endOrderBtn.disabled = true;
+                this.pauseConversationBtn.disabled = true;
                 this.clearOrderBtn.disabled = true;
                 this.replaceOrderBtn.disabled = true;
 
@@ -425,6 +517,358 @@
 
                 // Clear conversation history to stop API usage
                 this.conversationHistory = [];
+            }
+
+            async initializeAudioContext() {
+                try {
+                    // Get microphone permission but don't start recording yet
+                    this.audioStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            sampleRate: 44100,
+                            channelCount: 1,
+                            echoCancellation: true,
+                            noiseSuppression: true
+                        }
+                    });
+
+                    console.log('Audio context initialized, microphone ready');
+                } catch (error) {
+                    console.error('Failed to initialize audio:', error);
+                    this.addMessage('system', 'Failed to access microphone. Please check permissions.');
+                }
+            }
+
+            startListening() {
+                console.log('🔍 Checking if can start listening:', {
+                    autoConversation: this.isAutoConversation,
+                    hasStream: !!this.audioStream,
+                    alreadyListening: this.isListeningActive,
+                    aiSpeaking: this.isSpeaking,
+                    isProcessing: this.isProcessingResponse
+                });
+
+                if (!this.isAutoConversation || !this.audioStream || this.isListeningActive || this.isSpeaking) {
+                    console.log('❌ Cannot start listening - conditions not met');
+                    return;
+                }
+
+                try {
+                    console.log('🎤 Starting listening session...');
+                    this.isListeningActive = true;
+                    this.isCurrentlyRecording = false;
+
+                    // Create new audio context for this listening session
+                    this.audioContext = new AudioContext();
+                    this.vadAnalyser = this.audioContext.createAnalyser();
+                    this.vadAnalyser.fftSize = 256;
+                    this.vadDataArray = new Uint8Array(this.vadAnalyser.frequencyBinCount);
+
+                    const source = this.audioContext.createMediaStreamSource(this.audioStream);
+                    source.connect(this.vadAnalyser);
+
+                    // Setup MediaRecorder for this session
+                    this.mediaRecorder = new MediaRecorder(this.audioStream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+
+                    this.audioChunks = [];
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.audioChunks.push(event.data);
+                        }
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        if (this.audioChunks.length > 0) {
+                            this.processAutoAudio();
+                        }
+                    };
+
+                    // Start VAD monitoring
+                    this.monitorVoiceActivity();
+                    this.conversationStatus.textContent = 'Listening for your voice...';
+                    this.updateStatus('ready', '🎤 Listening for your voice');
+
+                } catch (error) {
+                    console.error('Failed to start listening:', error);
+                    this.addMessage('system', 'Failed to start listening. Please check microphone permissions.');
+                    this.isListeningActive = false;
+                }
+            }
+
+            stopListening() {
+                if (!this.isListeningActive) return;
+
+                console.log('🔇 Stopping listening session...');
+                this.isListeningActive = false;
+
+                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.stop();
+                }
+                if (this.audioContext) {
+                    this.audioContext.close();
+                    this.audioContext = null;
+                }
+                this.vadAnalyser = null;
+                this.vadDataArray = null;
+
+                // Reset speech detection state
+                this.speechStart = null;
+                this.silenceStart = null;
+                this.isCurrentlyRecording = false;
+                this.conversationStatus.textContent = 'Microphone off';
+            }
+
+            cleanupAudio() {
+                this.stopListening();
+                if (this.audioStream) {
+                    this.audioStream.getTracks().forEach(track => track.stop());
+                    this.audioStream = null;
+                }
+            }
+
+            monitorVoiceActivity() {
+                if (!this.isAutoConversation || !this.vadAnalyser || !this.isListeningActive || this.isProcessingResponse || this.isSpeaking) {
+                    if (this.isAutoConversation && this.isListeningActive && !this.isProcessingResponse && !this.isSpeaking) {
+                        requestAnimationFrame(() => this.monitorVoiceActivity());
+                    }
+                    return;
+                }
+
+                this.vadAnalyser.getByteFrequencyData(this.vadDataArray);
+                const average = this.vadDataArray.reduce((a, b) => a + b) / this.vadDataArray.length;
+                const percentage = (average / 255) * 100;
+
+                // Update volume bar
+                this.volumeBar.style.width = `${percentage}%`;
+
+                const isSpeaking = percentage > this.vadThreshold;
+                const now = Date.now();
+
+                if (isSpeaking) {
+                    this.vadIndicator.classList.add('speaking');
+                    this.conversationStatus.textContent = 'I hear you speaking...';
+
+                    if (!this.speechStart) {
+                        this.speechStart = now;
+                        console.log('🎤 Speech detected, starting recording...');
+                        this.startRecordingSegment();
+                    }
+                    this.silenceStart = null;
+                } else {
+                    this.vadIndicator.classList.remove('speaking');
+
+                    if (this.speechStart) {
+                        if (!this.silenceStart) {
+                            this.silenceStart = now;
+                            console.log('🔇 Silence detected, starting timer...');
+                        } else if (now - this.silenceStart > this.silenceThreshold) {
+                            // Check if speech was long enough
+                            const speechDuration = this.silenceStart - this.speechStart;
+                            console.log(`📊 Speech duration: ${speechDuration}ms, Min: ${this.minSpeechDuration}ms`);
+
+                            if (speechDuration > this.minSpeechDuration) {
+                                console.log('✅ Speech ended, stopping recording...');
+                                this.stopRecordingSegment();
+                            } else {
+                                console.log('❌ Speech too short, ignoring...');
+                                if (this.isCurrentlyRecording) {
+                                    this.mediaRecorder.stop();
+                                    this.isCurrentlyRecording = false;
+                                }
+                            }
+                            this.speechStart = null;
+                            this.silenceStart = null;
+                        } else {
+                            // Show countdown
+                            const remaining = this.silenceThreshold - (now - this.silenceStart);
+                            this.conversationStatus.textContent = `Speech ending... ${(remaining/1000).toFixed(1)}s`;
+                        }
+                    } else if (!this.isSpeaking && !this.isProcessingResponse) {
+                        this.conversationStatus.textContent = 'Listening for your voice...';
+                    }
+                }
+
+                requestAnimationFrame(() => this.monitorVoiceActivity());
+            }
+
+            startRecordingSegment() {
+                if (this.mediaRecorder && this.mediaRecorder.state === 'inactive' && !this.isCurrentlyRecording) {
+                    this.audioChunks = [];
+                    this.isCurrentlyRecording = true;
+                    this.mediaRecorder.start();
+                    this.conversationStatus.textContent = 'Recording your message...';
+                    console.log('🔴 Recording started');
+                }
+            }
+
+            stopRecordingSegment() {
+                if (this.mediaRecorder && this.mediaRecorder.state === 'recording' && this.isCurrentlyRecording) {
+                    this.isCurrentlyRecording = false;
+                    this.mediaRecorder.stop();
+                    this.conversationStatus.textContent = 'Processing your message...';
+                    console.log('⏹️ Recording stopped, will process audio...');
+                    // Note: processAutoAudio will be called by mediaRecorder.onstop
+                }
+            }
+
+            async processAutoAudio() {
+                if (this.audioChunks.length === 0 || !this.isAutoConversation) {
+                    console.log('❌ No audio to process or not in auto conversation');
+                    return;
+                }
+
+                console.log('🔄 Processing audio with', this.audioChunks.length, 'chunks');
+
+                // Stop listening and start processing
+                this.stopListening();
+                this.isProcessingResponse = true;
+                this.updateStatus('processing', '⏳ Processing your message...');
+
+                try {
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                    const transcription = await this.transcribeAudio(audioBlob);
+
+                    if (transcription && transcription.trim()) {
+                        this.addMessage('user', transcription);
+
+                        // Get AI response
+                        const response = await this.getAIResponse(transcription);
+                        this.addMessage('assistant', response);
+                        this.updateOrderDisplay();
+
+                        // Check if order is complete (check both user input and AI response)
+                        if (this.isOrderComplete(transcription, response)) {
+                            await this.speak(response);
+                            await this.speak("Thank you for your order! I'll finalize this for you.");
+                            setTimeout(() => this.endOrder(), 2000);
+                            return;
+                        }
+
+                        // Speak response, then continue conversation
+                        await this.speak(response);
+
+                        // Ensure AI is done speaking before starting to listen
+                        setTimeout(() => {
+                            if (this.isAutoConversation && !this.isSpeaking) {
+                                console.log('🎤 Restarting listening after AI response...');
+                                this.startListening();
+                            }
+                        }, 300);
+                    } else {
+                        console.log('❌ No transcription received');
+                        setTimeout(() => {
+                            if (this.isAutoConversation) {
+                                console.log('🎤 Restarting listening after no transcription...');
+                                this.startListening();
+                            }
+                        }, 500);
+                    }
+
+                } catch (error) {
+                    console.error('❌ Audio processing failed:', error);
+                    this.addMessage('system', 'Sorry, I had trouble understanding. Could you repeat that?');
+                    setTimeout(() => this.startListening(), 1000);
+                } finally {
+                    this.isProcessingResponse = false;
+                }
+            }
+
+            isOrderComplete(userText, aiResponse = '') {
+                // Must have items in order
+                if (!this.currentOrder.items || this.currentOrder.items.length === 0) {
+                    return false;
+                }
+
+                // Check user completion words (most reliable signal)
+                const userLower = userText.toLowerCase().trim();
+                const userCompleteWords = [
+                    'that\'s all', 'that\'s it', 'i\'m done', 'that\'s everything',
+                    'nothing else', 'that will be all', 'checkout', 'place the order',
+                    'no thanks', 'i\'m good', 'that\'s enough'
+                ];
+
+                const hasUserCompletionWord = userCompleteWords.some(word => userLower.includes(word));
+
+                // ONLY complete on explicit user completion words
+                // Don't auto-complete based on AI signals or item count
+                if (hasUserCompletionWord) {
+                    console.log('🏁 Order completion detected - user said:', userText);
+                    return true;
+                }
+
+                return false;
+            }
+
+            isConfirmationResponse(text) {
+                const confirmations = ['yes', 'yeah', 'yep', 'correct', 'right', 'exactly', 'that\'s right'];
+                const lowerText = text.toLowerCase().trim();
+                return confirmations.some(word => lowerText === word || lowerText.includes(word));
+            }
+
+            validateOrder(orderData) {
+                if (!orderData || !Array.isArray(orderData.items)) {
+                    console.warn('Invalid order data received');
+                    return { items: [], total: 0 };
+                }
+
+                // Get all available menu items for validation
+                const menuItems = this.getMenuItemsMap();
+                const validatedItems = [];
+                let calculatedTotal = 0;
+
+                for (const item of orderData.items) {
+                    if (!item.name || !item.price || !item.quantity) {
+                        console.warn('Invalid item structure:', item);
+                        continue;
+                    }
+
+                    // Validate item exists in menu
+                    const menuItem = menuItems.get(item.name.toLowerCase());
+                    if (menuItem) {
+                        // Use menu price for accuracy
+                        const validatedItem = {
+                            name: menuItem.name, // Use exact menu name
+                            price: menuItem.price, // Use exact menu price
+                            quantity: Math.max(1, parseInt(item.quantity) || 1)
+                        };
+                        validatedItems.push(validatedItem);
+                        calculatedTotal += validatedItem.price * validatedItem.quantity;
+                    } else {
+                        console.warn('Item not found in menu:', item.name);
+                        // Still add item but mark for review
+                        const validatedItem = {
+                            name: item.name,
+                            price: parseFloat(item.price) || 0,
+                            quantity: Math.max(1, parseInt(item.quantity) || 1)
+                        };
+                        validatedItems.push(validatedItem);
+                        calculatedTotal += validatedItem.price * validatedItem.quantity;
+                    }
+                }
+
+                const finalTotal = Math.round(calculatedTotal * 100) / 100;
+
+                console.log('Order validation:', {
+                    originalTotal: orderData.total,
+                    calculatedTotal: finalTotal,
+                    itemCount: validatedItems.length
+                });
+
+                return {
+                    items: validatedItems,
+                    total: finalTotal
+                };
+            }
+
+            getMenuItemsMap() {
+                const menuMap = new Map();
+                if (this.menuData && this.menuData.items) {
+                    this.menuData.items.forEach(item => {
+                        menuMap.set(item.name.toLowerCase(), item);
+                    });
+                }
+                return menuMap;
             }
 
             generateOrderSummary() {
@@ -473,109 +917,7 @@
                 }
             }
 
-            async startListening() {
-                if (!this.isConnected || this.isListening || !this.isOrderActive) return;
 
-                try {
-                    this.isListening = true;
-                    this.updateStatus('listening', '🎙️ Listening... speak now!');
-                    this.talkBtn.textContent = '🔴 Recording...';
-                    this.audioChunks = [];
-
-                    // Get user media
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        audio: {
-                            sampleRate: 44100,
-                            channelCount: 1,
-                            echoCancellation: true,
-                            noiseSuppression: true
-                        }
-                    });
-
-                    // Setup volume monitoring
-                    this.audioContext = new AudioContext();
-                    const analyser = this.audioContext.createAnalyser();
-                    const source = this.audioContext.createMediaStreamSource(stream);
-                    source.connect(analyser);
-                    this.monitorVolume(analyser);
-
-                    // Setup MediaRecorder with WAV format (better compatibility)
-                    this.mediaRecorder = new MediaRecorder(stream, {
-                        mimeType: 'audio/webm;codecs=opus'
-                    });
-
-                    this.mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) {
-                            this.audioChunks.push(event.data);
-                        }
-                    };
-
-                    this.mediaRecorder.onstop = () => {
-                        this.processAudio();
-                    };
-
-                    this.mediaRecorder.start();
-
-                } catch (error) {
-                    console.error('Failed to start listening:', error);
-                    this.addMessage('system', 'Failed to access microphone. Please check permissions.');
-                    this.stopListening();
-                }
-            }
-
-            stopListening() {
-                if (!this.isListening) return;
-
-                this.isListening = false;
-                this.updateStatus('processing', '⏳ Processing your message...');
-                this.talkBtn.textContent = '🎙️ Hold to Talk';
-                this.volumeBar.style.width = '0%';
-
-                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-                    this.mediaRecorder.stop();
-                }
-
-                if (this.audioContext) {
-                    this.audioContext.close();
-                    this.audioContext = null;
-                }
-            }
-
-            async processAudio() {
-                if (this.audioChunks.length === 0) {
-                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
-                    return;
-                }
-
-                try {
-                    // Create audio blob
-                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-
-                    // Convert to text using OpenAI Whisper
-                    const transcription = await this.transcribeAudio(audioBlob);
-
-                    if (transcription) {
-                        this.addMessage('user', transcription);
-
-                        // Get AI response
-                        const response = await this.getAIResponse(transcription);
-                        this.addMessage('assistant', response);
-
-                        // Force order display update after AI response
-                        this.updateOrderDisplay();
-
-                        // Speak the response
-                        this.speak(response);
-                    }
-
-                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
-
-                } catch (error) {
-                    console.error('Audio processing failed:', error);
-                    this.addMessage('system', 'Failed to process audio. Please try again.');
-                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
-                }
-            }
 
             async transcribeAudio(audioBlob) {
                 const formData = new FormData();
@@ -626,8 +968,17 @@ CRITICAL ORDER MANAGEMENT RULES:
 4. When removing items: Include ALL remaining items AFTER removal
 5. When changing quantities: Update the specific item's quantity
 6. When clearing: Return empty items array and total: 0
+7. ONLY use items and prices that exist in the menu above
+8. If customer asks for unavailable item, suggest similar items from menu
+9. Always double-check your math - total must equal sum of (price × quantity)
 
 ⚠️ IMPORTANT: Your response must be ONLY valid JSON - no text before or after!
+
+CONVERSATION FLOW:
+- Always ask "Would you like anything else?" or "Anything to add?" after adding items
+- ONLY set action to "complete" if customer explicitly says completion words like "that's all", "nothing else", "checkout"
+- DO NOT auto-complete orders - let customer decide when they're done
+- Keep the conversation going until customer clearly indicates they're finished
 
 RESPONSE FORMAT - Return ONLY this JSON structure (no additional text):
 {
@@ -668,26 +1019,64 @@ MENU MATCHING:
                     ...this.conversationHistory
                 ];
 
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${this.apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4',
-                        messages: messages,
-                        max_tokens: 200,
-                        temperature: 0.3
-                    })
-                });
+                let aiResponse;
 
-                if (!response.ok) {
-                    throw new Error('AI response failed');
+                try {
+                    // Try GPT-5 first
+                    const conversationText = messages.map(msg => {
+                        if (msg.role === 'system') return `System: ${msg.content}`;
+                        if (msg.role === 'user') return `User: ${msg.content}`;
+                        if (msg.role === 'assistant') return `Assistant: ${msg.content}`;
+                        return msg.content;
+                    }).join('\n\n');
+
+                    const gpt5Response = await fetch('https://api.openai.com/v1/responses', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-5",
+                            input: conversationText,
+                            reasoning: { effort: "low" },
+                            text: { verbosity: "low" },
+                            service_tier: "priority"
+                        })
+                    });
+
+                    if (gpt5Response.ok) {
+                        const gpt5Result = await gpt5Response.json();
+                        console.log('GPT-5 response status:', gpt5Result.status);
+                        console.log('GPT-5 output array:', gpt5Result.output);
+
+                        // Check if response is incomplete
+                        if (gpt5Result.status === 'incomplete') {
+                            console.warn('GPT-5 response incomplete:', gpt5Result.incomplete_details);
+                            throw new Error('GPT-5 response incomplete - try increasing token limit or reducing reasoning effort');
+                        }
+
+                        // Parse completed response
+                        if (gpt5Result.output && Array.isArray(gpt5Result.output)) {
+                            // Find the message output (skip reasoning)
+                            const messageOutput = gpt5Result.output.find(item => item.type === 'message');
+                            if (messageOutput && messageOutput.content && messageOutput.content[0] && messageOutput.content[0].text) {
+                                aiResponse = messageOutput.content[0].text;
+                                console.log('Successfully extracted text:', aiResponse);
+                            } else {
+                                console.error('Available outputs:', gpt5Result.output.map(o => o.type));
+                                throw new Error('GPT-5 response missing message content');
+                            }
+                        } else {
+                            throw new Error('GPT-5 response has no output array');
+                        }
+                    } else {
+                        throw new Error(`GPT-5 failed with status ${gpt5Response.status}`);
+                    }
+                } catch (gpt5Error) {
+                    console.error('GPT-5 failed:', gpt5Error);
+                    throw new Error('GPT-5 request failed: ' + gpt5Error.message);
                 }
-
-                const result = await response.json();
-                const aiResponse = result.choices[0].message.content;
 
                 // Parse JSON response
                 try {
@@ -706,26 +1095,15 @@ MENU MATCHING:
 
                     // COMPLETELY REPLACE the order from AI response
                     if (parsedResponse.order) {
-                        // Completely replace the order state - don't merge
-                        this.currentOrder = {
-                            items: Array.isArray(parsedResponse.order.items) ? parsedResponse.order.items : [],
-                            total: typeof parsedResponse.order.total === 'number' ? parsedResponse.order.total : 0
-                        };
+                        // Validate and clean the order first
+                        const validatedOrder = this.validateOrder(parsedResponse.order);
 
-                        // Validate total calculation
-                        const calculatedTotal = this.currentOrder.items.reduce((sum, item) => {
-                            return sum + ((item.price || 0) * (item.quantity || 1));
-                        }, 0);
-
-                        if (Math.abs(calculatedTotal - this.currentOrder.total) > 0.01) {
-                            console.warn('Total mismatch - AI:', this.currentOrder.total, 'Calculated:', calculatedTotal);
-                            // Use calculated total if there's a discrepancy
-                            this.currentOrder.total = Math.round(calculatedTotal * 100) / 100;
-                        }
+                        // Completely replace the order state with validated data
+                        this.currentOrder = validatedOrder;
 
                         // Force immediate visual update
                         this.updateOrderDisplay();
-                        console.log('Order completely replaced:', this.currentOrder);
+                        console.log('Order updated and validated:', this.currentOrder);
                     }
 
                     // Add AI message to conversation history
@@ -734,12 +1112,11 @@ MENU MATCHING:
                         content: parsedResponse.message
                     });
 
-                    // Check if order is complete
+                    // Check if AI indicates order completion
                     if (parsedResponse.action === 'complete') {
-                        // Don't auto-end here, just notify user they can complete
-                        setTimeout(() => {
-                            this.addMessage('system', '✅ Your order is ready! Click "End Order" to finalize.');
-                        }, 1000);
+                        console.log('🏁 AI indicated order completion - but waiting for user confirmation');
+                        // Don't auto-complete here - let the user completion logic handle it
+                        // This prevents premature completion
                     }
 
                     return parsedResponse.message;
@@ -771,7 +1148,12 @@ MENU MATCHING:
             }
 
             async speak(text) {
+                this.isSpeaking = true;
                 this.updateStatus('speaking', '🔊 AI is speaking...');
+
+                if (this.isAutoConversation) {
+                    this.conversationStatus.textContent = 'AI is speaking...';
+                }
 
                 try {
                     const response = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -792,37 +1174,62 @@ MENU MATCHING:
                         const audioUrl = URL.createObjectURL(audioBlob);
                         const audio = new Audio(audioUrl);
 
-                        audio.onended = () => {
-                            this.updateStatus('ready', '✅ Ready - Hold button to talk');
-                        };
+                        // Return a promise that resolves when speech is done
+                        return new Promise((resolve) => {
+                            audio.onended = () => {
+                                this.isSpeaking = false;
+                                if (this.isAutoConversation) {
+                                    this.updateStatus('ready', '✅ Ready - Listening for your voice');
+                                    this.conversationStatus.textContent = 'Listening for your voice...';
+                                } else {
+                                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                                }
+                                resolve();
+                            };
 
-                        await audio.play();
+                            audio.onerror = () => {
+                                this.isSpeaking = false;
+                                if (this.isAutoConversation) {
+                                    this.updateStatus('ready', '✅ Ready - Listening for your voice');
+                                    this.conversationStatus.textContent = 'Listening for your voice...';
+                                } else {
+                                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                                }
+                                resolve();
+                            };
+
+                            audio.play().catch(() => {
+                                this.isSpeaking = false;
+                                if (this.isAutoConversation) {
+                                    this.updateStatus('ready', '✅ Ready - Listening for your voice');
+                                    this.conversationStatus.textContent = 'Listening for your voice...';
+                                } else {
+                                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                                }
+                                resolve();
+                            });
+                        });
                     } else {
-                        this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                        this.isSpeaking = false;
+                        if (this.isAutoConversation) {
+                            this.updateStatus('ready', '✅ Ready - Listening for your voice');
+                            this.conversationStatus.textContent = 'Listening for your voice...';
+                        } else {
+                            this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                        }
                     }
                 } catch (error) {
                     console.error('Speech failed:', error);
-                    this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                    this.isSpeaking = false;
+                    if (this.isAutoConversation) {
+                        this.updateStatus('ready', '✅ Ready - Listening for your voice');
+                        this.conversationStatus.textContent = 'Listening for your voice...';
+                    } else {
+                        this.updateStatus('ready', '✅ Ready - Hold button to talk');
+                    }
                 }
             }
 
-            monitorVolume(analyser) {
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-
-                const updateVolume = () => {
-                    if (!this.isListening) return;
-
-                    analyser.getByteFrequencyData(dataArray);
-                    const average = dataArray.reduce((a, b) => a + b) / bufferLength;
-                    const percentage = (average / 255) * 100;
-
-                    this.volumeBar.style.width = `${percentage}%`;
-                    requestAnimationFrame(updateVolume);
-                };
-
-                updateVolume();
-            }
 
             clearOrder() {
                 if (!this.isOrderActive) return;

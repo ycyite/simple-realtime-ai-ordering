@@ -207,8 +207,8 @@ def refresh_embeddings():
         }), 500
 
 if __name__ == '__main__':
-    print("🚀 Starting AI Audio Ordering System - Development Version...")
-    print("📱 Interfaces available:")
-    print("   🎙️ Realtime Ordering: http://localhost:5000")
-    print("   🍽️ Menu Management: http://localhost:5000/menu")
+    print("Starting AI Audio Ordering System - Development Version...")
+    print("Interfaces available:")
+    print("   Realtime Ordering: http://localhost:5000")
+    print("   Menu Management: http://localhost:5000/menu")
     app.run(debug=True, host='0.0.0.0', port=5000)
