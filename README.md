@@ -1,201 +1,216 @@
-# 🎙️ AI Audio Ordering System - DEVELOPMENT BRANCH
+# OpenAI Voice Agent - WebRTC
 
-**⚠️ DEVELOPMENT BRANCH - Active development for new features and improvements**
+A real-time voice conversation application powered by OpenAI's Realtime API using WebRTC for browser-based speech-to-speech interactions.
 
-A sophisticated conversational AI ordering system that combines speech-to-text, RAG (Retrieval-Augmented Generation), and ChatGPT for natural language food ordering. Features complete order state management, dedicated menu management interface, and robust JSON response handling.
+## Features
 
-## 🚀 Quick Start
+- **Real-time Voice Conversations**: Speak naturally with ChatGPT using your microphone
+- **WebRTC Technology**: Direct peer-to-peer connection for low-latency audio streaming
+- **Secure Authentication**: Ephemeral tokens generated server-side for secure client connections
+- **Live Transcription**: See both your speech and AI responses transcribed in real-time
+- **Modern UI**: Clean, responsive interface with visual feedback
 
-1. **Install dependencies:**
+## Architecture
+
+```
+Browser (WebRTC) <--> Your Server (Token Generation) <--> OpenAI Realtime API
+```
+
+1. Client requests ephemeral token from your server
+2. Server generates token using OpenAI API key
+3. Client establishes WebRTC connection directly with OpenAI
+4. Real-time bidirectional audio streaming begins
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- OpenAI API key with Realtime API access
+- Modern web browser with WebRTC support (Chrome, Edge, Firefox, Safari)
+
+## Setup
+
+1. **Clone the repository**
    ```bash
-   pip install -r requirements.txt
+   git clone <repository-url>
+   cd AI_Audio_Ordering_System
    ```
 
-2. **Set up OpenAI API key:**
-   - Add your OpenAI API key to `.env` file
-   - Or enter it directly in the web interface
-
-3. **Run the application:**
+2. **Install dependencies**
    ```bash
-   python app.py
-   # Serves on http://localhost:5000
+   npm install
    ```
 
-4. **Access the interfaces:**
-   - **🎙️ Realtime AI Restaurant:** http://localhost:5000
-   - **🍽️ Menu Management:** http://localhost:5000/menu
+3. **Configure environment variables**
 
-## 📁 Project Structure
+   Create a `.env` file in the root directory:
+   ```env
+   OPENAI_API_KEY=your_openai_api_key_here
+   PORT=3000
+   ```
+
+4. **Start the server**
+   ```bash
+   npm start
+   ```
+
+5. **Open in browser**
+
+   Navigate to `http://localhost:3000`
+
+## Usage
+
+1. Click the microphone button to start
+2. Allow microphone access when prompted
+3. Wait for "Voice agent active" status
+4. Start speaking naturally
+5. The AI will respond with voice and text transcription
+6. Click "Disconnect" to end the session
+
+## Project Structure
 
 ```
-├── app.py                    # Main Flask application
-├── conversation_manager.py   # Enhanced conversation with memory
-├── simple_audio_to_text.py   # Speech-to-text using OpenAI Whisper
-├── menu_manager.py           # Menu CRUD operations
-├── menu_rag.py              # RAG system with ChatGPT integration
-├── menu.json                # Menu database
-├── menu_embeddings.npy      # Pre-computed embeddings
-├── menu_index.faiss         # FAISS search index
-├── conversation_memory.pkl  # Persistent conversation memory
-├── chroma_db/               # Vector database storage
-├── .env                     # Environment variables (API keys)
-├── requirements.txt         # Python dependencies
-├── templates/               # HTML templates
-│   ├── realtime_ordering.html  # Realtime AI Restaurant (Main)
-│   └── menu_management.html    # Menu Management Interface
-├── static/                  # CSS and JavaScript files
-└── uploads/                 # Temporary audio files
+.
+├── server.js              # Express server for token generation
+├── public/
+│   └── index.html        # Client-side WebRTC implementation
+├── .env                  # Environment configuration
+├── package.json          # Dependencies
+└── README.md            # This file
 ```
 
-## 🎯 Features
+## API Endpoints
 
-### **🔄 Advanced Order Management:**
-- **Complete State Updates**: LLM manages entire order state (not incremental changes)
-- **Automatic Total Validation**: Validates and corrects order totals in real-time
-- **Robust JSON Processing**: Handles mixed text+JSON responses from LLM
-- **Visual Feedback**: Real-time order updates with animations and highlighting
+### `POST /api/token`
+Generates an ephemeral token for client WebRTC connection.
 
-### **🎙️ Voice Ordering Flow:**
-1. **Audio Input** → Speech-to-text (OpenAI Whisper)
-2. **Semantic Search** → RAG finds relevant menu items
-3. **Order Processing** → LLM returns complete order state
-4. **Visual Updates** → Real-time order display with validation
-5. **Order Completion** → Final summary with accurate totals
-
-### **Two Core Interfaces:**
-
-#### **🎙️ Realtime Ordering** (`/`)
-- **Voice Recognition**: OpenAI Whisper speech-to-text
-- **Natural Conversation**: ChatGPT with menu context
-- **Smart Order Updates**: Complete state management by LLM
-- **Real-time Display**: Visual order tracking with animations
-- **Error Recovery**: Robust handling of malformed responses
-
-#### **🍽️ Menu Management** (`/menu`)
-- **CRUD Operations**: Add, edit, delete categories and items
-- **Visual Organization**: Category-based menu display
-- **Data Export**: Download menu as JSON
-- **AI Integration**: Refresh embeddings for better understanding
-- **Responsive Design**: Works on desktop and mobile
-
-## 🔧 Configuration
-
-### Required API Keys:
-- **OpenAI API Key** - For speech-to-text and ChatGPT responses
-
-### Menu Management:
-- Add/edit items in `menu.json`
-- Embeddings automatically refresh when menu changes
-- RAG system provides semantic search
-
-## 🎨 Usage Examples
-
-### **Realtime Ordering Flow:**
-```
-Customer: [Speaks] "I want something spicy for lunch"
-AI: "Great! I'd recommend our Chicken Wings - they're spicy buffalo wings for $8.99. Would you like those?"
-
-Customer: [Speaks] "Yes, and add a coke too"
-AI: "Perfect! So that's 1x Chicken Wings and 1x Coca-Cola. Your total is $11.98. Anything else?"
-
-Customer: [Speaks] "That's all"
-AI: "Excellent! Your order is ready for checkout."
+**Response:**
+```json
+{
+  "token": "ek_...",
+  "expiresAt": 1234567890,
+  "session": { ... }
+}
 ```
 
-### **Menu Management Examples:**
-- **Categories**: Create "Appetizers", "Main Dishes", "Beverages", "Desserts"
-- **Items**: Add "Cheeseburger ($9.99)", "Large Pizza ($18.99)", etc.
-- **Bulk Operations**: Edit multiple items, delete entire categories
-- **Export/Import**: Download menu as JSON, refresh AI embeddings
-- **Real-time Updates**: Changes immediately available to ordering system
+### `GET /api/health`
+Health check endpoint to verify server status.
 
-## 🏗️ Architecture
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-09-29T...",
+  "openaiConfigured": true,
+  "sdkVersion": "0.0.9"
+}
+```
 
-### **Multi-Layered LLM-Menu Interaction Design:**
+## Technical Details
 
-The system uses a sophisticated **3-tier approach** for natural language menu processing:
+### WebRTC Connection Flow
 
-#### **1. Menu Manager** (`menu_manager.py`)
-- **Static Menu Storage**: JSON-based menu with items, categories, prices, keywords
-- **Basic Text Parsing**: Simple keyword matching for order detection
-- **Rule-based Quantity Detection**: Maps words like "two", "three" to numbers
+1. **Peer Connection Setup**: Create `RTCPeerConnection` with audio tracks
+2. **Data Channel**: Establish `oai-events` channel for sending/receiving events
+3. **SDP Exchange**:
+   - Generate SDP offer
+   - Send to OpenAI with ephemeral token
+   - Apply SDP answer from OpenAI
+4. **Audio Streaming**: Bidirectional audio via WebRTC tracks
 
-#### **2. RAG-Enhanced Menu System** (`menu_rag.py`)
-- **Semantic Search**: Uses SentenceTransformers to create embeddings for menu items
-- **FAISS Vector Database**: Fast similarity search for natural language queries
-- **Rich Item Descriptions**: Combines name, category, description, price context for better embeddings
-- **Smart Order Parsing**: Extracts quantities, sizes, preferences from customer text
+### Event Handling
 
-#### **3. LLM Integration Layer** (Two approaches)
+The application listens for various server events via the data channel:
 
-**A. Direct OpenAI API** (`menu_rag.py`)
-- **Structured Prompting**: System prompt defines order management rules (add/remove/clear/update)
-- **Context Building**: RAG analysis + menu items + customer request → rich context
-- **JSON Order Extraction**: Parses `ORDER_JSON: {...}` from LLM responses
+- `conversation.item.created` - New conversation item
+- `response.audio_transcript.done` - Complete AI transcript
+- `conversation.item.input_audio_transcription.completed` - User speech transcript
+- `error` - Error events from the API
 
-**B. LangChain Approach** (`langchain_manager.py`)
-- **Memory Management**: ConversationBufferWindowMemory keeps conversation context
-- **Vector Store**: Chroma DB for menu items and FAQ retrieval
-- **Conversational Chain**: ConversationalRetrievalChain for context-aware responses
+## Security Notes
 
-#### **4. Enhanced Conversation Manager** (`conversation_manager.py`)
-- **Persistent Memory**: Saves conversation history to disk
-- **Context Enrichment**: Builds comprehensive context from memory + current order + menu
-- **Order State Tracking**: Maintains current order state across interactions
+- **Never expose your OpenAI API key in client-side code**
+- Ephemeral tokens are short-lived and session-specific
+- Server validates all requests before generating tokens
+- CORS is enabled for development (configure for production)
 
-### **Key Design Patterns:**
-- **Complete State Management**: LLM returns entire order state, not incremental changes
-- **Semantic Understanding**: Embeddings understand intent like "something spicy" → finds relevant items
-- **JSON Response Processing**: Robust parsing handles mixed text+JSON responses
-- **Real-time Validation**: Automatic total calculation and error correction
-- **Multi-Modal Context**: Combines menu embeddings, conversation history, and current order state
-- **Fallback Layers**: Graceful degradation when components fail
+## Troubleshooting
 
-### **Technical Stack:**
-- **Frontend:** HTML/CSS/JavaScript with real-time audio recording
-- **Backend:** Flask with REST API endpoints
-- **AI Components:**
-  - OpenAI Whisper for speech recognition
-  - Sentence transformers for embeddings
-  - FAISS for vector similarity search
-  - OpenAI ChatGPT for conversational responses
-- **Storage:** JSON file database with vector embeddings
+### "No token received from server"
+- Verify your `.env` file contains a valid `OPENAI_API_KEY`
+- Check server logs for token generation errors
+- Ensure the server is running on the expected port
 
-## 🌟 Key Technologies
+### "Failed to parse SessionDescription"
+- This error occurs when using the Agents SDK incorrectly
+- The current implementation uses raw WebRTC API (correct approach)
 
-- **Flask** - Web framework
-- **OpenAI APIs** - Speech-to-text and ChatGPT
-- **Sentence Transformers** - Text embeddings
-- **FAISS** - Vector similarity search
-- **RAG** - Retrieval-Augmented Generation
-- **JavaScript** - Real-time audio processing
+### Microphone not working
+- Grant microphone permissions in your browser
+- Check browser console for permission errors
+- Verify your system microphone is working
 
-## 🆕 Recent Improvements (Development Branch)
+### No audio output
+- Check browser audio settings
+- Verify speakers/headphones are connected
+- Look for WebRTC track events in console logs
 
-### **🔧 Order Management Overhaul:**
-- **Complete State Updates**: LLM now manages entire order state instead of incremental changes
-- **Total Validation**: Automatic calculation verification and correction
-- **Robust JSON Parsing**: Handles mixed text+JSON responses from LLM
-- **Enhanced Error Recovery**: Graceful handling of malformed responses
+## Development
 
-### **🎨 User Experience:**
-- **Visual Feedback**: Order updates with animations and highlighting
-- **Better Navigation**: Simplified interface with clear separation of concerns
-- **Responsive Design**: Works seamlessly on desktop and mobile
-- **Real-time Updates**: Immediate visual feedback for all order changes
+### Run with auto-reload
+```bash
+npm run dev
+```
 
-### **🍽️ Menu Management:**
-- **Dedicated Interface**: Separate menu management page (`/menu`)
-- **Full CRUD Operations**: Add, edit, delete categories and items
-- **AI Integration**: Refresh embeddings for better natural language understanding
-- **Data Export**: Download complete menu as JSON
+### View server logs
+The server logs important events:
+- Token generation
+- API key configuration status
+- Connection attempts
 
-### **🔄 System Reliability:**
-- **Simplified Architecture**: Focused on two core interfaces
-- **Better Error Handling**: User-friendly error messages and recovery
-- **Debug Logging**: Comprehensive console logging for troubleshooting
-- **State Validation**: Multiple layers of order validation
+### Debug client
+Open browser DevTools console to see:
+- WebRTC connection status
+- Data channel events
+- Server event messages
+- Transcription updates
 
----
+## Dependencies
 
-Ready to order with AI! 🎉
+- **express** - Web server framework
+- **dotenv** - Environment variable management
+- **cors** - Cross-origin resource sharing
+- **@openai/agents** - OpenAI Agents SDK (version info only)
+
+## Browser Compatibility
+
+- ✅ Chrome 90+
+- ✅ Edge 90+
+- ✅ Firefox 88+
+- ✅ Safari 15+
+
+Requires WebRTC support and microphone access.
+
+## Resources
+
+- [OpenAI Realtime API Documentation](https://platform.openai.com/docs/guides/realtime-webrtc)
+- [WebRTC API Reference](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API)
+- [OpenAI API Keys](https://platform.openai.com/api-keys)
+
+## License
+
+MIT
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## Support
+
+For issues and questions:
+- Check the troubleshooting section above
+- Review OpenAI Realtime API documentation
+- Open an issue in the repository
