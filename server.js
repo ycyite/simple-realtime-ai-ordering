@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs/promises';
 
 // Load environment variables
 config();
@@ -12,6 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MENU_FILE = path.join(__dirname, 'menu.json');
 
 // Middleware
 app.use(cors());
@@ -23,11 +25,71 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Serve the menu management page
+app.get('/menu', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'menu.html'));
+});
+
+// Get menu data
+app.get('/api/menu', async (req, res) => {
+  try {
+    const menuData = await fs.readFile(MENU_FILE, 'utf-8');
+    res.json(JSON.parse(menuData));
+  } catch (error) {
+    console.error('❌ Error reading menu:', error);
+    res.status(500).json({ error: 'Failed to load menu' });
+  }
+});
+
+// Update menu data
+app.post('/api/menu', async (req, res) => {
+  try {
+    const menuData = JSON.stringify(req.body, null, 2);
+    await fs.writeFile(MENU_FILE, menuData, 'utf-8');
+    console.log('✅ Menu updated successfully');
+    res.json({ success: true, message: 'Menu updated' });
+  } catch (error) {
+    console.error('❌ Error updating menu:', error);
+    res.status(500).json({ error: 'Failed to update menu' });
+  }
+});
+
 // Endpoint to get ephemeral token for client-side RealtimeSession
 app.post('/api/token', async (req, res) => {
   console.log('🔑 Creating ephemeral token for RealtimeSession...');
 
   try {
+    // Load menu for AI context
+    const menuData = await fs.readFile(MENU_FILE, 'utf-8');
+    const menu = JSON.parse(menuData);
+
+    // Build menu context for AI
+    const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
+
+IMPORTANT INSTRUCTIONS:
+- Start the conversation immediately by greeting the customer: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
+- Keep responses SHORT and CLEAR - use simple sentences
+- Listen carefully to their order
+- Confirm items briefly: "Got it, [item name]"
+- Ask only essential clarifying questions (size, quantity, customizations)
+- When order is complete, state: "Your total is $[amount]. Anything else?"
+- Keep final confirmation brief
+
+RESPONSE STYLE:
+- Use short, direct sentences
+- Avoid unnecessary elaboration
+- Be friendly but concise
+- Focus on getting the order efficiently
+
+MENU ITEMS:
+${menu.categories.map(cat =>
+  `${cat.name}:\n${cat.items.map(item =>
+    `- ${item.name}: $${item.price} - ${item.description}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
+  ).join('\n')}`
+).join('\n\n')}
+
+Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the customer speaks.`;
+
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
@@ -37,7 +99,8 @@ app.post('/api/token', async (req, res) => {
       body: JSON.stringify({
         session: {
           type: 'realtime',
-          model: 'gpt-realtime'
+          model: 'gpt-realtime',
+          instructions: menuContext
         }
       }),
     });

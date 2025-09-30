@@ -201,10 +201,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎙️ Voice Agent</h1>
+        <h1>📞 Phone Order Agent</h1>
 
         <div class="sdk-badge">
             OpenAI WebRTC Realtime API
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/menu" style="color: white; text-decoration: none; background: rgba(255, 255, 255, 0.2); padding: 10px 20px; border-radius: 10px; display: inline-block; font-weight: 600;">
+                🍽️ Manage Menu
+            </a>
         </div>
 
         <button id="voiceButton" class="voice-button ready">
@@ -216,7 +222,7 @@
         </button>
 
         <div id="status" class="status">
-            Click the microphone to start talking with ChatGPT
+            Click the microphone to start phone order
         </div>
 
         <div id="transcript" class="transcript">
@@ -375,6 +381,12 @@
                 // Listen for when data channel opens
                 this.dc.addEventListener('open', () => {
                     console.log('✅ Data channel opened');
+
+                    // Trigger AI to speak first by sending a response.create event
+                    this.dc.send(JSON.stringify({
+                        type: 'response.create'
+                    }));
+                    console.log('🎯 Triggered AI to start conversation');
                 });
 
                 // Listen for server events
@@ -499,7 +511,7 @@
 
                     this.resetButton();
                     this.disconnectButton.style.display = 'none';
-                    this.updateStatus('Click the microphone to start talking with ChatGPT', 'ready');
+                    this.updateStatus('Click the microphone to start phone order', 'ready');
 
                 } catch (error) {
                     console.error('Error stopping voice agent:', error);
