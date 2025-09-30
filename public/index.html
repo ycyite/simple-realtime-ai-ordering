@@ -197,6 +197,74 @@
             color: #c8e6c9;
             border: 1px solid rgba(76, 175, 80, 0.5);
         }
+
+        .orders-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .orders-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .order-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .order-name {
+            font-size: 1.2em;
+            color: #4CAF50;
+        }
+
+        .order-time {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .order-items {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .order-item {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .order-total {
+            text-align: right;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            color: #4CAF50;
+        }
+
+        .no-orders {
+            text-align: center;
+            opacity: 0.7;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -232,6 +300,13 @@
         <div class="footer">
             Powered by OpenAI Realtime API + WebRTC
         </div>
+
+        <div class="orders-section">
+            <h2>📋 Recent Orders</h2>
+            <div id="ordersContainer">
+                <div class="no-orders">No orders yet</div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -242,6 +317,11 @@
                 this.audioElement = null;
                 this.isConnected = false;
 
+                // Cost tracking
+                this.totalInputTokens = 0;
+                this.totalOutputTokens = 0;
+                this.totalCost = 0;
+
                 this.initializeElements();
                 this.setupEventListeners();
             }
@@ -251,11 +331,62 @@
                 this.disconnectButton = document.getElementById('disconnectButton');
                 this.statusDiv = document.getElementById('status');
                 this.transcriptDiv = document.getElementById('transcript');
+                this.ordersContainer = document.getElementById('ordersContainer');
+
+                // Load and render existing orders on page load
+                this.renderOrders();
             }
 
             setupEventListeners() {
                 this.voiceButton.addEventListener('click', () => this.toggleVoiceAgent());
                 this.disconnectButton.addEventListener('click', () => this.stopVoiceAgent());
+
+                // Add test button for debugging (remove in production)
+                window.addTestOrder = () => {
+                    const testOrder = {
+                        items: [
+                            {name: "Classic Cheeseburger", price: 10.99, quantity: 2},
+                            {name: "French Fries", price: 3.99, quantity: 1}
+                        ],
+                        total: 25.97,
+                        customerName: "Test Customer",
+                        timestamp: new Date().toISOString(),
+                        id: `order-${Date.now()}`
+                    };
+                    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+                    orders.push(testOrder);
+                    localStorage.setItem('orders', JSON.stringify(orders));
+                    this.renderOrders();
+                    console.log('✅ Test order added!');
+                };
+            }
+
+            // Calculate and log cost for response
+            calculateCost(usage) {
+                if (!usage) return;
+
+                const inputTokens = usage.input_tokens || 0;
+                const outputTokens = usage.output_tokens || 0;
+
+                // Pricing: $32/1M input tokens, $64/1M output tokens
+                const INPUT_COST_PER_TOKEN = 0.000032;  // $32.00 per 1M tokens
+                const OUTPUT_COST_PER_TOKEN = 0.000064; // $64.00 per 1M tokens
+
+                const inputCost = inputTokens * INPUT_COST_PER_TOKEN;
+                const outputCost = outputTokens * OUTPUT_COST_PER_TOKEN;
+                const totalCost = inputCost + outputCost;
+
+                // Update session totals
+                this.totalInputTokens += inputTokens;
+                this.totalOutputTokens += outputTokens;
+                this.totalCost += totalCost;
+
+                // Log breakdown
+                console.log('💰 Response Cost Breakdown:');
+                console.log(`   Input tokens:  ${inputTokens.toLocaleString()} × $0.000032 = $${inputCost.toFixed(6)}`);
+                console.log(`   Output tokens: ${outputTokens.toLocaleString()} × $0.000064 = $${outputCost.toFixed(6)}`);
+                console.log(`   Response cost: $${totalCost.toFixed(6)}`);
+                console.log(`   Session total: $${this.totalCost.toFixed(6)}`);
             }
 
             updateStatus(message, type = 'info') {
@@ -428,6 +559,19 @@
                         this.displayMessage('user', event.transcript);
                         break;
 
+                    // Handle response completion events
+                    case 'response.done':
+                    case 'response.completed':
+                        console.log('✅ Response completed:', event);
+
+                        // Calculate and log cost if usage data is available
+                        if (event.response && event.response.usage) {
+                            this.calculateCost(event.response.usage);
+                        } else if (event.usage) {
+                            this.calculateCost(event.usage);
+                        }
+                        break;
+
                     case 'error':
                         console.error('❌ Server error:', event.error);
                         this.updateStatus(`Error: ${event.error.message}`, 'error');
@@ -440,6 +584,51 @@
             }
 
 
+
+            renderOrders() {
+                const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+
+                if (orders.length === 0) {
+                    this.ordersContainer.innerHTML = '<div class="no-orders">No orders yet</div>';
+                    return;
+                }
+
+                // Reverse to show most recent first
+                const recentOrders = orders.slice().reverse();
+
+                this.ordersContainer.innerHTML = recentOrders.map(order => {
+                    const date = new Date(order.timestamp);
+                    const timeStr = date.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    const dateStr = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+
+                    return `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-name">👤 ${order.customerName || 'Guest'}</span>
+                                <span class="order-time">${timeStr} · ${dateStr}</span>
+                            </div>
+                            <div class="order-items">
+                                ${order.items.map(item => `
+                                    <div class="order-item">
+                                        <span>${item.quantity}x ${item.name}</span>
+                                        <span>$${item.price.toFixed(2)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="order-total">
+                                Total: $${order.total.toFixed(2)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             displayMessage(sender, text) {
                 if (!text || text.trim() === '') return;
@@ -491,6 +680,16 @@
 
                     this.isConnected = false;
 
+                    // Log final session cost
+                    if (this.totalCost > 0) {
+                        console.log('═'.repeat(50));
+                        console.log('💰 SESSION TOTAL COST:');
+                        console.log(`   Total Input tokens:  ${this.totalInputTokens.toLocaleString()}`);
+                        console.log(`   Total Output tokens: ${this.totalOutputTokens.toLocaleString()}`);
+                        console.log(`   Total Cost: $${this.totalCost.toFixed(6)}`);
+                        console.log('═'.repeat(50));
+                    }
+
                     // Close data channel
                     if (this.dc) {
                         this.dc.close();
@@ -509,6 +708,11 @@
                         this.audioElement = null;
                     }
 
+                    // Reset cost tracking for next session
+                    this.totalInputTokens = 0;
+                    this.totalOutputTokens = 0;
+                    this.totalCost = 0;
+
                     this.resetButton();
                     this.disconnectButton.style.display = 'none';
                     this.updateStatus('Click the microphone to start phone order', 'ready');
@@ -524,6 +728,7 @@
                 this.resetButton();
                 this.disconnectButton.style.display = 'none';
             }
+
 
             resetButton() {
                 this.voiceButton.disabled = false;

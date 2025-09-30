@@ -72,14 +72,21 @@ IMPORTANT INSTRUCTIONS:
 - Listen carefully to their order
 - Confirm items briefly: "Got it, [item name]"
 - Ask only essential clarifying questions (size, quantity, customizations)
-- When order is complete, state: "Your total is $[amount]. Anything else?"
-- Keep final confirmation brief
+- When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
+- After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly:
+  Example: "Let me confirm your order: 2 Classic Cheeseburgers, 1 French Fries, and 1 Coca-Cola. Your total is $28.47. Pickup at 6:30 PM. Is that correct?"
+  DO NOT mention individual item prices - only the final total
+- After customer confirms, say EXACTLY: "Perfect, see you at [time]. Drive safe, bye!"
 
 RESPONSE STYLE:
 - Use short, direct sentences
 - Avoid unnecessary elaboration
 - Be friendly but concise
 - Focus on getting the order efficiently
+- ALWAYS ask for name before finalizing
+- ALWAYS ask for pickup time
+- ALWAYS repeat the full order back with pickup time before confirming
 
 MENU ITEMS:
 ${menu.categories.map(cat =>
@@ -99,7 +106,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
       body: JSON.stringify({
         session: {
           type: 'realtime',
-          model: 'gpt-realtime',
+          model: 'gpt-4o-mini-realtime-preview',
           instructions: menuContext
         }
       }),
@@ -133,6 +140,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
     });
   }
 });
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

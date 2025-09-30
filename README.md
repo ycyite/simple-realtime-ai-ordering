@@ -1,37 +1,32 @@
-# OpenAI Voice Agent - WebRTC
+# 🎙️ AI Audio Ordering System
 
-A real-time voice conversation application powered by OpenAI's Realtime API using WebRTC for browser-based speech-to-speech interactions.
+A real-time voice-based restaurant ordering system powered by OpenAI's Realtime API with WebRTC. Take phone orders naturally through AI-powered voice conversations.
 
-## Features
+## ✨ Features
 
-- **Real-time Voice Conversations**: Speak naturally with ChatGPT using your microphone
-- **WebRTC Technology**: Direct peer-to-peer connection for low-latency audio streaming
-- **Secure Authentication**: Ephemeral tokens generated server-side for secure client connections
-- **Live Transcription**: See both your speech and AI responses transcribed in real-time
-- **Modern UI**: Clean, responsive interface with visual feedback
+- **Real-time Voice Conversations**: Natural phone order interactions using OpenAI's GPT-4o-mini Realtime model
+- **WebRTC Integration**: Low-latency audio streaming with client-side WebRTC implementation
+- **Dynamic Menu Management**: Easy-to-use web interface for managing menu items and categories
+- **Order Display**: View recent orders with customer names, items, and totals
+- **Cost Tracking**: Real-time token usage and cost monitoring in browser console
+- **Professional Order Flow**:
+  - AI asks for customer name
+  - AI requests pickup time
+  - AI confirms full order with total price
+  - Professional closing: "Perfect, see you at [time]. Drive safe, bye!"
 
-## Architecture
+## 🚀 Quick Start
 
-```
-Browser (WebRTC) <--> Your Server (Token Generation) <--> OpenAI Realtime API
-```
+### Prerequisites
 
-1. Client requests ephemeral token from your server
-2. Server generates token using OpenAI API key
-3. Client establishes WebRTC connection directly with OpenAI
-4. Real-time bidirectional audio streaming begins
+- Node.js (v18 or higher recommended)
+- OpenAI API key with access to Realtime API
+- Modern web browser with WebRTC support (Chrome, Firefox, Edge)
 
-## Prerequisites
+### Installation
 
-- Node.js (v18 or higher)
-- OpenAI API key with Realtime API access
-- Modern web browser with WebRTC support (Chrome, Edge, Firefox, Safari)
-
-## Setup
-
-1. **Clone the repository**
+1. **Clone or download the project**
    ```bash
-   git clone <repository-url>
    cd AI_Audio_Ordering_System
    ```
 
@@ -40,9 +35,9 @@ Browser (WebRTC) <--> Your Server (Token Generation) <--> OpenAI Realtime API
    npm install
    ```
 
-3. **Configure environment variables**
+3. **Create environment file**
 
-   Create a `.env` file in the root directory:
+   Create a `.env` file in the project root:
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
    PORT=3000
@@ -53,164 +48,190 @@ Browser (WebRTC) <--> Your Server (Token Generation) <--> OpenAI Realtime API
    npm start
    ```
 
+   For development with auto-reload:
+   ```bash
+   npm run dev
+   ```
+
 5. **Open in browser**
 
-   Navigate to `http://localhost:3000`
+   Navigate to: `http://localhost:3000`
 
-## Usage
+## 📦 Dependencies
 
-1. Click the microphone button to start
-2. Allow microphone access when prompted
-3. Wait for "Voice agent active" status
-4. Start speaking naturally
-5. The AI will respond with voice and text transcription
-6. Click "Disconnect" to end the session
+```json
+{
+  "@openai/agents": "^0.0.9",     // OpenAI Agents SDK for Realtime API
+  "express": "^4.18.2",            // Web server framework
+  "dotenv": "^16.3.1",             // Environment variable management
+  "cors": "^2.8.5",                // Cross-origin resource sharing
+  "zod": "^3.22.4"                 // Schema validation
+}
+```
 
-## Project Structure
+### Install all dependencies:
+```bash
+npm install express dotenv cors zod @openai/agents
+```
+
+## 📁 Project Structure
 
 ```
-.
-├── server.js              # Express server for token generation
+AI_Audio_Ordering_System/
+├── server.js              # Express server with token generation
 ├── public/
-│   └── index.html        # Client-side WebRTC implementation
-├── .env                  # Environment configuration
-├── package.json          # Dependencies
-└── README.md            # This file
+│   ├── index.html         # Main voice ordering interface
+│   └── menu.html          # Menu management interface
+├── menu.json              # Restaurant menu data
+├── .env                   # Environment variables (create this)
+├── package.json           # Project dependencies
+└── README.md              # This file
 ```
 
-## API Endpoints
+## 🎯 Usage
 
-### `POST /api/token`
-Generates an ephemeral token for client WebRTC connection.
+### Taking Orders
 
-**Response:**
+1. Click the **microphone button** to start a voice session
+2. The AI will greet the customer immediately
+3. Customer places their order naturally through voice
+4. AI asks for customer name and pickup time
+5. AI confirms the complete order with total price
+6. Click **Disconnect** button to end the session
+
+### Managing Menu
+
+1. Navigate to: `http://localhost:3000/menu`
+2. Add, edit, or delete menu categories and items
+3. Update prices, descriptions, and availability
+4. Click **Save Menu** to persist changes
+
+### Monitoring Costs
+
+Open browser DevTools (F12) → Console tab to see:
+- Per-response token usage and cost
+- Session total cost when disconnecting
+
+Example output:
+```
+💰 Response Cost Breakdown:
+   Input tokens:  1,250 × $0.000032 = $0.000040
+   Output tokens: 850 × $0.000064 = $0.000054
+   Response cost: $0.000094
+   Session total: $0.000094
+```
+
+## ⚙️ Configuration
+
+### Menu Structure (`menu.json`)
+
 ```json
 {
-  "token": "ek_...",
-  "expiresAt": 1234567890,
-  "session": { ... }
+  "restaurant": {
+    "name": "Joe's Diner",
+    "phone": "(555) 123-4567",
+    "hours": "Mon-Sun: 10am-10pm"
+  },
+  "categories": [
+    {
+      "id": "burgers",
+      "name": "Burgers",
+      "items": [
+        {
+          "id": "classic-burger",
+          "name": "Classic Cheeseburger",
+          "description": "Beef patty with cheese, lettuce, tomato, and pickles",
+          "price": 10.99,
+          "available": true
+        }
+      ]
+    }
+  ]
 }
 ```
 
-### `GET /api/health`
-Health check endpoint to verify server status.
+### AI Model Settings
 
-**Response:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-09-29T...",
-  "openaiConfigured": true,
-  "sdkVersion": "0.0.9"
-}
+Edit `server.js` line 109 to change the model:
+```javascript
+model: 'gpt-4o-mini-realtime-preview'  // Current model
 ```
 
-## Technical Details
+### Pricing (as of current implementation)
+
+- Input tokens: $32.00 per 1M tokens ($0.000032 per token)
+- Output tokens: $64.00 per 1M tokens ($0.000064 per token)
+
+## 🔧 API Endpoints
+
+- `GET /` - Voice ordering interface
+- `GET /menu` - Menu management interface
+- `GET /api/menu` - Get menu data (JSON)
+- `POST /api/menu` - Update menu data
+- `POST /api/token` - Generate ephemeral token for Realtime API
+- `GET /api/health` - Health check
+
+## 🎨 Features in Detail
 
 ### WebRTC Connection Flow
 
-1. **Peer Connection Setup**: Create `RTCPeerConnection` with audio tracks
-2. **Data Channel**: Establish `oai-events` channel for sending/receiving events
-3. **SDP Exchange**:
-   - Generate SDP offer
-   - Send to OpenAI with ephemeral token
-   - Apply SDP answer from OpenAI
-4. **Audio Streaming**: Bidirectional audio via WebRTC tracks
+1. Client requests ephemeral token from server
+2. Server generates token with menu context
+3. Client establishes WebRTC peer connection
+4. Audio streams bidirectionally with low latency
+5. AI responds in real-time through voice
 
-### Event Handling
+### Order Display
 
-The application listens for various server events via the data channel:
+- Orders stored in browser localStorage
+- Displays customer name, items, and total
+- Shows timestamp for each order
+- Persists across page refreshes
 
-- `conversation.item.created` - New conversation item
-- `response.audio_transcript.done` - Complete AI transcript
-- `conversation.item.input_audio_transcription.completed` - User speech transcript
-- `error` - Error events from the API
+## 🐛 Troubleshooting
 
-## Security Notes
-
-- **Never expose your OpenAI API key in client-side code**
-- Ephemeral tokens are short-lived and session-specific
-- Server validates all requests before generating tokens
-- CORS is enabled for development (configure for production)
-
-## Troubleshooting
-
-### "No token received from server"
-- Verify your `.env` file contains a valid `OPENAI_API_KEY`
-- Check server logs for token generation errors
-- Ensure the server is running on the expected port
-
-### "Failed to parse SessionDescription"
-- This error occurs when using the Agents SDK incorrectly
-- The current implementation uses raw WebRTC API (correct approach)
-
-### Microphone not working
-- Grant microphone permissions in your browser
-- Check browser console for permission errors
-- Verify your system microphone is working
-
-### No audio output
-- Check browser audio settings
-- Verify speakers/headphones are connected
-- Look for WebRTC track events in console logs
-
-## Development
-
-### Run with auto-reload
+**Port already in use:**
 ```bash
-npm run dev
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID <process_id> /F
+
+# Mac/Linux
+lsof -ti:3000 | xargs kill -9
 ```
 
-### View server logs
-The server logs important events:
-- Token generation
-- API key configuration status
-- Connection attempts
+**No microphone access:**
+- Ensure browser has microphone permissions
+- Check system microphone settings
+- Try HTTPS if having issues (WebRTC prefers secure contexts)
 
-### Debug client
-Open browser DevTools console to see:
-- WebRTC connection status
-- Data channel events
-- Server event messages
-- Transcription updates
+**High API costs:**
+- Monitor console for token usage
+- Shorter conversations = lower cost
+- Use disconnect button when done
 
-## Dependencies
+**"No token received from server":**
+- Verify `.env` file contains valid `OPENAI_API_KEY`
+- Check server logs for token generation errors
+- Restart server after changing `.env`
 
-- **express** - Web server framework
-- **dotenv** - Environment variable management
-- **cors** - Cross-origin resource sharing
-- **@openai/agents** - OpenAI Agents SDK (version info only)
+## 📝 License
 
-## Browser Compatibility
+MIT
 
-- ✅ Chrome 90+
-- ✅ Edge 90+
-- ✅ Firefox 88+
-- ✅ Safari 15+
+## 🤝 Contributing
 
-Requires WebRTC support and microphone access.
+Feel free to fork, modify, and use for your own restaurant ordering system!
 
-## Resources
+## 📚 Resources
 
 - [OpenAI Realtime API Documentation](https://platform.openai.com/docs/guides/realtime-webrtc)
 - [WebRTC API Reference](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API)
 - [OpenAI API Keys](https://platform.openai.com/api-keys)
 
-## License
+## 📧 Support
 
-MIT
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## Support
-
-For issues and questions:
-- Check the troubleshooting section above
-- Review OpenAI Realtime API documentation
-- Open an issue in the repository
+For issues with:
+- OpenAI API: Check [OpenAI Documentation](https://platform.openai.com/docs)
+- WebRTC: Verify browser compatibility
+- This project: Check console logs for detailed error messages
