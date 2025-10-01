@@ -1,18 +1,22 @@
 # 🎙️ AI Audio Ordering System
 
-A real-time voice-based restaurant ordering system powered by OpenAI's Realtime API with WebRTC. Take phone orders naturally through AI-powered voice conversations.
+A real-time voice-based restaurant ordering system powered by OpenAI's Realtime API with WebRTC. Take phone orders naturally through AI-powered voice conversations with automatic order parsing and display.
 
 ## ✨ Features
 
 - **Real-time Voice Conversations**: Natural phone order interactions using OpenAI's GPT-4o-mini Realtime model
 - **WebRTC Integration**: Low-latency audio streaming with client-side WebRTC implementation
+- **Smart Auto-Close**: Automatically ends conversation after "goodbye" detection or 10 seconds of inactivity
+- **Automatic Order Parsing**: Extracts order details (items, quantities, customer name, pickup time, total) from AI conversation
+- **Order Display**: View recent orders with customer names, items, pickup times, and totals
 - **Dynamic Menu Management**: Easy-to-use web interface for managing menu items and categories
-- **Order Display**: View recent orders with customer names, items, and totals
-- **Cost Tracking**: Real-time token usage and cost monitoring in browser console
+- **Cost Tracking**: Real-time token usage and cost monitoring with separate text/audio pricing in browser console
 - **Professional Order Flow**:
-  - AI asks for customer name
+  - AI greets customer immediately
+  - Customer places order with "Anything else?" prompts after each item
+  - AI confirms order content FIRST before asking for details
+  - AI asks for customer name only after order confirmation
   - AI requests pickup time
-  - AI confirms full order with total price
   - Professional closing: "Perfect, see you at [time]. Drive safe, bye!"
 
 ## 🚀 Quick Start
@@ -95,9 +99,21 @@ AI_Audio_Ordering_System/
 1. Click the **microphone button** to start a voice session
 2. The AI will greet the customer immediately
 3. Customer places their order naturally through voice
-4. AI asks for customer name and pickup time
-5. AI confirms the complete order with total price
-6. Click **Disconnect** button to end the session
+4. AI asks "Anything else?" after each item
+5. When customer is done, AI confirms the order content and total
+6. After customer confirms, AI asks for name
+7. AI asks for pickup time
+8. AI gives professional closing and conversation auto-closes after 3 seconds
+9. Order automatically appears in "Recent Orders" section with all details
+
+### Viewing Orders
+
+Orders are automatically parsed and displayed showing:
+- Customer name (👤)
+- Order timestamp
+- Items with quantities (e.g., "2x Classic Cheeseburgers")
+- Pickup time (🕒)
+- Total price
 
 ### Managing Menu
 
@@ -109,16 +125,24 @@ AI_Audio_Ordering_System/
 ### Monitoring Costs
 
 Open browser DevTools (F12) → Console tab to see:
-- Per-response token usage and cost
+- Separate text and audio token usage
+- Cached input tokens (menu/instructions sent once)
+- Per-response cost breakdown
 - Session total cost when disconnecting
 
 Example output:
 ```
 💰 Response Cost Breakdown:
-   Input tokens:  1,250 × $0.000032 = $0.000040
-   Output tokens: 850 × $0.000064 = $0.000054
-   Response cost: $0.000094
-   Session total: $0.000094
+📊 Token Usage:
+   Text Input: 245 tokens × $0.000004 = $0.00098
+   Text Cached Input: 1,520 tokens × $0.0000004 = $0.00061
+   Audio Input: 890 tokens × $0.000032 = $0.02848
+   Audio Cached Input: 0 tokens × $0.0000004 = $0.00000
+   Text Output: 128 tokens × $0.000016 = $0.00205
+   Audio Output: 672 tokens × $0.000064 = $0.04301
+
+💵 Response cost: $0.07513
+💵 Session total: $0.24856
 ```
 
 ## ⚙️ Configuration
@@ -152,15 +176,22 @@ Example output:
 
 ### AI Model Settings
 
-Edit `server.js` line 109 to change the model:
+Edit `server.js` to change the model or instructions:
 ```javascript
-model: 'gpt-4o-mini-realtime-preview'  // Current model
+model: 'gpt-4o-mini-realtime-preview-2024-12-17'
 ```
 
-### Pricing (as of current implementation)
+### Pricing (OpenAI Realtime API)
 
-- Input tokens: $32.00 per 1M tokens ($0.000032 per token)
-- Output tokens: $64.00 per 1M tokens ($0.000064 per token)
+**Text tokens:**
+- Input: $4.00 per 1M tokens
+- Cached input: $0.40 per 1M tokens (menu/instructions)
+- Output: $16.00 per 1M tokens
+
+**Audio tokens:**
+- Input: $32.00 per 1M tokens
+- Cached input: $0.40 per 1M tokens
+- Output: $64.00 per 1M tokens
 
 ## 🔧 API Endpoints
 
@@ -176,17 +207,36 @@ model: 'gpt-4o-mini-realtime-preview'  // Current model
 ### WebRTC Connection Flow
 
 1. Client requests ephemeral token from server
-2. Server generates token with menu context
-3. Client establishes WebRTC peer connection
+2. Server generates token with menu context and AI instructions
+3. Client establishes WebRTC peer connection to OpenAI
 4. Audio streams bidirectionally with low latency
 5. AI responds in real-time through voice
+6. Transcripts captured for both user and AI
+
+### Smart Auto-Close
+
+The system intelligently closes conversations:
+- **Goodbye detection**: When AI says specific farewell phrases ("drive safe...bye", "see you...bye", "goodbye"), waits 3 seconds then closes
+- **Inactivity timer**: Starts 10-second timer AFTER AI finishes speaking audio (not just when response is generated)
+- **User activity**: Timer resets when customer speaks
+
+### Automatic Order Parsing
+
+The system automatically extracts order details from the AI's confirmation:
+- **Customer name**: Captured from user's voice input when they provide their name
+- **Items & quantities**: Parsed from AI's confirmation (e.g., "2 Classic Cheeseburgers, 1 French Fries")
+- **Pickup time**: Captured from user input and AI confirmation
+- **Total**: Extracted from AI's price confirmation
+- **Storage**: Orders saved to browser localStorage and persist across refreshes
+
+Detailed parsing logs available in browser console showing each extraction step.
 
 ### Order Display
 
-- Orders stored in browser localStorage
-- Displays customer name, items, and total
-- Shows timestamp for each order
-- Persists across page refreshes
+- Orders displayed with customer name, timestamp, items, pickup time, and total
+- Automatically refreshes when new order is parsed
+- Shows most recent orders first
+- Clean card-based UI with color-coded sections
 
 ## 🐛 Troubleshooting
 
@@ -207,6 +257,7 @@ lsof -ti:3000 | xargs kill -9
 
 **High API costs:**
 - Monitor console for token usage
+- Audio tokens are 8x more expensive than text tokens
 - Shorter conversations = lower cost
 - Use disconnect button when done
 
@@ -214,6 +265,32 @@ lsof -ti:3000 | xargs kill -9
 - Verify `.env` file contains valid `OPENAI_API_KEY`
 - Check server logs for token generation errors
 - Restart server after changing `.env`
+
+**Orders not displaying:**
+- Check browser console for parsing logs
+- Verify AI is following the confirmation format
+- Check localStorage in DevTools → Application → Local Storage
+
+**Auto-close not working:**
+- Check console for "goodbye" detection logs
+- Verify AI is using exact phrases: "drive safe...bye", "see you...bye", or "goodbye"
+- Check for 3-second delay before disconnect
+
+**Inactivity timer starting too early:**
+- Timer now starts on `response.audio.done` (when AI finishes speaking)
+- Not on `response.completed` (when response is generated)
+- Check console logs: "AI finished speaking - starting 10 second inactivity timer"
+
+## 📝 Recent Updates
+
+- ✅ Added automatic order parsing from AI confirmations
+- ✅ Implemented pickup time display in order cards
+- ✅ Improved customer name and pickup time extraction from user input
+- ✅ Added detailed console logging for debugging order parsing
+- ✅ Enhanced UI with order footer showing pickup time and total
+- ✅ Fixed inactivity timer to start after AI finishes speaking audio
+- ✅ Separated text and audio token cost calculations
+- ✅ Updated order confirmation flow to confirm content before asking for name
 
 ## 📝 License
 
@@ -228,10 +305,11 @@ Feel free to fork, modify, and use for your own restaurant ordering system!
 - [OpenAI Realtime API Documentation](https://platform.openai.com/docs/guides/realtime-webrtc)
 - [WebRTC API Reference](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API)
 - [OpenAI API Keys](https://platform.openai.com/api-keys)
+- [OpenAI Realtime API Pricing](https://openai.com/api/pricing/)
 
 ## 📧 Support
 
 For issues with:
 - OpenAI API: Check [OpenAI Documentation](https://platform.openai.com/docs)
 - WebRTC: Verify browser compatibility
-- This project: Check console logs for detailed error messages
+- This project: Check console logs for detailed error messages and parsing information
