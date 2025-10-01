@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MENU_FILE = path.join(__dirname, 'menu.json');
+const ORDERS_FILE = path.join(__dirname, 'orders.json');
 
 // Middleware
 app.use(cors());
@@ -28,6 +29,11 @@ app.get('/', (req, res) => {
 // Serve the menu management page
 app.get('/menu', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'menu.html'));
+});
+
+// Serve the orders page
+app.get('/orders', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'orders.html'));
 });
 
 // Get menu data
@@ -51,6 +57,70 @@ app.post('/api/menu', async (req, res) => {
   } catch (error) {
     console.error('❌ Error updating menu:', error);
     res.status(500).json({ error: 'Failed to update menu' });
+  }
+});
+
+// Get orders data
+app.get('/api/orders', async (req, res) => {
+  try {
+    const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
+    res.json(JSON.parse(ordersData));
+  } catch (error) {
+    // If file doesn't exist, return empty array
+    if (error.code === 'ENOENT') {
+      res.json([]);
+    } else {
+      console.error('❌ Error reading orders:', error);
+      res.status(500).json({ error: 'Failed to load orders' });
+    }
+  }
+});
+
+// Add new order
+app.post('/api/orders', async (req, res) => {
+  try {
+    let orders = [];
+
+    // Read existing orders
+    try {
+      const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
+      orders = JSON.parse(ordersData);
+    } catch (error) {
+      // If file doesn't exist, start with empty array
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+
+    // Add new order with timestamp and ID
+    const newOrder = {
+      ...req.body,
+      timestamp: new Date().toISOString(),
+      id: `order-${Date.now()}`
+    };
+
+    orders.push(newOrder);
+
+    // Save updated orders
+    await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+    console.log('✅ Order added successfully:', newOrder.id);
+
+    res.json({ success: true, order: newOrder });
+  } catch (error) {
+    console.error('❌ Error adding order:', error);
+    res.status(500).json({ error: 'Failed to add order' });
+  }
+});
+
+// Clear all orders
+app.delete('/api/orders', async (req, res) => {
+  try {
+    await fs.writeFile(ORDERS_FILE, JSON.stringify([], null, 2), 'utf-8');
+    console.log('✅ All orders cleared');
+    res.json({ success: true, message: 'Orders cleared' });
+  } catch (error) {
+    console.error('❌ Error clearing orders:', error);
+    res.status(500).json({ error: 'Failed to clear orders' });
   }
 });
 
@@ -106,7 +176,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
       body: JSON.stringify({
         session: {
           type: 'realtime',
-          model: 'gpt-4o-mini-realtime-preview',
+          model: 'gpt-realtime',
           instructions: menuContext
         }
       }),
@@ -156,8 +226,13 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log('🚀 OpenAI Voice Agent Server Started');
   console.log('='.repeat(50));
-  console.log(`🌐 Server: http://localhost:${PORT}`);
-  console.log(`🎙️ Voice Agent: http://localhost:${PORT}`);
+  console.log(`🌐 Server running on port ${PORT}`);
+  console.log('');
+  console.log('📱 Available Pages:');
+  console.log(`   🎙️  Voice Agent (Customer):  http://localhost:${PORT}`);
+  console.log(`   🍽️  Menu Management (Owner): http://localhost:${PORT}/menu`);
+  console.log(`   📋 Order Management (Owner): http://localhost:${PORT}/orders`);
+  console.log('');
   console.log('📚 Using Official OpenAI Agents JS SDK');
   console.log('🔧 RealtimeAgent + RealtimeSession pattern');
   console.log('='.repeat(50));
