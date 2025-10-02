@@ -1,0 +1,35 @@
+# Fly.io configuration for SIP Server
+app = "ai-ordering-sip-server"
+primary_region = "sjc"
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[services]]
+  protocol = "udp"
+  internal_port = 5060
+
+  [[services.ports]]
+    port = 5060
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 3000
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[env]
+  PORT = "3000"
+  SIP_PORT = "5060"
