@@ -332,6 +332,9 @@ ${menu.categories.map(cat =>
                 voice: 'alloy',
                 input_audio_format: 'g711_ulaw',
                 output_audio_format: 'g711_ulaw',
+                input_audio_transcription: {
+                  model: 'whisper-1',
+                },
                 turn_detection: null, // Disable automatic interrupts
               },
             }));
