@@ -291,7 +291,7 @@ wss.on('connection', (twilioWs) => {
           console.log(`📞 Call started - Stream SID: ${streamSid}`);
 
           // Connect to OpenAI Realtime API via WebSocket
-          openaiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01', {
+          openaiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-realtime', {
             headers: {
               'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
               'OpenAI-Beta': 'realtime=v1',
