@@ -367,41 +367,55 @@ ${menu.categories.map(cat =>
 
               if (event.type === 'response.audio_transcript.done') {
                 console.log('🤖 AI:', event.transcript);
+              }
 
-                // Check if AI said final goodbye phrase - hang up the call
-                const transcript = event.transcript.toLowerCase().trim();
-                const farewellPhrases = [
-                  'drive safe, bye',
-                  'drive safe. bye',
-                  'see you then. drive safe, bye',
-                  'see you at',
-                  'perfect, see you',
-                ];
+              // Check for hangup only when the ENTIRE response is done (not just transcript chunks)
+              if (event.type === 'response.done') {
+                // Get full transcript from response output
+                const outputs = event.response?.output || [];
+                const fullTranscript = outputs
+                  .filter(item => item.type === 'message')
+                  .flatMap(item => item.content || [])
+                  .filter(content => content.type === 'audio' && content.transcript)
+                  .map(content => content.transcript)
+                  .join(' ')
+                  .toLowerCase()
+                  .trim();
 
-                const matchedPhrase = farewellPhrases.find(phrase =>
-                  transcript.includes(phrase)
-                );
+                if (fullTranscript) {
+                  const farewellPhrases = [
+                    'drive safe, bye',
+                    'drive safe. bye',
+                    'see you then. drive safe, bye',
+                    'see you at',
+                    'perfect, see you',
+                  ];
 
-                if (matchedPhrase) {
-                  console.log('\n' + '='.repeat(60));
-                  console.log('👋 AUTO-HANGUP TRIGGERED');
-                  console.log('='.repeat(60));
-                  console.log(`AI said: "${event.transcript}"`);
-                  console.log(`Matched phrase: "${matchedPhrase}"`);
-                  console.log('Hanging up in 2 seconds...');
-                  console.log('='.repeat(60) + '\n');
+                  const matchedPhrase = farewellPhrases.find(phrase =>
+                    fullTranscript.includes(phrase)
+                  );
 
-                  // Wait 2 seconds for audio to finish, then hang up
-                  setTimeout(() => {
-                    console.log('🔌 Closing connections...');
-                    if (openaiWs) {
-                      openaiWs.close();
-                    }
-                    if (twilioWs && twilioWs.readyState === WebSocket.OPEN) {
-                      twilioWs.close();
-                    }
-                    console.log('✅ Call ended by auto-hangup');
-                  }, 2000);
+                  if (matchedPhrase) {
+                    console.log('\n' + '='.repeat(60));
+                    console.log('👋 AUTO-HANGUP TRIGGERED');
+                    console.log('='.repeat(60));
+                    console.log(`Full AI response: "${fullTranscript}"`);
+                    console.log(`Matched phrase: "${matchedPhrase}"`);
+                    console.log('Hanging up in 3 seconds...');
+                    console.log('='.repeat(60) + '\n');
+
+                    // Wait 3 seconds for audio to finish, then hang up
+                    setTimeout(() => {
+                      console.log('🔌 Closing connections...');
+                      if (openaiWs) {
+                        openaiWs.close();
+                      }
+                      if (twilioWs && twilioWs.readyState === WebSocket.OPEN) {
+                        twilioWs.close();
+                      }
+                      console.log('✅ Call ended by auto-hangup');
+                    }, 3000);
+                  }
                 }
               }
 
