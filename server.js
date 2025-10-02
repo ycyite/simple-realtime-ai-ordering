@@ -239,22 +239,25 @@ app.get('/api/health', (req, res) => {
 
 // Twilio Voice webhook - Forward to SIP server
 app.post('/twilio/voice', async (req, res) => {
-  console.log('📞 Incoming call from:', req.body.From);
-  console.log('📞 To:', req.body.To);
-  console.log('📞 Call SID:', req.body.CallSid);
-
-  // Debug: log entire body if From is undefined
-  if (!req.body.From) {
-    console.log('⚠️  Twilio webhook body:', req.body);
-  }
+  console.log('\n' + '='.repeat(60));
+  console.log('📞 INCOMING CALL FROM TWILIO');
+  console.log('='.repeat(60));
+  console.log(`   From: ${req.body.From || 'undefined'}`);
+  console.log(`   To: ${req.body.To || 'undefined'}`);
+  console.log(`   Call SID: ${req.body.CallSid || 'undefined'}`);
+  console.log(`   Call Status: ${req.body.CallStatus || 'undefined'}`);
 
   const sipDomain = process.env.SIP_DOMAIN || req.headers.host.split(':')[0];
+  const sipEndpoint = `sip:agent@${sipDomain}:${SIP_PORT}`;
+
+  console.log(`   → Forwarding to SIP: ${sipEndpoint}`);
+  console.log('='.repeat(60) + '\n');
 
   // TwiML to dial our SIP server
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial>
-    <Sip>sip:agent@${sipDomain}:${SIP_PORT}</Sip>
+    <Sip>${sipEndpoint}</Sip>
   </Dial>
 </Response>`;
 
@@ -276,7 +279,14 @@ sip.start({
 
 async function handleSipInvite(request) {
   const callId = request.headers['call-id'];
-  console.log('📞 SIP INVITE received from Twilio, Call-ID:', callId);
+
+  console.log('\n' + '='.repeat(60));
+  console.log('📡 SIP INVITE RECEIVED');
+  console.log('='.repeat(60));
+  console.log(`   Call-ID: ${callId}`);
+  console.log(`   From: ${request.headers.from}`);
+  console.log(`   To: ${request.headers.to}`);
+  console.log('='.repeat(60) + '\n');
 
   try {
     // Create server-side WebRTC connection to OpenAI
@@ -337,7 +347,9 @@ async function handleSipInvite(request) {
       content: localSdpString
     });
 
-    console.log('✅ Phone call connected - bridging to OpenAI WebRTC');
+    console.log('\n' + '✅ '.repeat(30));
+    console.log('🎉 PHONE CALL CONNECTED - BRIDGING TO OPENAI');
+    console.log('✅ '.repeat(30) + '\n');
 
     // Store active call
     activeCalls.set(callId, { pc });
