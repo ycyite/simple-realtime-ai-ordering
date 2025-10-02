@@ -28,6 +28,7 @@ const activeCalls = new Map();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // For Twilio webhook data
 app.use(express.static('public'));
 
 // Serve the main page
@@ -239,6 +240,13 @@ app.get('/api/health', (req, res) => {
 // Twilio Voice webhook - Forward to SIP server
 app.post('/twilio/voice', async (req, res) => {
   console.log('📞 Incoming call from:', req.body.From);
+  console.log('📞 To:', req.body.To);
+  console.log('📞 Call SID:', req.body.CallSid);
+
+  // Debug: log entire body if From is undefined
+  if (!req.body.From) {
+    console.log('⚠️  Twilio webhook body:', req.body);
+  }
 
   const sipDomain = process.env.SIP_DOMAIN || req.headers.host.split(':')[0];
 
