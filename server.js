@@ -315,7 +315,7 @@ IMPORTANT INSTRUCTIONS:
 - Ask only essential clarifying questions (size, quantity, customizations)
 - When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly with the total price
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Let me confirm: [list items]. Pickup at [time]. Is that correct?"
 - After customer confirms, CALL THE save_order function with all order details
 - Then say: "Perfect, see you at [time]. Drive safe, bye!"
 
