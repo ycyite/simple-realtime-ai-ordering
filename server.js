@@ -349,10 +349,21 @@ async function handleSipInvite(request) {
 
     console.log('\n' + '✅ '.repeat(30));
     console.log('🎉 PHONE CALL CONNECTED - BRIDGING TO OPENAI');
-    console.log('✅ '.repeat(30) + '\n');
+    console.log('✅ '.repeat(30));
+    console.log(`   Active calls: ${activeCalls.size + 1}`);
+    console.log('='.repeat(60) + '\n');
 
     // Store active call
     activeCalls.set(callId, { pc });
+
+    // Listen for connection state changes
+    pc.onconnectionstatechange = () => {
+      console.log(`📡 WebRTC connection state: ${pc.connectionState}`);
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`🧊 ICE connection state: ${pc.iceConnectionState}`);
+    };
 
   } catch (error) {
     console.error('❌ Error handling phone call:', error);
@@ -374,11 +385,12 @@ async function handleSipInvite(request) {
 
 // Create server-side WebRTC connection to OpenAI for phone calls
 async function createOpenAIWebRTCForPhone() {
-  console.log('🔑 Creating OpenAI WebRTC connection for phone call...');
+  console.log('\n🔑 Creating OpenAI WebRTC connection for phone call...');
 
   // Load menu for AI context
   const menuData = await fs.readFile(MENU_FILE, 'utf-8');
   const menu = JSON.parse(menuData);
+  console.log(`   Menu loaded: ${menu.restaurant.name}`);
 
   const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
 
@@ -400,6 +412,7 @@ ${menu.categories.map(cat =>
 ).join('\n\n')}`;
 
   // Create ephemeral token for phone call session
+  console.log('   Requesting ephemeral token from OpenAI...');
   const tokenResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
     method: 'POST',
     headers: {
@@ -413,8 +426,15 @@ ${menu.categories.map(cat =>
     })
   });
 
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    console.error('❌ OpenAI token error:', error);
+    throw new Error(`Failed to get OpenAI token: ${error}`);
+  }
+
   const tokenData = await tokenResponse.json();
   const ephemeralKey = tokenData.client_secret.value;
+  console.log('   ✅ Ephemeral token received');
 
   // Create WebRTC peer connection (server-side)
   const pc = new RTCPeerConnection();
@@ -434,10 +454,13 @@ ${menu.categories.map(cat =>
   });
 
   // Create SDP offer
+  console.log('   Creating WebRTC offer...');
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
+  console.log('   ✅ SDP offer created');
 
   // Send to OpenAI Realtime API
+  console.log('   Sending SDP to OpenAI Realtime API...');
   const sdpResponse = await fetch('https://api.openai.com/v1/realtime', {
     method: 'POST',
     headers: {
@@ -447,10 +470,17 @@ ${menu.categories.map(cat =>
     body: offer.sdp
   });
 
+  if (!sdpResponse.ok) {
+    const error = await sdpResponse.text();
+    console.error('❌ OpenAI SDP error:', error);
+    throw new Error(`Failed to negotiate SDP: ${error}`);
+  }
+
   const answerSdp = await sdpResponse.text();
   await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
-  console.log('✅ OpenAI WebRTC connection established (phone call)');
+  console.log('   ✅ OpenAI WebRTC connection established');
+  console.log('   Data channel state:', dc.readyState);
 
   return { pc, dc, sdp: answerSdp };
 }
