@@ -4,6 +4,8 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import twilio from 'twilio';
+import { WebSocketServer, WebSocket } from 'ws';
 
 // Load environment variables
 config();
@@ -218,12 +220,32 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     openaiConfigured: !!process.env.OPENAI_API_KEY,
+    twilioConfigured: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
     sdkVersion: '0.0.9'
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// TwiML webhook for incoming phone calls
+app.post('/twilio/voice', async (req, res) => {
+  console.log('📞 Incoming call from:', req.body.From);
+
+  const twiml = new twilio.twiml.VoiceResponse();
+
+  // Start audio streaming to WebSocket
+  const connect = twiml.connect();
+  const host = req.headers.host;
+  const protocol = host.includes('localhost') ? 'ws' : 'wss';
+
+  connect.stream({
+    url: `${protocol}://${host}/twilio/media-stream`
+  });
+
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+// Start HTTP server
+const server = app.listen(PORT, () => {
   console.log('🚀 OpenAI Voice Agent Server Started');
   console.log('='.repeat(50));
   console.log(`🌐 Server running on port ${PORT}`);
@@ -232,6 +254,9 @@ app.listen(PORT, () => {
   console.log(`   🎙️  Voice Agent (Customer):  http://localhost:${PORT}`);
   console.log(`   🍽️  Menu Management (Owner): http://localhost:${PORT}/menu`);
   console.log(`   📋 Order Management (Owner): http://localhost:${PORT}/orders`);
+  console.log('');
+  console.log('📞 Twilio Phone Integration:');
+  console.log(`   Webhook URL: https://your-domain/twilio/voice`);
   console.log('');
   console.log('📚 Using Official OpenAI Agents JS SDK');
   console.log('🔧 RealtimeAgent + RealtimeSession pattern');
@@ -243,4 +268,154 @@ app.listen(PORT, () => {
   } else {
     console.log('✅ OpenAI API key configured');
   }
+});
+
+// WebSocket server for Twilio Media Streams
+const wss = new WebSocketServer({ server, path: '/twilio/media-stream' });
+
+wss.on('connection', (twilioWs) => {
+  console.log('🔌 Twilio Media Stream connected');
+
+  let streamSid = null;
+  let openaiWs = null;
+
+  twilioWs.on('message', async (message) => {
+    try {
+      const msg = JSON.parse(message);
+
+      switch (msg.event) {
+        case 'start':
+          streamSid = msg.start.streamSid;
+          console.log(`📞 Call started - Stream SID: ${streamSid}`);
+
+          // Connect to OpenAI Realtime API via WebSocket
+          openaiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01', {
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'OpenAI-Beta': 'realtime=v1',
+            },
+          });
+
+          openaiWs.on('open', async () => {
+            console.log('✅ Connected to OpenAI Realtime API');
+
+            // Load menu for AI context
+            const menuData = await fs.readFile(MENU_FILE, 'utf-8');
+            const menu = JSON.parse(menuData);
+
+            const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
+
+IMPORTANT INSTRUCTIONS:
+- Start the conversation immediately by greeting the customer: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
+- Keep responses SHORT and CLEAR - use simple sentences
+- Listen carefully to their order
+- Confirm items briefly: "Got it, [item name]"
+- Ask only essential clarifying questions (size, quantity, customizations)
+- When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
+- After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly
+- After customer confirms, say: "Perfect, see you at [time]. Drive safe, bye!"
+
+MENU ITEMS:
+${menu.categories.map(cat =>
+  `${cat.name}:\n${cat.items.map(item =>
+    `- ${item.name}: $${item.price}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
+  ).join('\n')}`
+).join('\n\n')}`;
+
+            // Configure session
+            openaiWs.send(JSON.stringify({
+              type: 'session.update',
+              session: {
+                modalities: ['text', 'audio'],
+                instructions: menuContext,
+                voice: 'alloy',
+                input_audio_format: 'g711_ulaw',
+                output_audio_format: 'g711_ulaw',
+                input_audio_transcription: {
+                  model: 'whisper-1',
+                },
+                turn_detection: {
+                  type: 'server_vad',
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 500,
+                },
+              },
+            }));
+
+            // Trigger AI to greet first
+            openaiWs.send(JSON.stringify({
+              type: 'response.create',
+            }));
+          });
+
+          openaiWs.on('message', (data) => {
+            try {
+              const event = JSON.parse(data.toString());
+
+              if (event.type === 'response.audio.delta' && event.delta) {
+                // Send AI audio back to Twilio
+                twilioWs.send(JSON.stringify({
+                  event: 'media',
+                  streamSid: streamSid,
+                  media: {
+                    payload: event.delta
+                  }
+                }));
+              }
+
+              if (event.type === 'response.audio_transcript.done') {
+                console.log('🤖 AI:', event.transcript);
+              }
+
+              if (event.type === 'conversation.item.input_audio_transcription.completed') {
+                console.log('👤 User:', event.transcript);
+              }
+            } catch (error) {
+              console.error('❌ Error processing OpenAI message:', error);
+            }
+          });
+
+          openaiWs.on('error', (error) => {
+            console.error('❌ OpenAI WebSocket error:', error);
+          });
+
+          openaiWs.on('close', () => {
+            console.log('🔌 OpenAI WebSocket closed');
+          });
+          break;
+
+        case 'media':
+          // Forward audio from Twilio to OpenAI
+          if (openaiWs && openaiWs.readyState === WebSocket.OPEN) {
+            openaiWs.send(JSON.stringify({
+              type: 'input_audio_buffer.append',
+              audio: msg.media.payload
+            }));
+          }
+          break;
+
+        case 'stop':
+          console.log('📞 Call ended');
+          if (openaiWs) {
+            openaiWs.close();
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('❌ Error processing Twilio message:', error);
+    }
+  });
+
+  twilioWs.on('close', () => {
+    console.log('🔌 Twilio Media Stream disconnected');
+    if (openaiWs) {
+      openaiWs.close();
+    }
+  });
+
+  twilioWs.on('error', (error) => {
+    console.error('❌ Twilio WebSocket error:', error);
+  });
 });
