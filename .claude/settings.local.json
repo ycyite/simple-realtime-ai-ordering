@@ -5,7 +5,11 @@
       "WebSearch",
       "WebFetch(domain:platform.openai.com)",
       "Bash(curl -X POST https://api.openai.com/v1/responses )",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm install:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,11 +1,13 @@
 # 🎙️ AI Audio Ordering System
 
-A real-time voice-based restaurant ordering system powered by OpenAI's Realtime API with WebRTC. Take phone orders naturally through AI-powered voice conversations with automatic order parsing and display.
+A real-time voice-based restaurant ordering system powered by OpenAI's Realtime API with WebRTC. Take orders through **browser voice** or **real phone calls** with natural AI-powered conversations.
 
 ## ✨ Features
 
-- **Real-time Voice Conversations**: Natural phone order interactions using OpenAI's GPT-4o-mini Realtime model
-- **WebRTC Integration**: Low-latency audio streaming with client-side WebRTC implementation
+- **Dual Input Modes**: Browser WebRTC OR real phone calls (Twilio + SIP)
+- **Real-time Voice Conversations**: Natural order interactions using OpenAI's GPT-4o-mini Realtime model
+- **Browser WebRTC Integration**: Low-latency audio streaming with client-side WebRTC
+- **📞 Phone Call Support**: Customers can call a real phone number powered by Twilio (NO WebSocket!)
 - **Smart Auto-Close**: Automatically ends conversation after "goodbye" detection or 10 seconds of inactivity
 - **Automatic Order Parsing**: Extracts order details (items, quantities, customer name, pickup time, total) from AI conversation
 - **Order Display**: View recent orders with customer names, items, pickup times, and totals
@@ -60,6 +62,27 @@ A real-time voice-based restaurant ordering system powered by OpenAI's Realtime 
 5. **Open in browser**
 
    Navigate to: `http://localhost:3000`
+
+## 📞 Phone Call Integration (Optional)
+
+Want customers to call a real phone number? See **[PHONE_SETUP.md](PHONE_SETUP.md)** for:
+- Twilio integration
+- Pure Node.js SIP server (no external dependencies!)
+- Railway deployment guide
+- **No WebSocket** - uses SIP/RTP → WebRTC
+
+Quick setup:
+```bash
+# Add to .env
+SIP_DOMAIN=your-domain.com
+PUBLIC_IP=your-domain.com
+
+# Deploy to Railway
+railway up
+
+# Configure Twilio webhook
+https://your-domain/twilio/voice
+```
 
 ## 📦 Dependencies
 

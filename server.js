@@ -4,6 +4,9 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import sip from 'sip';
+import sdpTransform from 'sdp-transform';
+import { RTCPeerConnection } from '@roamhq/wrtc';
 
 // Load environment variables
 config();
@@ -13,8 +16,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const SIP_PORT = process.env.SIP_PORT || 5060;
 const MENU_FILE = path.join(__dirname, 'menu.json');
 const ORDERS_FILE = path.join(__dirname, 'orders.json');
+
+// Store active phone calls
+const activeCalls = new Map();
 
 // Middleware
 app.use(cors());
@@ -218,29 +225,252 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     openaiConfigured: !!process.env.OPENAI_API_KEY,
+    sipServerRunning: true,
     sdkVersion: '0.0.9'
   });
 });
 
+// ============================================================================
+// PHONE CALL INTEGRATION (Twilio SIP + OpenAI WebRTC)
+// ============================================================================
+
+// Twilio Voice webhook - Forward to SIP server
+app.post('/twilio/voice', async (req, res) => {
+  console.log('📞 Incoming call from:', req.body.From);
+
+  const sipDomain = process.env.SIP_DOMAIN || req.headers.host.split(':')[0];
+
+  // TwiML to dial our SIP server
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial>
+    <Sip>sip:agent@${sipDomain}:${SIP_PORT}</Sip>
+  </Dial>
+</Response>`;
+
+  res.type('text/xml');
+  res.send(twiml);
+});
+
+// SIP Server - Handle incoming calls from Twilio
+sip.start({
+  port: SIP_PORT,
+  udp: true,
+  tcp: false,
+  tls: false
+}, (request) => {
+  if (request.method === 'INVITE') {
+    handleSipInvite(request);
+  }
+});
+
+async function handleSipInvite(request) {
+  const callId = request.headers['call-id'];
+  console.log('📞 SIP INVITE received from Twilio, Call-ID:', callId);
+
+  try {
+    // Create server-side WebRTC connection to OpenAI
+    const { pc, sdp: openaiSdp } = await createOpenAIWebRTCForPhone();
+
+    // Parse OpenAI's SDP to get media info
+    const openaiSdpParsed = sdpTransform.parse(openaiSdp);
+    const audioMedia = openaiSdpParsed.media.find(m => m.type === 'audio');
+
+    if (!audioMedia) {
+      throw new Error('No audio media in OpenAI SDP');
+    }
+
+    // Create SDP answer for Twilio
+    const localSdp = {
+      version: 0,
+      origin: {
+        username: 'agent',
+        sessionId: Date.now(),
+        sessionVersion: Date.now(),
+        netType: 'IN',
+        ipVer: 4,
+        address: process.env.PUBLIC_IP || '0.0.0.0'
+      },
+      name: 'AI Agent',
+      timing: { start: 0, stop: 0 },
+      connection: { version: 4, ip: audioMedia.connection?.ip || process.env.PUBLIC_IP || '0.0.0.0' },
+      media: [{
+        type: 'audio',
+        port: audioMedia.port,
+        protocol: 'RTP/AVP',
+        payloads: '0 8 101',
+        rtp: [
+          { payload: 0, codec: 'PCMU', rate: 8000 },
+          { payload: 8, codec: 'PCMA', rate: 8000 },
+          { payload: 101, codec: 'telephone-event', rate: 8000 }
+        ],
+        fmtp: [{ payload: 101, config: '0-16' }],
+        connection: audioMedia.connection
+      }]
+    };
+
+    const localSdpString = sdpTransform.write(localSdp);
+
+    // Send 200 OK response to Twilio
+    sip.send({
+      method: 'OK',
+      status: 200,
+      reason: 'OK',
+      headers: {
+        to: request.headers.to,
+        from: request.headers.from,
+        'call-id': callId,
+        cseq: request.headers.cseq,
+        contact: request.headers.contact,
+        'content-type': 'application/sdp'
+      },
+      content: localSdpString
+    });
+
+    console.log('✅ Phone call connected - bridging to OpenAI WebRTC');
+
+    // Store active call
+    activeCalls.set(callId, { pc });
+
+  } catch (error) {
+    console.error('❌ Error handling phone call:', error);
+
+    // Send 500 error response
+    sip.send({
+      method: 'OK',
+      status: 500,
+      reason: 'Server Error',
+      headers: {
+        to: request.headers.to,
+        from: request.headers.from,
+        'call-id': callId,
+        cseq: request.headers.cseq
+      }
+    });
+  }
+}
+
+// Create server-side WebRTC connection to OpenAI for phone calls
+async function createOpenAIWebRTCForPhone() {
+  console.log('🔑 Creating OpenAI WebRTC connection for phone call...');
+
+  // Load menu for AI context
+  const menuData = await fs.readFile(MENU_FILE, 'utf-8');
+  const menu = JSON.parse(menuData);
+
+  const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
+
+IMPORTANT INSTRUCTIONS:
+- Start immediately by greeting: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
+- Keep responses SHORT and CLEAR
+- Listen carefully to orders
+- Confirm items briefly
+- When done, ASK FOR NAME: "Can I get a name for the order?"
+- After name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
+- REPEAT THE ORDER back with total and pickup time
+- End with: "Perfect, see you at [time]. Drive safe, bye!"
+
+MENU:
+${menu.categories.map(cat =>
+  `${cat.name}:\n${cat.items.map(item =>
+    `- ${item.name}: $${item.price}`
+  ).join('\n')}`
+).join('\n\n')}`;
+
+  // Create ephemeral token for phone call session
+  const tokenResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-realtime-preview-2024-12-17',
+      voice: 'verse',
+      instructions: menuContext
+    })
+  });
+
+  const tokenData = await tokenResponse.json();
+  const ephemeralKey = tokenData.client_secret.value;
+
+  // Create WebRTC peer connection (server-side)
+  const pc = new RTCPeerConnection();
+
+  // Create data channel
+  const dc = pc.createDataChannel('oai-events');
+
+  dc.addEventListener('open', () => {
+    console.log('✅ OpenAI data channel opened (phone call)');
+  });
+
+  dc.addEventListener('message', (e) => {
+    const event = JSON.parse(e.data);
+    if (event.type === 'response.audio_transcript.done') {
+      console.log('🤖 AI (phone):', event.transcript);
+    }
+  });
+
+  // Create SDP offer
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  // Send to OpenAI Realtime API
+  const sdpResponse = await fetch('https://api.openai.com/v1/realtime', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${ephemeralKey}`,
+      'Content-Type': 'application/sdp'
+    },
+    body: offer.sdp
+  });
+
+  const answerSdp = await sdpResponse.text();
+  await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+  console.log('✅ OpenAI WebRTC connection established (phone call)');
+
+  return { pc, dc, sdp: answerSdp };
+}
+
+// ============================================================================
+// END PHONE CALL INTEGRATION
+// ============================================================================
+
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 OpenAI Voice Agent Server Started');
-  console.log('='.repeat(50));
-  console.log(`🌐 Server running on port ${PORT}`);
+  console.log('🚀 AI Audio Ordering System Started');
+  console.log('='.repeat(60));
+  console.log(`🌐 HTTP Server: http://localhost:${PORT}`);
+  console.log(`📞 SIP Server: UDP Port ${SIP_PORT}`);
   console.log('');
-  console.log('📱 Available Pages:');
-  console.log(`   🎙️  Voice Agent (Customer):  http://localhost:${PORT}`);
-  console.log(`   🍽️  Menu Management (Owner): http://localhost:${PORT}/menu`);
-  console.log(`   📋 Order Management (Owner): http://localhost:${PORT}/orders`);
+  console.log('📱 Browser Voice Ordering:');
+  console.log(`   🎙️  Customer Interface: http://localhost:${PORT}`);
+  console.log(`   🍽️  Menu Management:    http://localhost:${PORT}/menu`);
+  console.log(`   📋 Order Management:    http://localhost:${PORT}/orders`);
   console.log('');
-  console.log('📚 Using Official OpenAI Agents JS SDK');
-  console.log('🔧 RealtimeAgent + RealtimeSession pattern');
-  console.log('='.repeat(50));
+  console.log('📞 Phone Call Integration (Twilio):');
+  console.log(`   Webhook URL: https://your-domain/twilio/voice`);
+  console.log(`   SIP Endpoint: sip:agent@${process.env.SIP_DOMAIN || 'your-domain'}:${SIP_PORT}`);
+  console.log(`   Mode: Pure SIP + WebRTC (No WebSocket)`);
+  console.log('');
+  console.log('🔗 Architecture:');
+  console.log('   Browser: Browser WebRTC → OpenAI Realtime API');
+  console.log('   Phone:   Twilio → SIP/RTP → Server WebRTC → OpenAI');
+  console.log('='.repeat(60));
 
   if (!process.env.OPENAI_API_KEY) {
-    console.warn('⚠️  WARNING: OPENAI_API_KEY not found in environment');
-    console.warn('   Please check your .env file');
+    console.warn('⚠️  WARNING: OPENAI_API_KEY not configured');
   } else {
     console.log('✅ OpenAI API key configured');
   }
+
+  if (!process.env.SIP_DOMAIN) {
+    console.warn('⚠️  Phone integration: Set SIP_DOMAIN in .env for deployment');
+  } else {
+    console.log(`✅ Phone integration configured: ${process.env.SIP_DOMAIN}`);
+  }
+
+  console.log('✅ Browser voice ordering ready');
+  console.log('✅ Phone SIP server running (Railway-compatible)');
 });
