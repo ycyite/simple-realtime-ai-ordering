@@ -410,8 +410,7 @@ ${menu.categories.map(cat =>
                     console.log(`Total audio chunks sent: ${totalAudioChunks}`);
 
                     // Calculate delay: Each audio chunk is ~20ms of audio
-                    // Add extra 2 seconds for network buffering and playback
-                    const estimatedAudioDuration = (totalAudioChunks * 20) + 2000;
+                    const estimatedAudioDuration = totalAudioChunks * 20;
                     const safeHangupDelay = Math.max(5000, estimatedAudioDuration);
 
                     console.log(`Estimated audio duration: ${estimatedAudioDuration}ms`);
