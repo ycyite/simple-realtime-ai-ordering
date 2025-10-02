@@ -378,21 +378,29 @@ ${menu.categories.map(cat =>
                   'perfect, see you',
                 ];
 
-                const shouldHangup = farewellPhrases.some(phrase =>
+                const matchedPhrase = farewellPhrases.find(phrase =>
                   transcript.includes(phrase)
                 );
 
-                if (shouldHangup) {
-                  console.log('👋 AI said goodbye - hanging up call');
+                if (matchedPhrase) {
+                  console.log('\n' + '='.repeat(60));
+                  console.log('👋 AUTO-HANGUP TRIGGERED');
+                  console.log('='.repeat(60));
+                  console.log(`AI said: "${event.transcript}"`);
+                  console.log(`Matched phrase: "${matchedPhrase}"`);
+                  console.log('Hanging up in 2 seconds...');
+                  console.log('='.repeat(60) + '\n');
 
                   // Wait 2 seconds for audio to finish, then hang up
                   setTimeout(() => {
+                    console.log('🔌 Closing connections...');
                     if (openaiWs) {
                       openaiWs.close();
                     }
                     if (twilioWs && twilioWs.readyState === WebSocket.OPEN) {
                       twilioWs.close();
                     }
+                    console.log('✅ Call ended by auto-hangup');
                   }, 2000);
                 }
               }
