@@ -368,16 +368,24 @@ ${menu.categories.map(cat =>
               if (event.type === 'response.audio_transcript.done') {
                 console.log('🤖 AI:', event.transcript);
 
-                // Check if AI said goodbye - hang up the call
-                const transcript = event.transcript.toLowerCase();
-                if (transcript.includes('goodbye') ||
-                    transcript.includes('bye') ||
-                    transcript.includes('have a good day') ||
-                    transcript.includes('drive safe')) {
+                // Check if AI said final goodbye phrase - hang up the call
+                const transcript = event.transcript.toLowerCase().trim();
+                const farewellPhrases = [
+                  'drive safe, bye',
+                  'drive safe. bye',
+                  'see you then. drive safe, bye',
+                  'see you at',
+                  'perfect, see you',
+                ];
 
+                const shouldHangup = farewellPhrases.some(phrase =>
+                  transcript.includes(phrase)
+                );
+
+                if (shouldHangup) {
                   console.log('👋 AI said goodbye - hanging up call');
 
-                  // Wait 1 second for audio to finish, then hang up
+                  // Wait 2 seconds for audio to finish, then hang up
                   setTimeout(() => {
                     if (openaiWs) {
                       openaiWs.close();
@@ -385,7 +393,7 @@ ${menu.categories.map(cat =>
                     if (twilioWs && twilioWs.readyState === WebSocket.OPEN) {
                       twilioWs.close();
                     }
-                  }, 1000);
+                  }, 2000);
                 }
               }
 
