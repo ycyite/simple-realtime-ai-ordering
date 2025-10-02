@@ -241,6 +241,18 @@ async function handleSipInvite(request) {
     // Listen for connection state changes
     pc.onconnectionstatechange = () => {
       console.log(`📡 WebRTC connection state: ${pc.connectionState}`);
+
+      if (pc.connectionState === 'connected') {
+        console.log('\n' + '✅ '.repeat(30));
+        console.log('🎉 PHONE ↔ OPENAI AUDIO BRIDGE ACTIVE');
+        console.log('📞 Customer can now talk to the AI agent');
+        console.log('✅ '.repeat(30) + '\n');
+      }
+
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+        console.log('❌ WebRTC connection lost');
+        activeCalls.delete(callId);
+      }
     };
 
     pc.oniceconnectionstatechange = () => {
@@ -325,13 +337,31 @@ ${menu.categories.map(cat =>
   const dc = pc.createDataChannel('oai-events');
 
   dc.addEventListener('open', () => {
-    console.log('✅ OpenAI data channel opened (phone call)');
+    console.log('\n' + '🎙️ '.repeat(30));
+    console.log('✅ OPENAI REALTIME API CONNECTED - READY TO TALK!');
+    console.log('🎙️ '.repeat(30) + '\n');
   });
 
   dc.addEventListener('message', (e) => {
     const event = JSON.parse(e.data);
+
+    // Log when AI starts speaking
+    if (event.type === 'response.audio.delta') {
+      console.log('🔊 AI is speaking...');
+    }
+
+    // Log AI transcript when done
     if (event.type === 'response.audio_transcript.done') {
-      console.log('🤖 AI (phone):', event.transcript);
+      console.log('🤖 AI said:', event.transcript);
+    }
+
+    // Log conversation events
+    if (event.type === 'conversation.item.created') {
+      console.log('💬 New conversation item created');
+    }
+
+    if (event.type === 'response.done') {
+      console.log('✅ AI response completed');
     }
   });
 
