@@ -315,8 +315,9 @@ IMPORTANT INSTRUCTIONS:
 - Ask only essential clarifying questions (size, quantity, customizations)
 - When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly
-- After customer confirms, say: "Perfect, see you at [time]. Drive safe, bye!"
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly with the total price
+- After customer confirms, CALL THE save_order function with all order details
+- Then say: "Perfect, see you at [time]. Drive safe, bye!"
 
 MENU ITEMS:
 ${menu.categories.map(cat =>
@@ -325,7 +326,7 @@ ${menu.categories.map(cat =>
   ).join('\n')}`
 ).join('\n\n')}`;
 
-            // Configure session
+            // Configure session with save_order function
             openaiWs.send(JSON.stringify({
               type: 'session.update',
               session: {
@@ -343,6 +344,44 @@ ${menu.categories.map(cat =>
                   prefix_padding_ms: 300,
                   silence_duration_ms: 500,
                 },
+                tools: [
+                  {
+                    type: 'function',
+                    name: 'save_order',
+                    description: 'Save the customer order to the database after order is confirmed',
+                    parameters: {
+                      type: 'object',
+                      properties: {
+                        customerName: {
+                          type: 'string',
+                          description: 'Customer name for the order'
+                        },
+                        items: {
+                          type: 'array',
+                          description: 'List of ordered items',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              name: { type: 'string' },
+                              quantity: { type: 'number' },
+                              price: { type: 'number' }
+                            }
+                          }
+                        },
+                        total: {
+                          type: 'number',
+                          description: 'Total order price'
+                        },
+                        pickupTime: {
+                          type: 'string',
+                          description: 'Pickup time'
+                        }
+                      },
+                      required: ['customerName', 'items', 'total', 'pickupTime']
+                    }
+                  }
+                ],
+                tool_choice: 'auto'
               },
             }));
 
@@ -437,6 +476,67 @@ ${menu.categories.map(cat =>
 
               if (event.type === 'conversation.item.input_audio_transcription.completed') {
                 console.log('👤 User:', event.transcript);
+              }
+
+              // Handle function calls
+              if (event.type === 'response.function_call_arguments.done') {
+                const functionName = event.name;
+                const args = JSON.parse(event.arguments);
+
+                console.log(`🔧 Function call: ${functionName}`, args);
+
+                if (functionName === 'save_order') {
+                  // Save order to file
+                  try {
+                    let orders = [];
+                    try {
+                      const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
+                      orders = JSON.parse(ordersData);
+                    } catch (err) {
+                      if (err.code !== 'ENOENT') throw err;
+                    }
+
+                    const newOrder = {
+                      ...args,
+                      source: 'phone',
+                      timestamp: new Date().toISOString(),
+                      id: `phone-order-${Date.now()}`
+                    };
+
+                    orders.push(newOrder);
+                    await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+
+                    console.log('✅ Phone order saved:', newOrder.id);
+
+                    // Send function result back to OpenAI
+                    openaiWs.send(JSON.stringify({
+                      type: 'conversation.item.create',
+                      item: {
+                        type: 'function_call_output',
+                        call_id: event.call_id,
+                        output: JSON.stringify({ success: true, orderId: newOrder.id })
+                      }
+                    }));
+
+                    // Continue the conversation
+                    openaiWs.send(JSON.stringify({
+                      type: 'response.create'
+                    }));
+
+                  } catch (error) {
+                    console.error('❌ Error saving phone order:', error);
+
+                    // Send error back to OpenAI
+                    openaiWs.send(JSON.stringify({
+                      type: 'conversation.item.create',
+                      item: {
+                        type: 'function_call_output',
+                        call_id: event.call_id,
+                        output: JSON.stringify({ success: false, error: error.message })
+                      }
+                    }));
+                  }
+                }
               }
             } catch (error) {
               console.error('❌ Error processing OpenAI message:', error);
