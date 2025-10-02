@@ -391,7 +391,7 @@ ${menu.categories.map(cat =>
             }));
           });
 
-          openaiWs.on('message', (data) => {
+          openaiWs.on('message', async (data) => {
             try {
               const event = JSON.parse(data.toString());
 
