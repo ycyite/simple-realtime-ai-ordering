@@ -6,7 +6,9 @@ import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import sip from 'sip';
 import sdpTransform from 'sdp-transform';
-import { RTCPeerConnection } from '@roamhq/wrtc';
+import wrtc from '@roamhq/wrtc';
+
+const { RTCPeerConnection } = wrtc;
 
 // Load environment variables
 config();
