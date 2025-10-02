@@ -312,8 +312,22 @@
         let orders = [];
         const CURRENT_ORDER_TIME_LIMIT = 30 * 60 * 1000; // 30 minutes
 
-        function loadOrders() {
-            orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        async function loadOrders() {
+            // Load orders from server (includes both browser and phone orders)
+            try {
+                const response = await fetch('/api/orders');
+                if (response.ok) {
+                    orders = await response.json();
+                } else {
+                    // Fallback to localStorage if server fails
+                    orders = JSON.parse(localStorage.getItem('orders') || '[]');
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                // Fallback to localStorage
+                orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            }
+
             renderOrders();
             updateStats();
         }
@@ -368,11 +382,14 @@
                 ? '<span class="status-badge status-current">In Progress</span>'
                 : '<span class="status-badge status-completed">Completed</span>';
 
+            const sourceIcon = order.source === 'phone' ? '📞' : '💻';
+            const sourceLabel = order.source === 'phone' ? 'Phone' : 'Web';
+
             return `
                 <div class="order-card ${isCurrent ? 'current' : ''}">
                     <div class="order-header">
                         <div>
-                            <div class="order-name">👤 ${order.customerName || 'Guest'}</div>
+                            <div class="order-name">👤 ${order.customerName || 'Guest'} <span style="font-size: 0.8em; opacity: 0.8;">${sourceIcon} ${sourceLabel}</span></div>
                             ${statusBadge}
                         </div>
                         <div class="order-time">${timeStr}<br>${dateStr}</div>
