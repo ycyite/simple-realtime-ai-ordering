@@ -334,6 +334,9 @@ ${menu.categories.map(cat =>
                 voice: 'alloy',
                 input_audio_format: 'g711_ulaw',
                 output_audio_format: 'g711_ulaw',
+                input_audio_transcription: {
+                  model: 'whisper-1',
+                },
                 turn_detection: {
                   type: 'server_vad',
                   threshold: 0.5,
@@ -432,6 +435,9 @@ ${menu.categories.map(cat =>
                 }
               }
 
+              if (event.type === 'conversation.item.input_audio_transcription.completed') {
+                console.log('👤 User:', event.transcript);
+              }
             } catch (error) {
               console.error('❌ Error processing OpenAI message:', error);
             }
