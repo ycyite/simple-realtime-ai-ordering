@@ -278,25 +278,6 @@ wss.on('connection', (twilioWs) => {
 
   let streamSid = null;
   let openaiWs = null;
-  let inactivityTimer = null;
-  const INACTIVITY_TIMEOUT = 30000; // 30 seconds of silence
-
-  // Function to reset inactivity timer
-  const resetInactivityTimer = () => {
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
-
-    inactivityTimer = setTimeout(() => {
-      console.log('⏰ Inactivity timeout - hanging up call');
-      if (openaiWs) {
-        openaiWs.close();
-      }
-      if (twilioWs && twilioWs.readyState === WebSocket.OPEN) {
-        twilioWs.close();
-      }
-    }, INACTIVITY_TIMEOUT);
-  };
 
   twilioWs.on('message', async (message) => {
     try {
@@ -317,9 +298,6 @@ wss.on('connection', (twilioWs) => {
 
           openaiWs.on('open', async () => {
             console.log('✅ Connected to OpenAI Realtime API');
-
-            // Start inactivity timer
-            resetInactivityTimer();
 
             // Load menu for AI context
             const menuData = await fs.readFile(MENU_FILE, 'utf-8');
@@ -390,9 +368,6 @@ ${menu.categories.map(cat =>
               if (event.type === 'response.audio_transcript.done') {
                 console.log('🤖 AI:', event.transcript);
 
-                // Reset inactivity timer on AI response
-                resetInactivityTimer();
-
                 // Check if AI said final goodbye phrase - hang up the call
                 const transcript = event.transcript.toLowerCase().trim();
                 const farewellPhrases = [
@@ -424,9 +399,6 @@ ${menu.categories.map(cat =>
 
               if (event.type === 'conversation.item.input_audio_transcription.completed') {
                 console.log('👤 User:', event.transcript);
-
-                // Reset inactivity timer on user input
-                resetInactivityTimer();
               }
             } catch (error) {
               console.error('❌ Error processing OpenAI message:', error);
@@ -454,9 +426,6 @@ ${menu.categories.map(cat =>
 
         case 'stop':
           console.log('📞 Call ended');
-          if (inactivityTimer) {
-            clearTimeout(inactivityTimer);
-          }
           if (openaiWs) {
             openaiWs.close();
           }
