@@ -278,6 +278,8 @@ wss.on('connection', (twilioWs) => {
 
   let streamSid = null;
   let openaiWs = null;
+  let lastAudioChunkTime = null;
+  let totalAudioChunks = 0;
 
   twilioWs.on('message', async (message) => {
     try {
@@ -355,6 +357,10 @@ ${menu.categories.map(cat =>
               const event = JSON.parse(data.toString());
 
               if (event.type === 'response.audio.delta' && event.delta) {
+                // Track last audio chunk time
+                lastAudioChunkTime = Date.now();
+                totalAudioChunks++;
+
                 // Send AI audio back to Twilio
                 twilioWs.send(JSON.stringify({
                   event: 'media',
@@ -401,10 +407,18 @@ ${menu.categories.map(cat =>
                     console.log('='.repeat(60));
                     console.log(`Full AI response: "${fullTranscript}"`);
                     console.log(`Matched phrase: "${matchedPhrase}"`);
-                    console.log('Hanging up in 5 seconds...');
+                    console.log(`Total audio chunks sent: ${totalAudioChunks}`);
+
+                    // Calculate delay: Each audio chunk is ~20ms of audio
+                    // Add extra 2 seconds for network buffering and playback
+                    const estimatedAudioDuration = (totalAudioChunks * 20) + 2000;
+                    const safeHangupDelay = Math.max(5000, estimatedAudioDuration);
+
+                    console.log(`Estimated audio duration: ${estimatedAudioDuration}ms`);
+                    console.log(`Hanging up in ${safeHangupDelay}ms...`);
                     console.log('='.repeat(60) + '\n');
 
-                    // Wait 5 seconds for audio to finish, then hang up
+                    // Wait for audio to finish playing, then hang up
                     setTimeout(() => {
                       console.log('🔌 Closing connections...');
                       if (openaiWs) {
@@ -414,7 +428,10 @@ ${menu.categories.map(cat =>
                         twilioWs.close();
                       }
                       console.log('✅ Call ended by auto-hangup');
-                    }, 5000);
+                    }, safeHangupDelay);
+
+                    // Reset audio chunk counter
+                    totalAudioChunks = 0;
                   }
                 }
               }
