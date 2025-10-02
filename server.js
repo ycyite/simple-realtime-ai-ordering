@@ -414,63 +414,8 @@ ${menu.categories.map(cat =>
                 console.log('🤖 AI:', event.transcript);
               }
 
-              // Check for hangup only when the ENTIRE response is done (not just transcript chunks)
+              // Reset chunk counter for next response
               if (event.type === 'response.done') {
-                // Get full transcript from response output
-                const outputs = event.response?.output || [];
-                const fullTranscript = outputs
-                  .filter(item => item.type === 'message')
-                  .flatMap(item => item.content || [])
-                  .filter(content => content.type === 'audio' && content.transcript)
-                  .map(content => content.transcript)
-                  .join(' ')
-                  .toLowerCase()
-                  .trim();
-
-                if (fullTranscript) {
-                  const farewellPhrases = [
-                    'drive safe, bye',
-                    'drive safe. bye',
-                    'see you then. drive safe, bye',
-                    'see you at',
-                    'perfect, see you',
-                  ];
-
-                  const matchedPhrase = farewellPhrases.find(phrase =>
-                    fullTranscript.includes(phrase)
-                  );
-
-                  if (matchedPhrase) {
-                    console.log('\n' + '='.repeat(60));
-                    console.log('👋 AUTO-HANGUP TRIGGERED');
-                    console.log('='.repeat(60));
-                    console.log(`Full AI response: "${fullTranscript}"`);
-                    console.log(`Matched phrase: "${matchedPhrase}"`);
-                    console.log(`Audio chunks in this response: ${currentResponseAudioChunks}`);
-
-                    // Calculate delay: Each audio chunk is ~20ms of audio
-                    const estimatedAudioDuration = currentResponseAudioChunks * 20;
-                    const safeHangupDelay = Math.max(5000, estimatedAudioDuration);
-
-                    console.log(`Estimated audio duration: ${estimatedAudioDuration}ms`);
-                    console.log(`Hanging up in ${safeHangupDelay}ms...`);
-                    console.log('='.repeat(60) + '\n');
-
-                    // Wait for audio to finish playing, then hang up
-                    setTimeout(() => {
-                      console.log('🔌 Closing connections...');
-                      if (openaiWs) {
-                        openaiWs.close();
-                      }
-                      if (twilioWs && twilioWs.readyState === WebSocket.OPEN) {
-                        twilioWs.close();
-                      }
-                      console.log('✅ Call ended by auto-hangup');
-                    }, safeHangupDelay);
-                  }
-                }
-
-                // Reset chunk counter for next response
                 currentResponseAudioChunks = 0;
               }
 
