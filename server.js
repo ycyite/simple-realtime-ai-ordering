@@ -401,10 +401,10 @@ ${menu.categories.map(cat =>
                     console.log('='.repeat(60));
                     console.log(`Full AI response: "${fullTranscript}"`);
                     console.log(`Matched phrase: "${matchedPhrase}"`);
-                    console.log('Hanging up in 3 seconds...');
+                    console.log('Hanging up in 5 seconds...');
                     console.log('='.repeat(60) + '\n');
 
-                    // Wait 3 seconds for audio to finish, then hang up
+                    // Wait 5 seconds for audio to finish, then hang up
                     setTimeout(() => {
                       console.log('🔌 Closing connections...');
                       if (openaiWs) {
@@ -414,7 +414,7 @@ ${menu.categories.map(cat =>
                         twilioWs.close();
                       }
                       console.log('✅ Call ended by auto-hangup');
-                    }, 3000);
+                    }, 5000);
                   }
                 }
               }
