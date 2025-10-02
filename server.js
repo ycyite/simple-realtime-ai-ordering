@@ -279,7 +279,7 @@ wss.on('connection', (twilioWs) => {
   let streamSid = null;
   let openaiWs = null;
   let lastAudioChunkTime = null;
-  let totalAudioChunks = 0;
+  let currentResponseAudioChunks = 0;
 
   twilioWs.on('message', async (message) => {
     try {
@@ -357,9 +357,9 @@ ${menu.categories.map(cat =>
               const event = JSON.parse(data.toString());
 
               if (event.type === 'response.audio.delta' && event.delta) {
-                // Track last audio chunk time
+                // Track audio chunks for current response
                 lastAudioChunkTime = Date.now();
-                totalAudioChunks++;
+                currentResponseAudioChunks++;
 
                 // Send AI audio back to Twilio
                 twilioWs.send(JSON.stringify({
@@ -407,10 +407,10 @@ ${menu.categories.map(cat =>
                     console.log('='.repeat(60));
                     console.log(`Full AI response: "${fullTranscript}"`);
                     console.log(`Matched phrase: "${matchedPhrase}"`);
-                    console.log(`Total audio chunks sent: ${totalAudioChunks}`);
+                    console.log(`Audio chunks in this response: ${currentResponseAudioChunks}`);
 
                     // Calculate delay: Each audio chunk is ~20ms of audio
-                    const estimatedAudioDuration = totalAudioChunks * 20;
+                    const estimatedAudioDuration = currentResponseAudioChunks * 20;
                     const safeHangupDelay = Math.max(5000, estimatedAudioDuration);
 
                     console.log(`Estimated audio duration: ${estimatedAudioDuration}ms`);
@@ -428,11 +428,11 @@ ${menu.categories.map(cat =>
                       }
                       console.log('✅ Call ended by auto-hangup');
                     }, safeHangupDelay);
-
-                    // Reset audio chunk counter
-                    totalAudioChunks = 0;
                   }
                 }
+
+                // Reset chunk counter for next response
+                currentResponseAudioChunks = 0;
               }
 
               if (event.type === 'conversation.item.input_audio_transcription.completed') {
