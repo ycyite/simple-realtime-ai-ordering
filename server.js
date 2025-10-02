@@ -29,24 +29,19 @@ const activeCalls = new Map();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For Twilio webhook data
-app.use(express.static('public'));
 
-// Serve the main page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    openaiConfigured: !!process.env.OPENAI_API_KEY,
+    sipServerRunning: true,
+    activeCalls: activeCalls.size
+  });
 });
 
-// Serve the menu management page
-app.get('/menu', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'menu.html'));
-});
-
-// Serve the orders page
-app.get('/orders', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'orders.html'));
-});
-
-// Get menu data
+// Get menu data (for management)
 app.get('/api/menu', async (req, res) => {
   try {
     const menuData = await fs.readFile(MENU_FILE, 'utf-8');
@@ -57,7 +52,7 @@ app.get('/api/menu', async (req, res) => {
   }
 });
 
-// Update menu data
+// Update menu data (for management)
 app.post('/api/menu', async (req, res) => {
   try {
     const menuData = JSON.stringify(req.body, null, 2);
@@ -70,13 +65,12 @@ app.post('/api/menu', async (req, res) => {
   }
 });
 
-// Get orders data
+// Get orders data (for management)
 app.get('/api/orders', async (req, res) => {
   try {
     const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
     res.json(JSON.parse(ordersData));
   } catch (error) {
-    // If file doesn't exist, return empty array
     if (error.code === 'ENOENT') {
       res.json([]);
     } else {
@@ -86,7 +80,7 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
-// Add new order
+// Add new order (from phone calls)
 app.post('/api/orders', async (req, res) => {
   try {
     let orders = [];
@@ -96,7 +90,6 @@ app.post('/api/orders', async (req, res) => {
       const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
       orders = JSON.parse(ordersData);
     } catch (error) {
-      // If file doesn't exist, start with empty array
       if (error.code !== 'ENOENT') {
         throw error;
       }
@@ -120,117 +113,6 @@ app.post('/api/orders', async (req, res) => {
     console.error('❌ Error adding order:', error);
     res.status(500).json({ error: 'Failed to add order' });
   }
-});
-
-// Clear all orders
-app.delete('/api/orders', async (req, res) => {
-  try {
-    await fs.writeFile(ORDERS_FILE, JSON.stringify([], null, 2), 'utf-8');
-    console.log('✅ All orders cleared');
-    res.json({ success: true, message: 'Orders cleared' });
-  } catch (error) {
-    console.error('❌ Error clearing orders:', error);
-    res.status(500).json({ error: 'Failed to clear orders' });
-  }
-});
-
-// Endpoint to get ephemeral token for client-side RealtimeSession
-app.post('/api/token', async (req, res) => {
-  console.log('🔑 Creating ephemeral token for RealtimeSession...');
-
-  try {
-    // Load menu for AI context
-    const menuData = await fs.readFile(MENU_FILE, 'utf-8');
-    const menu = JSON.parse(menuData);
-
-    // Build menu context for AI
-    const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
-
-IMPORTANT INSTRUCTIONS:
-- Start the conversation immediately by greeting the customer: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
-- Keep responses SHORT and CLEAR - use simple sentences
-- Listen carefully to their order
-- Confirm items briefly: "Got it, [item name]"
-- Ask only essential clarifying questions (size, quantity, customizations)
-- When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
-- After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly:
-  Example: "Let me confirm your order: 2 Classic Cheeseburgers, 1 French Fries, and 1 Coca-Cola. Your total is $28.47. Pickup at 6:30 PM. Is that correct?"
-  DO NOT mention individual item prices - only the final total
-- After customer confirms, say EXACTLY: "Perfect, see you at [time]. Drive safe, bye!"
-
-RESPONSE STYLE:
-- Use short, direct sentences
-- Avoid unnecessary elaboration
-- Be friendly but concise
-- Focus on getting the order efficiently
-- ALWAYS ask for name before finalizing
-- ALWAYS ask for pickup time
-- ALWAYS repeat the full order back with pickup time before confirming
-
-MENU ITEMS:
-${menu.categories.map(cat =>
-  `${cat.name}:\n${cat.items.map(item =>
-    `- ${item.name}: $${item.price} - ${item.description}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
-  ).join('\n')}`
-).join('\n\n')}
-
-Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the customer speaks.`;
-
-    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        session: {
-          type: 'realtime',
-          model: 'gpt-realtime',
-          instructions: menuContext
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Token generation error:', response.status, errorText);
-      return res.status(response.status).json({
-        error: 'Failed to generate token',
-        details: errorText
-      });
-    }
-
-    const data = await response.json();
-    console.log('✅ Ephemeral token created successfully');
-
-    // Return the token in the format expected by the SDK
-    // OpenAI API returns: { "value": "ek_...", "expires_at": ..., "session": {...} }
-    res.json({
-      token: data.value,
-      expiresAt: data.expires_at,
-      session: data.session
-    });
-
-  } catch (error) {
-    console.error('❌ Token generation error:', error);
-    res.status(500).json({
-      error: 'Failed to generate token',
-      details: error.message
-    });
-  }
-});
-
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    openaiConfigured: !!process.env.OPENAI_API_KEY,
-    sipServerRunning: true,
-    sdkVersion: '0.0.9'
-  });
 });
 
 // ============================================================================
@@ -491,15 +373,10 @@ ${menu.categories.map(cat =>
 
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 AI Audio Ordering System Started');
+  console.log('🚀 AI Phone Ordering SIP Server');
   console.log('='.repeat(60));
   console.log(`🌐 HTTP Server: http://localhost:${PORT}`);
   console.log(`📞 SIP Server: UDP Port ${SIP_PORT}`);
-  console.log('');
-  console.log('📱 Browser Voice Ordering:');
-  console.log(`   🎙️  Customer Interface: http://localhost:${PORT}`);
-  console.log(`   🍽️  Menu Management:    http://localhost:${PORT}/menu`);
-  console.log(`   📋 Order Management:    http://localhost:${PORT}/orders`);
   console.log('');
   console.log('📞 Phone Call Integration (Twilio):');
   console.log(`   Webhook URL: https://your-domain/twilio/voice`);
@@ -507,8 +384,7 @@ app.listen(PORT, () => {
   console.log(`   Mode: Pure SIP + WebRTC (No WebSocket)`);
   console.log('');
   console.log('🔗 Architecture:');
-  console.log('   Browser: Browser WebRTC → OpenAI Realtime API');
-  console.log('   Phone:   Twilio → SIP/RTP → Server WebRTC → OpenAI');
+  console.log('   Phone: Twilio → SIP/RTP → Server WebRTC → OpenAI');
   console.log('='.repeat(60));
 
   if (!process.env.OPENAI_API_KEY) {
@@ -523,6 +399,5 @@ app.listen(PORT, () => {
     console.log(`✅ Phone integration configured: ${process.env.SIP_DOMAIN}`);
   }
 
-  console.log('✅ Browser voice ordering ready');
-  console.log('✅ Phone SIP server running (Railway-compatible)');
+  console.log('✅ Phone SIP server running');
 });
