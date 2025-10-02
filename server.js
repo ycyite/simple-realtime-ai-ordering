@@ -333,7 +333,7 @@ ${menu.categories.map(cat =>
                 input_audio_format: 'g711_ulaw',
                 output_audio_format: 'g711_ulaw',
                 input_audio_transcription: {
-                  model: 'whisper-1',
+                  model: 'gpt-realtime',
                 },
                 turn_detection: null, // Disable automatic interrupts
               },
