@@ -277,9 +277,12 @@ wss.on('connection', (twilioWs) => {
   console.log('🔌 Twilio Media Stream connected');
 
   let streamSid = null;
+  let callSid = null;
   let openaiWs = null;
   let lastAudioChunkTime = null;
   let currentResponseAudioChunks = 0;
+  let hangupQueued = false;
+  let allAudioSent = false;
 
   twilioWs.on('message', async (message) => {
     try {
@@ -288,7 +291,8 @@ wss.on('connection', (twilioWs) => {
       switch (msg.event) {
         case 'start':
           streamSid = msg.start.streamSid;
-          console.log(`📞 Call started - Stream SID: ${streamSid}`);
+          callSid = msg.start.callSid;
+          console.log(`📞 Call started - Stream SID: ${streamSid}, Call SID: ${callSid}`);
 
           // Connect to OpenAI Realtime API via WebSocket
           openaiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-realtime', {
@@ -412,11 +416,60 @@ ${menu.categories.map(cat =>
 
               if (event.type === 'response.audio_transcript.done') {
                 console.log('🤖 AI:', event.transcript);
+
+                // Check if AI said goodbye - queue hangup
+                const transcript = event.transcript.toLowerCase();
+                if ((transcript.includes('bye') || transcript.includes('goodbye')) && !hangupQueued) {
+                  hangupQueued = true;
+                  console.log('👋 Goodbye detected - hangup queued, waiting for audio to complete');
+                }
               }
 
-              // Reset chunk counter for next response
+              // When response is fully done, mark that all audio has been generated
               if (event.type === 'response.done') {
                 currentResponseAudioChunks = 0;
+
+                if (hangupQueued) {
+                  allAudioSent = true;
+                  console.log('✅ Response completed - all audio generated');
+
+                  // Wait 500ms for Twilio to flush audio packets, then hang up
+                  setTimeout(async () => {
+                    console.log('📞 Hanging up call via Twilio API...');
+
+                    try {
+                      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+                      const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+                      if (accountSid && authToken && callSid) {
+                        const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls/${callSid}.json`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                          },
+                          body: 'Status=completed'
+                        });
+
+                        if (response.ok) {
+                          console.log('✅ Call ended via Twilio API');
+                        } else {
+                          console.log('⚠️ Twilio API call failed, closing WebSockets instead');
+                          if (openaiWs) openaiWs.close();
+                          if (twilioWs) twilioWs.close();
+                        }
+                      } else {
+                        console.log('⚠️ Twilio credentials not configured, closing WebSockets');
+                        if (openaiWs) openaiWs.close();
+                        if (twilioWs) twilioWs.close();
+                      }
+                    } catch (error) {
+                      console.error('❌ Error hanging up call:', error);
+                      if (openaiWs) openaiWs.close();
+                      if (twilioWs) twilioWs.close();
+                    }
+                  }, 500);
+                }
               }
 
               if (event.type === 'conversation.item.input_audio_transcription.completed') {

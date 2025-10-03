@@ -93,6 +93,7 @@ ipython_config.py
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
 #   install all needed dependencies.
 #Pipfile.lock
+temp_auto_push.bat
 
 # poetry
 #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
@@ -159,7 +160,6 @@ dmypy.json
 .idea/
 
 # VS Code
-.vscode/
 
 # Project specific
 uploads/
@@ -189,4 +189,5 @@ package-lock.json
 .claude/
 
 # Temporary files
-nul
+nulbranch_structure.json
+branch_structure.json
