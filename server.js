@@ -183,10 +183,7 @@ ${menu.categories.map(cat =>
           type: 'realtime',
           model: 'gpt-realtime',
           instructions: menuContext,
-          voice: 'alloy',
-          turn_detection: {
-            type: 'server_vad'
-          }
+          voice: 'alloy'
         })
       });
 
