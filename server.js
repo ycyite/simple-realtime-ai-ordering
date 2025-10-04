@@ -182,8 +182,7 @@ ${menu.categories.map(cat =>
         body: JSON.stringify({
           type: 'realtime',
           model: 'gpt-realtime',
-          instructions: menuContext,
-          voice: 'alloy'
+          instructions: menuContext
         })
       });
 
