@@ -181,58 +181,7 @@ ${menu.categories.map(cat =>
         body: JSON.stringify({
           type: 'realtime',
           model: 'gpt-realtime',
-          modalities: ['text', 'audio'],
-          instructions: menuContext,
-          voice: 'alloy',
-          input_audio_format: 'g711_ulaw',
-          output_audio_format: 'g711_ulaw',
-          input_audio_transcription: {
-            model: 'gpt-4o-mini-transcribe'
-          },
-          turn_detection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 500
-          },
-          tools: [
-            {
-              type: 'function',
-              name: 'save_order',
-              description: 'Save the customer order to the database after order is confirmed',
-              parameters: {
-                type: 'object',
-                properties: {
-                  customerName: {
-                    type: 'string',
-                    description: 'Customer name for the order'
-                  },
-                  items: {
-                    type: 'array',
-                    description: 'List of ordered items',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        name: { type: 'string' },
-                        quantity: { type: 'number' },
-                        price: { type: 'number' }
-                      }
-                    }
-                  },
-                  total: {
-                    type: 'number',
-                    description: 'Total order price'
-                  },
-                  pickupTime: {
-                    type: 'string',
-                    description: 'Pickup time'
-                  }
-                },
-                required: ['customerName', 'items', 'total', 'pickupTime']
-              }
-            }
-          ],
-          tool_choice: 'auto'
+          instructions: menuContext
         })
       });
 
