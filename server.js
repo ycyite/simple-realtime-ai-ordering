@@ -133,18 +133,18 @@ app.delete('/api/orders', async (req, res) => {
 
 // OpenAI SIP webhook - receives incoming call notifications
 app.post('/api/openai-webhook', async (req, res) => {
-  const { call_id, from, to, event_type } = req.body;
+  const { type, data } = req.body;
 
   console.log('\n' + '='.repeat(60));
   console.log('📞 OPENAI SIP WEBHOOK RECEIVED');
   console.log('='.repeat(60));
-  console.log(`   Event: ${event_type}`);
-  console.log(`   Call ID: ${call_id}`);
-  console.log(`   From: ${from}`);
-  console.log(`   To: ${to}`);
+  console.log(`   Event Type: ${type}`);
+  console.log(`   Call ID: ${data?.call_id}`);
+  console.log(`   Full payload:`, JSON.stringify(req.body, null, 2));
   console.log('='.repeat(60) + '\n');
 
-  if (event_type === 'realtime.call.incoming') {
+  if (type === 'realtime.call.incoming') {
+    const call_id = data.call_id;
     try {
       // Load menu for AI context
       const menuData = await fs.readFile(MENU_FILE, 'utf-8');
