@@ -131,6 +131,185 @@ app.delete('/api/orders', async (req, res) => {
   }
 });
 
+// OpenAI SIP webhook - receives incoming call notifications
+app.post('/api/openai-webhook', async (req, res) => {
+  const { call_id, from, to, event_type } = req.body;
+
+  console.log('\n' + '='.repeat(60));
+  console.log('📞 OPENAI SIP WEBHOOK RECEIVED');
+  console.log('='.repeat(60));
+  console.log(`   Event: ${event_type}`);
+  console.log(`   Call ID: ${call_id}`);
+  console.log(`   From: ${from}`);
+  console.log(`   To: ${to}`);
+  console.log('='.repeat(60) + '\n');
+
+  if (event_type === 'call.started') {
+    try {
+      // Load menu for AI context
+      const menuData = await fs.readFile(MENU_FILE, 'utf-8');
+      const menu = JSON.parse(menuData);
+
+      const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
+
+IMPORTANT INSTRUCTIONS:
+- Start the conversation immediately by greeting the customer: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
+- Keep responses SHORT and CLEAR - use simple sentences
+- Listen carefully to their order
+- Confirm items briefly: "Got it, [item name]"
+- Ask only essential clarifying questions (size, quantity, customizations)
+- When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
+- After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Let me confirm: [list items]. Pickup at [time]. Is that correct?"
+- After customer confirms, CALL THE save_order function with all order details
+- Then say: "Perfect, see you at [time]. Drive safe, bye!"
+
+MENU ITEMS:
+${menu.categories.map(cat =>
+  `${cat.name}:\n${cat.items.map(item =>
+    `- ${item.name}: $${item.price}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
+  ).join('\n')}`
+).join('\n\n')}`;
+
+      // Accept the call with session configuration
+      const acceptResponse = await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          session: {
+            modalities: ['text', 'audio'],
+            instructions: menuContext,
+            voice: 'alloy',
+            input_audio_format: 'g711_ulaw',
+            output_audio_format: 'g711_ulaw',
+            input_audio_transcription: {
+              model: 'gpt-4o-mini-transcribe'
+            },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500
+            },
+            tools: [
+              {
+                type: 'function',
+                name: 'save_order',
+                description: 'Save the customer order to the database after order is confirmed',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    customerName: {
+                      type: 'string',
+                      description: 'Customer name for the order'
+                    },
+                    items: {
+                      type: 'array',
+                      description: 'List of ordered items',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          name: { type: 'string' },
+                          quantity: { type: 'number' },
+                          price: { type: 'number' }
+                        }
+                      }
+                    },
+                    total: {
+                      type: 'number',
+                      description: 'Total order price'
+                    },
+                    pickupTime: {
+                      type: 'string',
+                      description: 'Pickup time'
+                    }
+                  },
+                  required: ['customerName', 'items', 'total', 'pickupTime']
+                }
+              }
+            ],
+            tool_choice: 'auto'
+          }
+        })
+      });
+
+      if (acceptResponse.ok) {
+        console.log('✅ Call accepted successfully');
+        res.json({ success: true });
+      } else {
+        const error = await acceptResponse.text();
+        console.error('❌ Failed to accept call:', error);
+        res.status(500).json({ error: 'Failed to accept call' });
+      }
+
+    } catch (error) {
+      console.error('❌ Error handling webhook:', error);
+      res.status(500).json({ error: error.message });
+    }
+  } else {
+    // Acknowledge other event types
+    res.json({ success: true });
+  }
+});
+
+// Function call webhook - receives function call requests from OpenAI
+app.post('/api/function-call', async (req, res) => {
+  const { call_id, function_name, arguments: args } = req.body;
+
+  console.log(`🔧 Function call: ${function_name}`, args);
+
+  if (function_name === 'save_order') {
+    try {
+      let orders = [];
+      try {
+        const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
+        orders = JSON.parse(ordersData);
+      } catch (err) {
+        if (err.code !== 'ENOENT') throw err;
+      }
+
+      const newOrder = {
+        ...args,
+        source: 'phone',
+        timestamp: new Date().toISOString(),
+        id: `phone-order-${Date.now()}`
+      };
+
+      orders.push(newOrder);
+      await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+
+      console.log('✅ Phone order saved:', newOrder.id);
+
+      res.json({ success: true, orderId: newOrder.id });
+
+      // Hang up the call after saving the order
+      setTimeout(async () => {
+        try {
+          await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          console.log('✅ Call ended via /hangup endpoint');
+        } catch (error) {
+          console.error('❌ Error hanging up call:', error);
+        }
+      }, 5000); // Wait 5 seconds for goodbye message
+
+    } catch (error) {
+      console.error('❌ Error saving phone order:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  } else {
+    res.json({ success: true });
+  }
+});
+
 // Endpoint to get ephemeral token for client-side RealtimeSession
 app.post('/api/token', async (req, res) => {
   console.log('🔑 Creating ephemeral token for RealtimeSession...');
