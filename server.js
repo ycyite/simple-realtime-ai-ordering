@@ -144,7 +144,7 @@ app.post('/api/openai-webhook', async (req, res) => {
   console.log(`   To: ${to}`);
   console.log('='.repeat(60) + '\n');
 
-  if (event_type === 'call.started') {
+  if (event_type === 'realtime.call.incoming') {
     try {
       // Load menu for AI context
       const menuData = await fs.readFile(MENU_FILE, 'utf-8');
