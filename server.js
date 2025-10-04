@@ -152,8 +152,9 @@ app.post('/api/openai-webhook', async (req, res) => {
 
       const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
 
+CRITICAL: You MUST greet the customer FIRST as soon as the call connects. Say: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
+
 IMPORTANT INSTRUCTIONS:
-- Start the conversation immediately by greeting the customer: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
 - Keep responses SHORT and CLEAR - use simple sentences
 - Listen carefully to their order
 - Confirm items briefly: "Got it, [item name]"
@@ -181,7 +182,11 @@ ${menu.categories.map(cat =>
         body: JSON.stringify({
           type: 'realtime',
           model: 'gpt-realtime',
-          instructions: menuContext
+          instructions: menuContext,
+          voice: 'alloy',
+          turn_detection: {
+            type: 'server_vad'
+          }
         })
       });
 
