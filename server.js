@@ -160,9 +160,19 @@ IMPORTANT INSTRUCTIONS:
 - Ask only essential clarifying questions (size, quantity, customizations)
 - When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Let me confirm: [list items]. Pickup at [time]. Is that correct?"
-- After customer confirms, CALL THE save_order function with all order details
-- Then say: "Perfect, see you at [time]. Drive safe, bye!"
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly:
+  Example: "Let me confirm your order: 2 Classic Cheeseburgers, 1 French Fries, and 1 Coca-Cola. Your total is $28.47. Pickup at 6:30 PM. Is that correct?"
+  DO NOT mention individual item prices - only the final total
+- After customer confirms, say EXACTLY: "Perfect, see you at [time]. Drive safe, bye!"
+
+RESPONSE STYLE:
+- Use short, direct sentences
+- Avoid unnecessary elaboration
+- Be friendly but concise
+- Focus on getting the order efficiently
+- ALWAYS ask for name before finalizing
+- ALWAYS ask for pickup time
+- ALWAYS repeat the full order back with pickup time before confirming
 
 MENU ITEMS:
 ${menu.categories.map(cat =>
