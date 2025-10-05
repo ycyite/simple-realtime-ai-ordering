@@ -175,7 +175,7 @@ IMPORTANT INSTRUCTIONS:
 - When customer says no/that's it/that's all, READ BACK THE COMPLETE ORDER LIST: "Let me confirm your order: [list all items with quantities]"
 - After confirming the order list, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITH total price: "Your order: [list items]. Your total is $[amount]. Pickup at [time]. Is that correct?"
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Your order: [list items]. Pickup at [time]. Is that correct?"
 - After customer confirms, CALL THE save_order function with all order details
 - Then say: "Perfect, see you at [time]. Drive safe, bye!"
 
