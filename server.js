@@ -146,6 +146,18 @@ app.post('/api/openai-webhook', async (req, res) => {
 
   if (type === 'realtime.call.incoming') {
     const call_id = data.call_id;
+
+    // Extract phone number from SIP headers
+    let phoneNumber = '';
+    const fromHeader = data.sip_headers?.find(h => h.name === 'From');
+    if (fromHeader) {
+      const phoneMatch = fromHeader.value.match(/\+1(\d+)/);
+      if (phoneMatch) {
+        phoneNumber = phoneMatch[1]; // Store without +1
+        console.log('📞 Caller phone number:', phoneNumber);
+      }
+    }
+
     try {
       // Load menu for AI context
       const menuData = await fs.readFile(MENU_FILE, 'utf-8');
@@ -299,6 +311,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
                 const newOrder = {
                   ...args,
+                  phoneNumber: phoneNumber,
                   source: 'phone',
                   timestamp: new Date().toISOString(),
                   id: `phone-order-${Date.now()}`
