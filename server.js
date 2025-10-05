@@ -166,6 +166,16 @@ IMPORTANT INSTRUCTIONS:
 - After customer confirms, CALL THE save_order function with all order details
 - Then say: "Perfect, see you at [time]. Drive safe, bye!"
 
+RESPONSE STYLE:
+- Use short, direct sentences
+- Avoid unnecessary elaboration
+- Be friendly but concise
+- Focus on getting the order efficiently
+- ALWAYS ask for name before finalizing
+- ALWAYS ask for pickup time
+- ALWAYS repeat the full order back with pickup time before confirming
+- Please say quickly
+
 MENU ITEMS:
 ${menu.categories.map(cat =>
   `${cat.name}:\n${cat.items.map(item =>
@@ -389,6 +399,7 @@ RESPONSE STYLE:
 - ALWAYS ask for name before finalizing
 - ALWAYS ask for pickup time
 - ALWAYS repeat the full order back with pickup time before confirming
+- Please say quickly
 
 MENU ITEMS:
 ${menu.categories.map(cat =>
