@@ -201,6 +201,14 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
         console.log('✅ Call accepted successfully');
         res.json({ success: true });
 
+        // In-memory order object that gets updated throughout the conversation
+        let currentOrder = {
+          items: [],
+          customerName: '',
+          pickupTime: '',
+          total: 0
+        };
+
         // Connect to WebSocket to listen for conversation events
         const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${call_id}`, {
           headers: {
@@ -212,25 +220,85 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
           console.log('🔌 WebSocket connected for call:', call_id);
         });
 
-        ws.on('message', (data) => {
+        ws.on('message', async (data) => {
           const event = JSON.parse(data.toString());
           console.log('📨 WebSocket event:', event.type);
 
           // Print AI's speech transcript
-          if (event.type === 'response.output_audio_transcript.delta') {
-            console.log('🤖 AI says:', event.delta);
-          }
-
           if (event.type === 'response.output_audio_transcript.done') {
             console.log('🤖 AI completed:', event.transcript);
+
+            const transcript = event.transcript.toLowerCase();
+
+            // Update order in memory only when AI confirms the entire order
+            const confirmMatch = transcript.match(/let me confirm your order:([^.]+)\. your total is \$?(\d+\.?\d+)\. pickup at (.+?)\. is that correct/i);
+            if (confirmMatch) {
+              // Extract items
+              const itemsText = confirmMatch[1];
+              const items = itemsText.split(/,\s*(?:and\s+)?/).map(item => item.trim()).filter(item => item);
+              currentOrder.items = items.map(item => {
+                const quantityMatch = item.match(/(\d+)\s+(.+)/);
+                if (quantityMatch) {
+                  return {
+                    quantity: parseInt(quantityMatch[1]),
+                    name: quantityMatch[2]
+                  };
+                }
+                return { quantity: 1, name: item };
+              });
+
+              // Extract total
+              currentOrder.total = parseFloat(confirmMatch[2]);
+
+              // Extract pickup time
+              currentOrder.pickupTime = confirmMatch[3].trim();
+
+              console.log('📋 Order confirmed and updated in memory:');
+              console.log('   Items:', JSON.stringify(currentOrder.items, null, 2));
+              console.log('   Total: $' + currentOrder.total);
+              console.log('   Pickup:', currentOrder.pickupTime);
+              console.log('   Customer:', currentOrder.customerName || '(not yet provided)');
+            }
+
+            // Check if this is the final goodbye and hang up first
+            if (transcript.includes('drive safe') && transcript.includes('bye')) {
+              try {
+                // Hang up the call immediately
+                await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                console.log('✅ Call ended via /hangup endpoint');
+
+                // Then save the order after hangup
+                let orders = [];
+                try {
+                  const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
+                  orders = JSON.parse(ordersData);
+                } catch (err) {
+                  if (err.code !== 'ENOENT') throw err;
+                }
+
+                const newOrder = {
+                  ...currentOrder,
+                  source: 'phone',
+                  timestamp: new Date().toISOString(),
+                  id: `phone-order-${Date.now()}`
+                };
+
+                orders.push(newOrder);
+                await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+
+                console.log('✅ Phone order saved:', newOrder.id);
+              } catch (error) {
+                console.error('❌ Error hanging up call or saving order:', error);
+              }
+            }
           }
 
-          // Log conversation content
-          if (event.type === 'conversation.item.created' ||
-              event.type === 'response.audio_transcript.delta' ||
-              event.type === 'conversation.item.input_audio_transcription.completed') {
-            console.log('💬 Conversation event:', JSON.stringify(event, null, 2));
-          }
         });
 
         ws.on('error', (error) => {
