@@ -161,19 +161,9 @@ IMPORTANT INSTRUCTIONS:
 - Ask only essential clarifying questions (size, quantity, customizations)
 - When customer is done ordering, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly:
-  Example: "Let me confirm your order: 2 Classic Cheeseburgers, 1 French Fries, and 1 Coca-Cola. Your total is $28.47. Pickup at 6:30 PM. Is that correct?"
-  DO NOT mention individual item prices - only the final total
-- After customer confirms, say EXACTLY: "Perfect, see you at [time]. Drive safe, bye!"
-
-RESPONSE STYLE:
-- Use short, direct sentences
-- Avoid unnecessary elaboration
-- Be friendly but concise
-- Focus on getting the order efficiently
-- ALWAYS ask for name before finalizing
-- ALWAYS ask for pickup time
-- ALWAYS repeat the full order back with pickup time before confirming
+- After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Let me confirm: [list items]. Pickup at [time]. Is that correct?"
+- After customer confirms, CALL THE save_order function with all order details
+- Then say: "Perfect, see you at [time]. Drive safe, bye!"
 
 MENU ITEMS:
 ${menu.categories.map(cat =>
@@ -183,7 +173,7 @@ ${menu.categories.map(cat =>
 ).join('\n\n')}
 
 Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the customer speaks.`;
-      // Accept the call with session configuration
+      // Accept the call with session configuration including save_order function
       const acceptResponse = await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/accept`, {
         method: 'POST',
         headers: {
@@ -193,21 +183,51 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
         body: JSON.stringify({
           type: 'realtime',
           model: 'gpt-realtime',
-          instructions: menuContext
+          instructions: menuContext,
+          tools: [
+            {
+              type: 'function',
+              name: 'save_order',
+              description: 'Save the customer order to the database after order is confirmed',
+              parameters: {
+                type: 'object',
+                properties: {
+                  customerName: {
+                    type: 'string',
+                    description: 'Customer name for the order'
+                  },
+                  items: {
+                    type: 'array',
+                    description: 'List of ordered items',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        quantity: { type: 'number' },
+                        price: { type: 'number' }
+                      }
+                    }
+                  },
+                  total: {
+                    type: 'number',
+                    description: 'Total order price'
+                  },
+                  pickupTime: {
+                    type: 'string',
+                    description: 'Pickup time'
+                  }
+                },
+                required: ['customerName', 'items', 'total', 'pickupTime']
+              }
+            }
+          ],
+          tool_choice: 'auto'
         })
       });
 
       if (acceptResponse.ok) {
         console.log('✅ Call accepted successfully');
         res.json({ success: true });
-
-        // In-memory order object that gets updated throughout the conversation
-        let currentOrder = {
-          items: [],
-          customerName: '',
-          pickupTime: '',
-          total: 0
-        };
 
         // Connect to WebSocket to listen for conversation events
         const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${call_id}`, {
@@ -230,37 +250,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
             const transcript = event.transcript.toLowerCase();
 
-            // Update order in memory only when AI confirms the entire order
-            const confirmMatch = transcript.match(/let me confirm your order:([^.]+)\. your total is \$?(\d+\.?\d+)\. pickup at (.+?)\. is that correct/i);
-            if (confirmMatch) {
-              // Extract items
-              const itemsText = confirmMatch[1];
-              const items = itemsText.split(/,\s*(?:and\s+)?/).map(item => item.trim()).filter(item => item);
-              currentOrder.items = items.map(item => {
-                const quantityMatch = item.match(/(\d+)\s+(.+)/);
-                if (quantityMatch) {
-                  return {
-                    quantity: parseInt(quantityMatch[1]),
-                    name: quantityMatch[2]
-                  };
-                }
-                return { quantity: 1, name: item };
-              });
-
-              // Extract total
-              currentOrder.total = parseFloat(confirmMatch[2]);
-
-              // Extract pickup time
-              currentOrder.pickupTime = confirmMatch[3].trim();
-
-              console.log('📋 Order confirmed and updated in memory:');
-              console.log('   Items:', JSON.stringify(currentOrder.items, null, 2));
-              console.log('   Total: $' + currentOrder.total);
-              console.log('   Pickup:', currentOrder.pickupTime);
-              console.log('   Customer:', currentOrder.customerName || '(not yet provided)');
-            }
-
-            // Check if this is the final goodbye and hang up first
+            // Check if this is the final goodbye and hang up
             if (transcript.includes('drive safe') && transcript.includes('bye')) {
               try {
                 // Hang up the call immediately
@@ -272,8 +262,22 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   }
                 });
                 console.log('✅ Call ended via /hangup endpoint');
+              } catch (error) {
+                console.error('❌ Error hanging up call:', error);
+              }
+            }
+          }
 
-                // Then save the order after hangup
+          // Handle function calls
+          if (event.type === 'response.function_call_arguments.done') {
+            const functionName = event.name;
+            const args = JSON.parse(event.arguments);
+
+            console.log(`🔧 Function call: ${functionName}`, args);
+
+            if (functionName === 'save_order') {
+              // Save order to file
+              try {
                 let orders = [];
                 try {
                   const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
@@ -283,7 +287,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 }
 
                 const newOrder = {
-                  ...currentOrder,
+                  ...args,
                   source: 'phone',
                   timestamp: new Date().toISOString(),
                   id: `phone-order-${Date.now()}`
@@ -293,8 +297,34 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
 
                 console.log('✅ Phone order saved:', newOrder.id);
+
+                // Send function result back to OpenAI
+                ws.send(JSON.stringify({
+                  type: 'conversation.item.create',
+                  item: {
+                    type: 'function_call_output',
+                    call_id: event.call_id,
+                    output: JSON.stringify({ success: true, orderId: newOrder.id })
+                  }
+                }));
+
+                // Continue the conversation
+                ws.send(JSON.stringify({
+                  type: 'response.create'
+                }));
+
               } catch (error) {
-                console.error('❌ Error hanging up call or saving order:', error);
+                console.error('❌ Error saving phone order:', error);
+
+                // Send error back to OpenAI
+                ws.send(JSON.stringify({
+                  type: 'conversation.item.create',
+                  item: {
+                    type: 'function_call_output',
+                    call_id: event.call_id,
+                    output: JSON.stringify({ success: false, error: error.message })
+                  }
+                }));
               }
             }
           }
