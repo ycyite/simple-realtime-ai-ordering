@@ -176,9 +176,9 @@ IMPORTANT INSTRUCTIONS:
 - After confirming the order list, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
 - After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Your order: [list items]. Pickup at [time]. Is that correct?"
-- After customer confirms, CALL THE save_order function with all order details
-- Then say: "Perfect, see you at [time]. Drive safe, bye!"
-- After saying goodbye, CALL THE end_call function to hang up the phone
+- After customer confirms, say: "Perfect, see you at [time]. Drive safe, bye!"
+- Then CALL THE save_order function with all order details
+- Then CALL THE end_call function to hang up the phone
 
 RESPONSE STYLE:
 - Use short, direct sentences
@@ -347,7 +347,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             }
 
             if (functionName === 'end_call') {
-              // End the call
+              // End the call after a delay to allow goodbye message to play
               try {
                 console.log('📞 AI requested to end call');
 
@@ -361,15 +361,21 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   }
                 }));
 
-                // Hang up the call
-                await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
+                // Wait 3 seconds for goodbye message to finish playing, then hang up
+                setTimeout(async () => {
+                  try {
+                    await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                      }
+                    });
+                    console.log('✅ Call ended via /hangup endpoint (after 3s delay)');
+                  } catch (error) {
+                    console.error('❌ Error hanging up call:', error);
                   }
-                });
-                console.log('✅ Call ended via /hangup endpoint');
+                }, 3000);
               } catch (error) {
                 console.error('❌ Error ending call:', error);
               }
