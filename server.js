@@ -142,7 +142,6 @@ app.post('/api/openai-webhook', async (req, res) => {
   console.log(`   Event Type: ${type}`);
   console.log(`   Call ID: ${data?.call_id}`);
   console.log(`   SIP Headers:`, JSON.stringify(data?.sip_headers, null, 2));
-  console.log(`   Full payload:`, JSON.stringify(req.body, null, 2));
   console.log('='.repeat(60) + '\n');
 
   if (type === 'realtime.call.incoming') {
