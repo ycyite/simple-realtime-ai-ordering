@@ -178,6 +178,7 @@ IMPORTANT INSTRUCTIONS:
 - After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Your order: [list items]. Pickup at [time]. Is that correct?"
 - After customer confirms, CALL THE save_order function with all order details
 - Then say: "Perfect, see you at [time]. Drive safe, bye!"
+- After saying goodbye, CALL THE end_call function to hang up the phone
 
 RESPONSE STYLE:
 - Use short, direct sentences
@@ -243,6 +244,16 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 },
                 required: ['customerName', 'items', 'total', 'pickupTime']
               }
+            },
+            {
+              type: 'function',
+              name: 'end_call',
+              description: 'End the phone call after saying goodbye to the customer',
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: []
+              }
             }
           ],
           tool_choice: 'auto'
@@ -271,27 +282,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
           // Print AI's speech transcript
           if (event.type === 'response.output_audio_transcript.done') {
-            console.log('🤖 AI completed:', event.transcript);
-
-            const transcript = event.transcript.toLowerCase();
-
-            // Check if this is the final goodbye and hang up after 2 seconds
-            if (transcript.includes('drive safe') && transcript.includes('bye')) {
-              setTimeout(async () => {
-                try {
-                  await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                      'Content-Type': 'application/json'
-                    }
-                  });
-                  console.log('✅ Call ended via /hangup endpoint');
-                } catch (error) {
-                  console.error('❌ Error hanging up call:', error);
-                }
-              }, 3000); // Wait 3 seconds before hanging up
-            }
+            console.log('🤖 AI says:', event.transcript);
           }
 
           // Handle function calls
@@ -352,6 +343,35 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                     output: JSON.stringify({ success: false, error: error.message })
                   }
                 }));
+              }
+            }
+
+            if (functionName === 'end_call') {
+              // End the call
+              try {
+                console.log('📞 AI requested to end call');
+
+                // Send function result back to OpenAI
+                ws.send(JSON.stringify({
+                  type: 'conversation.item.create',
+                  item: {
+                    type: 'function_call_output',
+                    call_id: event.call_id,
+                    output: JSON.stringify({ success: true })
+                  }
+                }));
+
+                // Hang up the call
+                await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                console.log('✅ Call ended via /hangup endpoint');
+              } catch (error) {
+                console.error('❌ Error ending call:', error);
               }
             }
           }
