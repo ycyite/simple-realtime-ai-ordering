@@ -384,12 +384,14 @@
 
             const sourceIcon = order.source === 'phone' ? '📞' : '💻';
             const sourceLabel = order.source === 'phone' ? 'Phone' : 'Web';
+            const phoneDisplay = order.phoneNumber ? `<div style="font-size: 0.9em; opacity: 0.9; margin-top: 5px;">📱 +1 ${order.phoneNumber}</div>` : '';
 
             return `
                 <div class="order-card ${isCurrent ? 'current' : ''}">
                     <div class="order-header">
                         <div>
                             <div class="order-name">👤 ${order.customerName || 'Guest'} <span style="font-size: 0.8em; opacity: 0.8;">${sourceIcon} ${sourceLabel}</span></div>
+                            ${phoneDisplay}
                             ${statusBadge}
                         </div>
                         <div class="order-time">${timeStr}<br>${dateStr}</div>
