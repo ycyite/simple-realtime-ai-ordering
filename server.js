@@ -4,6 +4,7 @@ import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import WebSocket from 'ws';
 
 // Load environment variables
 config();
@@ -179,8 +180,9 @@ ${menu.categories.map(cat =>
   `${cat.name}:\n${cat.items.map(item =>
     `- ${item.name}: $${item.price}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
   ).join('\n')}`
-).join('\n\n')}`;
+).join('\n\n')}
 
+Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the customer speaks.`;
       // Accept the call with session configuration
       const acceptResponse = await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/accept`, {
         method: 'POST',
@@ -198,6 +200,37 @@ ${menu.categories.map(cat =>
       if (acceptResponse.ok) {
         console.log('✅ Call accepted successfully');
         res.json({ success: true });
+
+        // Connect to WebSocket to listen for conversation events
+        const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${call_id}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+        });
+
+        ws.on('open', () => {
+          console.log('🔌 WebSocket connected for call:', call_id);
+        });
+
+        ws.on('message', (data) => {
+          const event = JSON.parse(data.toString());
+          console.log('📨 WebSocket event:', event.type);
+
+          // Log conversation content
+          if (event.type === 'conversation.item.created' ||
+              event.type === 'response.audio_transcript.delta' ||
+              event.type === 'conversation.item.input_audio_transcription.completed') {
+            console.log('💬 Conversation event:', JSON.stringify(event, null, 2));
+          }
+        });
+
+        ws.on('error', (error) => {
+          console.error('❌ WebSocket error:', error);
+        });
+
+        ws.on('close', () => {
+          console.log('🔌 WebSocket closed for call:', call_id);
+        });
       } else {
         const error = await acceptResponse.text();
         console.error('❌ Failed to accept call:', error);
