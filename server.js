@@ -120,6 +120,19 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
+// Update orders (for status changes)
+app.post('/api/orders/update', async (req, res) => {
+  try {
+    const updatedOrders = req.body;
+    await fs.writeFile(ORDERS_FILE, JSON.stringify(updatedOrders, null, 2), 'utf-8');
+    console.log('✅ Orders updated');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error updating orders:', error);
+    res.status(500).json({ error: 'Failed to update orders' });
+  }
+});
+
 // Clear all orders
 app.delete('/api/orders', async (req, res) => {
   try {

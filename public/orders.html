@@ -539,11 +539,16 @@
 
         async function saveOrders() {
             try {
-                await fetch('/api/orders', {
+                // Save to server by updating orders.json
+                const response = await fetch('/api/orders/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orders })
+                    body: JSON.stringify(orders)
                 });
+
+                if (!response.ok) {
+                    console.error('Failed to save orders');
+                }
             } catch (error) {
                 console.error('Error saving orders:', error);
             }
