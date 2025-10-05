@@ -197,11 +197,90 @@
             color: #c8e6c9;
             border: 1px solid rgba(76, 175, 80, 0.5);
         }
+
+        .orders-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .orders-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .order-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .order-name {
+            font-size: 1.2em;
+            color: #4CAF50;
+        }
+
+        .order-time {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .order-items {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .order-item {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .order-footer {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-pickup {
+            font-size: 1em;
+            color: #64B5F6;
+        }
+
+        .order-total {
+            text-align: right;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .no-orders {
+            text-align: center;
+            opacity: 0.7;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎙️ Voice Agent</h1>
+        <h1>📞 Phone Order Agent</h1>
 
         <div class="sdk-badge">
             OpenAI WebRTC Realtime API
@@ -216,15 +295,22 @@
         </button>
 
         <div id="status" class="status">
-            Click the microphone to start talking with ChatGPT
+            Click the microphone to start phone order
         </div>
 
-        <div id="transcript" class="transcript">
-            <!-- Conversation messages will appear here -->
+        <div id="transcript" class="transcript" style="display: none;">
+            <!-- Conversation messages will appear here (hidden) -->
         </div>
 
         <div class="footer">
             Powered by OpenAI Realtime API + WebRTC
+        </div>
+
+        <div class="orders-section">
+            <h2>📋 Recent Orders</h2>
+            <div id="ordersContainer">
+                <div class="no-orders">No orders yet</div>
+            </div>
         </div>
     </div>
 
@@ -236,6 +322,23 @@
                 this.audioElement = null;
                 this.isConnected = false;
 
+                // Store last transcript for goodbye detection
+                this.lastTranscript = null;
+
+                // Store customer name and order details during conversation
+                this.currentCustomerName = '';
+                this.currentPickupTime = '';
+
+                // Cost tracking
+                this.sessionTotalCost = 0;
+                this.sessionInputTokens = 0;
+                this.sessionCachedInputTokens = 0;
+                this.sessionOutputTokens = 0;
+
+                // Inactivity timer - starts after response completes
+                this.inactivityTimer = null;
+                this.INACTIVITY_TIMEOUT = 10000; // 10 seconds
+
                 this.initializeElements();
                 this.setupEventListeners();
             }
@@ -245,11 +348,151 @@
                 this.disconnectButton = document.getElementById('disconnectButton');
                 this.statusDiv = document.getElementById('status');
                 this.transcriptDiv = document.getElementById('transcript');
+                this.ordersContainer = document.getElementById('ordersContainer');
+
+                // Load and render existing orders on page load
+                this.renderOrders();
+
+                // Auto-refresh orders every 3 seconds to show new orders
+                setInterval(() => {
+                    if (this.isConnected) {
+                        this.renderOrders();
+                    }
+                }, 3000);
             }
 
             setupEventListeners() {
                 this.voiceButton.addEventListener('click', () => this.toggleVoiceAgent());
                 this.disconnectButton.addEventListener('click', () => this.stopVoiceAgent());
+
+                // Add test button for debugging (remove in production)
+                window.addTestOrder = () => {
+                    const testOrder = {
+                        items: [
+                            {name: "Classic Cheeseburger", price: 10.99, quantity: 2},
+                            {name: "French Fries", price: 3.99, quantity: 1}
+                        ],
+                        total: 25.97,
+                        customerName: "Test Customer",
+                        timestamp: new Date().toISOString(),
+                        id: `order-${Date.now()}`
+                    };
+                    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+                    orders.push(testOrder);
+                    localStorage.setItem('orders', JSON.stringify(orders));
+                    this.renderOrders();
+                    console.log('✅ Test order added!');
+                };
+            }
+
+
+            // Calculate and log cost for response
+            calculateRealtimeCost(usage) {
+                if (!usage) {
+                    console.log('⚠️ No usage data available');
+                    return null;
+                }
+
+                // First, log the raw usage object to see its structure
+                console.log('\n🔍 Raw usage object:', JSON.stringify(usage, null, 2));
+
+                // Extract token counts - check for both text and audio modalities
+                const textInputTokens = usage.input_token_details?.text_tokens || 0;
+                const textCachedInputTokens = usage.input_token_details?.cached_text_tokens || 0;
+                const audioInputTokens = usage.input_token_details?.audio_tokens || 0;
+                const audioCachedInputTokens = usage.input_token_details?.cached_audio_tokens || 0;
+
+                // Text output tokens
+                const textOutputTokens = usage.output_token_details?.text_tokens || 0;
+                const audioOutputTokens = usage.output_token_details?.audio_tokens || 0;
+
+                // Fallback to total if details not available
+                const totalInputTokens = usage.input_tokens || 0;
+                const totalOutputTokens = usage.output_tokens || 0;
+
+                // Pricing for gpt-realtime (per token)
+                // Text tokens - cheaper
+                const TEXT_INPUT_COST = 0.000004;          // $4.00 per 1M
+                const TEXT_CACHED_INPUT_COST = 0.0000004;  // $0.40 per 1M
+                const TEXT_OUTPUT_COST = 0.000016;         // $16.00 per 1M
+
+                // Audio tokens - more expensive
+                const AUDIO_INPUT_COST = 0.000032;          // $32.00 per 1M
+                const AUDIO_CACHED_INPUT_COST = 0.0000004; // $0.40 per 1M
+                const AUDIO_OUTPUT_COST = 0.000064;        // $64.00 per 1M
+
+                // Calculate costs
+                const textInputCost = textInputTokens * TEXT_INPUT_COST;
+                const textCachedInputCost = textCachedInputTokens * TEXT_CACHED_INPUT_COST;
+                const audioInputCost = audioInputTokens * AUDIO_INPUT_COST;
+                const audioCachedInputCost = audioCachedInputTokens * AUDIO_CACHED_INPUT_COST;
+                const textOutputCost = textOutputTokens * TEXT_OUTPUT_COST;
+                const audioOutputCost = audioOutputTokens * AUDIO_OUTPUT_COST;
+
+                const totalCost = textInputCost + textCachedInputCost + audioInputCost +
+                                 audioCachedInputCost + textOutputCost + audioOutputCost;
+
+                // Update session totals
+                this.sessionTotalCost += totalCost;
+
+                // Log breakdown
+                console.log('\n💰 OpenAI Realtime API Cost Breakdown');
+                console.log('━'.repeat(50));
+
+                // Text tokens (cheaper)
+                if (textCachedInputTokens > 0) {
+                    console.log(`💾 Text Cached Input:  ${textCachedInputTokens.toLocaleString()} tokens × $0.0000004 = $${textCachedInputCost.toFixed(6)}`);
+                }
+                if (textInputTokens > 0) {
+                    console.log(`📝 Text Input:         ${textInputTokens.toLocaleString()} tokens × $0.000004 = $${textInputCost.toFixed(6)}`);
+                }
+                if (textOutputTokens > 0) {
+                    console.log(`📝 Text Output:        ${textOutputTokens.toLocaleString()} tokens × $0.000016 = $${textOutputCost.toFixed(6)}`);
+                }
+
+                // Audio tokens (more expensive)
+                if (audioCachedInputTokens > 0) {
+                    console.log(`💾 Audio Cached Input: ${audioCachedInputTokens.toLocaleString()} tokens × $0.0000004 = $${audioCachedInputCost.toFixed(6)}`);
+                }
+                if (audioInputTokens > 0) {
+                    console.log(`🎤 Audio Input:        ${audioInputTokens.toLocaleString()} tokens × $0.000032 = $${audioInputCost.toFixed(6)}`);
+                }
+                if (audioOutputTokens > 0) {
+                    console.log(`🎤 Audio Output:       ${audioOutputTokens.toLocaleString()} tokens × $0.000064 = $${audioOutputCost.toFixed(6)}`);
+                }
+
+                console.log('━'.repeat(50));
+                console.log(`💵 Response Cost:      $${totalCost.toFixed(6)}`);
+                console.log(`📊 Session Total:      $${this.sessionTotalCost.toFixed(6)}`);
+                console.log('━'.repeat(50) + '\n');
+
+                return {
+                    textInputTokens,
+                    textCachedInputTokens,
+                    audioInputTokens,
+                    audioCachedInputTokens,
+                    textOutputTokens,
+                    audioOutputTokens,
+                    totalCost
+                };
+            }
+
+            startInactivityTimer() {
+                // Clear any existing timer first
+                this.clearInactivityTimer();
+
+                // Start new 10 second timer
+                this.inactivityTimer = setTimeout(() => {
+                    console.log('⏰ 10 seconds of inactivity - closing conversation');
+                    this.stopVoiceAgent();
+                }, this.INACTIVITY_TIMEOUT);
+            }
+
+            clearInactivityTimer() {
+                if (this.inactivityTimer) {
+                    clearTimeout(this.inactivityTimer);
+                    this.inactivityTimer = null;
+                }
             }
 
             updateStatus(message, type = 'info') {
@@ -375,6 +618,12 @@
                 // Listen for when data channel opens
                 this.dc.addEventListener('open', () => {
                     console.log('✅ Data channel opened');
+
+                    // Trigger AI to speak first by sending a response.create event
+                    this.dc.send(JSON.stringify({
+                        type: 'response.create',
+                    }));
+                    console.log('🎯 Triggered AI to start conversation');
                 });
 
                 // Listen for server events
@@ -400,6 +649,22 @@
                 switch (event.type) {
                     case 'conversation.item.created':
                         console.log('💬 Item created:', event.item);
+
+                        // Check for text content in the created item (for text modality)
+                        if (event.item && event.item.type === 'message' && event.item.role === 'assistant') {
+                            const content = event.item.content;
+                            if (Array.isArray(content)) {
+                                for (const part of content) {
+                                    if (part.type === 'text' && part.text) {
+                                        // Check for "bye" or "goodbye" in the text
+                                        if (/\bbye\b/i.test(part.text) || /\bgoodbye\b/i.test(part.text)) {
+                                            console.log('👋 Detected "bye/goodbye" in conversation item - auto-closing connection in 2 seconds');
+                                            setTimeout(() => this.stopVoiceAgent(), 2000);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         break;
 
                     case 'response.audio_transcript.delta':
@@ -411,9 +676,106 @@
                         this.displayMessage('assistant', event.transcript);
                         break;
 
+                    case 'response.output_audio_transcript.done':
+                        console.log('✅ Output audio transcript done:', event.transcript);
+                        this.displayMessage('assistant', event.transcript);
+
+                        // Store the last transcript for checking in response.done
+                        this.lastTranscript = event.transcript;
+
+                        // Extract pickup time from AI's confirmation (e.g., "Pickup under Alex at 6:30 PM")
+                        const aiPickupMatch = event.transcript.match(/(?:pickup|see you).*?(?:at\s+)?([0-9]{1,2}(?::[0-9]{2})?\s*(?:AM|PM|am|pm))/i);
+                        if (aiPickupMatch) {
+                            this.currentPickupTime = aiPickupMatch[1];
+                            console.log('⏰ Pickup time confirmed by AI:', this.currentPickupTime);
+                        }
+
+                        // Check if this is the FINAL confirmation with name and pickup time
+                        // Example: "Let me confirm your order: 2 Classic Cheeseburgers, 1 French Fries, and 1 Coca-Cola. Pickup under Alex at 6:30 PM. Your total is $28.47."
+                        if (event.transcript && (/pickup under|pickup at|see you at/i.test(event.transcript) || /let me confirm your order/i.test(event.transcript))) {
+                            console.log('📋 Final order confirmation detected, parsing order...');
+                            this.parseAndDisplayOrder(event.transcript);
+                        }
+                        break;
+
+                    case 'response.audio.done':
+                        console.log('🔊 Audio playback finished');
+                        // AI finished speaking - start 10 second inactivity timer
+                        console.log('⏱️ AI finished speaking - starting 10 second inactivity timer');
+                        this.startInactivityTimer();
+                        break;
+
+                    case 'response.output_text.done':
+                        console.log('✅ Output text done:', event);
+
+                        // Check for "bye" or "goodbye" in assistant's output text (case-insensitive)
+                        const outputText = event.text || (event.output && event.output[0]?.text);
+                        if (outputText && (/\bbye\b/i.test(outputText) || /\bgoodbye\b/i.test(outputText))) {
+                            console.log('👋 Detected "bye/goodbye" in output text - auto-closing connection in 2 seconds');
+                            setTimeout(() => this.stopVoiceAgent(), 2000);
+                        }
+                        break;
+
+                    case 'response.text.done':
+                        console.log('✅ Response text done:', event);
+
+                        // Check for "bye" or "goodbye" in response text
+                        const responseText = event.text;
+                        if (responseText && (/\bbye\b/i.test(responseText) || /\bgoodbye\b/i.test(responseText))) {
+                            console.log('👋 Detected "bye/goodbye" in response text - auto-closing connection in 2 seconds');
+                            setTimeout(() => this.stopVoiceAgent(), 2000);
+                        }
+                        break;
+
                     case 'conversation.item.input_audio_transcription.completed':
                         console.log('✅ User transcript:', event.transcript);
                         this.displayMessage('user', event.transcript);
+
+                        // User is speaking - clear inactivity timer
+                        this.clearInactivityTimer();
+
+                        // Try to extract customer name from user's response
+                        // Pattern: "My name is Alex", "I'm Alex", "This is Alex", "Alex"
+                        const userNameMatch = event.transcript.match(/(?:my name is|I'm|I am|this is)\s+([A-Za-z]+)/i);
+                        if (userNameMatch) {
+                            this.currentCustomerName = userNameMatch[1];
+                            console.log('👤 Customer name captured from user:', this.currentCustomerName);
+                        } else if (!this.currentCustomerName && /^[A-Z][a-z]+$/.test(event.transcript.trim())) {
+                            // If user just says a name like "Alex"
+                            this.currentCustomerName = event.transcript.trim();
+                            console.log('👤 Customer name captured (simple):', this.currentCustomerName);
+                        }
+
+                        // Try to extract pickup time from user's response
+                        const userPickupMatch = event.transcript.match(/([0-9]{1,2}(?::[0-9]{2})?\s*(?:AM|PM|am|pm|minutes?|hours?))/i);
+                        if (userPickupMatch) {
+                            this.currentPickupTime = userPickupMatch[1];
+                            console.log('⏰ Pickup time captured from user:', this.currentPickupTime);
+                        }
+                        break;
+
+                    // Handle response completion events
+                    case 'response.done':
+                    case 'response.completed':
+                        console.log('✅ Response completed:', event);
+
+                        // Calculate and log cost if usage data is available
+                        const usage = event.response?.usage || event.usage;
+                        if (usage) {
+                            this.calculateRealtimeCost(usage);
+                        }
+
+                        // Check if the last transcript contained the final goodbye phrase
+                        // Only close if it says "drive safe" or "see you" with "bye" - this is the final goodbye
+                        if (this.lastTranscript &&
+                            ((/drive safe.*bye/i.test(this.lastTranscript)) ||
+                             (/see you.*bye/i.test(this.lastTranscript)) ||
+                             (/goodbye/i.test(this.lastTranscript)))) {
+                            console.log('👋 Response completed with final goodbye detected - auto-closing connection in 3 seconds');
+                            console.log('🔍 Detected in transcript:', this.lastTranscript);
+                            setTimeout(() => this.stopVoiceAgent(), 3000);
+                        }
+                        // Note: Inactivity timer now starts on response.audio.done instead
                         break;
 
                     case 'error':
@@ -428,6 +790,147 @@
             }
 
 
+
+            parseAndDisplayOrder(confirmationText) {
+                console.log('\n=== PARSING ORDER CONFIRMATION ===');
+                console.log('🔍 Full confirmation text:', confirmationText);
+                console.log('👤 Current customer name:', this.currentCustomerName);
+                console.log('⏰ Current pickup time:', this.currentPickupTime);
+
+                const items = [];
+                let total = 0;
+                let customerName = this.currentCustomerName || '';
+                let pickupTime = this.currentPickupTime || '';
+
+                // Extract customer name from confirmation text (e.g., "Pickup under Alex")
+                const nameInConfirmation = confirmationText.match(/(?:pickup under|under the name)\s+([A-Za-z]+)/i);
+                if (nameInConfirmation) {
+                    customerName = nameInConfirmation[1];
+                    console.log('👤 Customer name from confirmation:', customerName);
+                }
+
+                // Extract pickup time from confirmation text
+                const pickupInConfirmation = confirmationText.match(/(?:pickup|see you).*?(?:at\s+)?([0-9]{1,2}(?::[0-9]{2})?\s*(?:AM|PM|am|pm))/i);
+                if (pickupInConfirmation) {
+                    pickupTime = pickupInConfirmation[1];
+                    console.log('⏰ Pickup time from confirmation:', pickupTime);
+                }
+
+                // Extract total (multiple patterns)
+                const totalMatch = confirmationText.match(/total is \$?([\d.]+)/i) ||
+                                  confirmationText.match(/\$?([\d.]+)\s*total/i);
+                if (totalMatch) {
+                    total = parseFloat(totalMatch[1]);
+                    console.log('💰 Total extracted:', total);
+                }
+
+                // Extract items with quantities
+                // Patterns to try:
+                // 1. "Let me confirm: 2 Classic Cheeseburgers, 1 French Fries and 1 Coca-Cola."
+                // 2. "Let me confirm your order: 2 Classic Cheeseburgers, 1 French Fries, and 1 Coca-Cola."
+                let itemsText = confirmationText.match(/confirm(?:\s+your\s+order)?[:\s]+(.+?)(?:\.|pickup|your total|is that correct)/i);
+                if (itemsText) {
+                    console.log('📦 Items text extracted:', itemsText[1]);
+                    // Split by comma and "and"
+                    const itemsList = itemsText[1].split(/,\s*(?:and\s+)?|\s+and\s+/);
+                    console.log('📦 Split items:', itemsList);
+
+                    itemsList.forEach(itemStr => {
+                        // Match patterns like: "2 Classic Cheeseburgers" or "1 French Fries"
+                        const itemMatch = itemStr.trim().match(/^(\d+)\s+(.+)$/);
+                        if (itemMatch) {
+                            const quantity = parseInt(itemMatch[1]);
+                            const name = itemMatch[2].trim();
+                            items.push({
+                                name: name,
+                                quantity: quantity,
+                                price: 0
+                            });
+                            console.log(`  ✓ Added item: ${quantity}x ${name}`);
+                        }
+                    });
+                } else {
+                    console.warn('⚠️ Could not extract items from confirmation text');
+                }
+
+                // Create order object
+                const order = {
+                    items: items,
+                    total: total,
+                    customerName: customerName || 'Customer',
+                    pickupTime: pickupTime || 'ASAP',
+                    timestamp: new Date().toISOString(),
+                    id: `order-${Date.now()}`
+                };
+
+                console.log('📋 Final parsed order:', JSON.stringify(order, null, 2));
+
+                // Save to localStorage
+                const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+                orders.push(order);
+                localStorage.setItem('orders', JSON.stringify(orders));
+                console.log('💾 Order saved to localStorage. Total orders:', orders.length);
+
+                // Refresh the orders display
+                this.renderOrders();
+                console.log('🖥️ Orders display refreshed');
+
+                // Reset captured info for next order
+                this.currentCustomerName = '';
+                this.currentPickupTime = '';
+
+                console.log('✅ Order processing complete!');
+                console.log('=================================\n');
+            }
+
+            renderOrders() {
+                const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+
+                if (orders.length === 0) {
+                    this.ordersContainer.innerHTML = '<div class="no-orders">No orders yet</div>';
+                    return;
+                }
+
+                // Reverse to show most recent first
+                const recentOrders = orders.slice().reverse();
+
+                this.ordersContainer.innerHTML = recentOrders.map(order => {
+                    const date = new Date(order.timestamp);
+                    const timeStr = date.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    const dateStr = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+
+                    return `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-name">👤 ${order.customerName || 'Guest'}</span>
+                                <span class="order-time">${timeStr} · ${dateStr}</span>
+                            </div>
+                            <div class="order-items">
+                                ${order.items.map(item => `
+                                    <div class="order-item">
+                                        <span>${item.quantity}x ${item.name}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="order-footer">
+                                <div class="order-pickup">
+                                    🕒 Pickup: ${order.pickupTime || 'ASAP'}
+                                </div>
+                                <div class="order-total">
+                                    Total: $${order.total.toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             displayMessage(sender, text) {
                 if (!text || text.trim() === '') return;
@@ -466,7 +969,8 @@
             }
 
             showTranscript() {
-                this.transcriptDiv.style.display = 'block';
+                // Keep transcript hidden
+                this.transcriptDiv.style.display = 'none';
             }
 
             scrollToBottom() {
@@ -478,6 +982,26 @@
                     this.updateStatus('🛑 Stopping voice agent...', 'connecting');
 
                     this.isConnected = false;
+
+                    // Clear inactivity timer
+                    this.clearInactivityTimer();
+
+                    // Log final session cost
+                    if (this.sessionTotalCost > 0) {
+                        console.log('\n' + '═'.repeat(50));
+                        console.log('💰 FINAL SESSION COST');
+                        console.log('═'.repeat(50));
+                        if (this.sessionCachedInputTokens > 0) {
+                            console.log(`💾 Cached Input Tokens:  ${this.sessionCachedInputTokens.toLocaleString()}`);
+                        }
+                        if (this.sessionInputTokens > 0) {
+                            console.log(`📥 Input Tokens:         ${this.sessionInputTokens.toLocaleString()}`);
+                        }
+                        console.log(`📤 Output Tokens:        ${this.sessionOutputTokens.toLocaleString()}`);
+                        console.log('═'.repeat(50));
+                        console.log(`💵 Total Session Cost:   $${this.sessionTotalCost.toFixed(6)}`);
+                        console.log('═'.repeat(50) + '\n');
+                    }
 
                     // Close data channel
                     if (this.dc) {
@@ -497,9 +1021,15 @@
                         this.audioElement = null;
                     }
 
+                    // Reset cost tracking for next session
+                    this.sessionTotalCost = 0;
+                    this.sessionInputTokens = 0;
+                    this.sessionCachedInputTokens = 0;
+                    this.sessionOutputTokens = 0;
+
                     this.resetButton();
                     this.disconnectButton.style.display = 'none';
-                    this.updateStatus('Click the microphone to start talking with ChatGPT', 'ready');
+                    this.updateStatus('Click the microphone to start phone order', 'ready');
 
                 } catch (error) {
                     console.error('Error stopping voice agent:', error);
@@ -512,6 +1042,7 @@
                 this.resetButton();
                 this.disconnectButton.style.display = 'none';
             }
+
 
             resetButton() {
                 this.voiceButton.disabled = false;

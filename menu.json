@@ -1,0 +1,235 @@
+{
+  "restaurant": {
+    "name": "Joe's Diner",
+    "phone": "(555) 123-4567",
+    "hours": "Mon-Sun: 8:00 AM - 10:00 PM"
+  },
+  "categories": [
+    {
+      "id": "appetizers",
+      "name": "Appetizers",
+      "items": [
+        {
+          "id": "wings",
+          "name": "Chicken Wings",
+          "description": "Spicy buffalo wings with ranch dressing",
+          "price": 8.99,
+          "available": true
+        },
+        {
+          "id": "mozzarella",
+          "name": "Mozzarella Sticks",
+          "description": "Crispy fried mozzarella with marinara sauce",
+          "price": 6.99,
+          "available": true
+        },
+        {
+          "id": "nachos",
+          "name": "Loaded Nachos",
+          "description": "Tortilla chips with cheese, jalapeños, and salsa",
+          "price": 9.99,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "burgers",
+      "name": "Burgers",
+      "items": [
+        {
+          "id": "classic",
+          "name": "Classic Cheeseburger",
+          "description": "Beef patty with cheese, lettuce, tomato, and pickles",
+          "price": 10.99,
+          "available": true
+        },
+        {
+          "id": "bacon",
+          "name": "Bacon Burger",
+          "description": "Beef patty with bacon, cheese, and BBQ sauce",
+          "price": 12.99,
+          "available": true
+        },
+        {
+          "id": "veggie",
+          "name": "Veggie Burger",
+          "description": "Plant-based patty with avocado and sprouts",
+          "price": 11.99,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "pizzas",
+      "name": "Pizzas",
+      "items": [
+        {
+          "id": "pepperoni",
+          "name": "Pepperoni Pizza",
+          "description": "Classic pepperoni with mozzarella cheese",
+          "price": 14.99,
+          "sizes": ["Small", "Medium", "Large"],
+          "available": true
+        },
+        {
+          "id": "margherita",
+          "name": "Margherita Pizza",
+          "description": "Fresh tomatoes, basil, and mozzarella",
+          "price": 13.99,
+          "sizes": ["Small", "Medium", "Large"],
+          "available": true
+        },
+        {
+          "id": "supreme",
+          "name": "Supreme Pizza",
+          "description": "Loaded with meats and vegetables",
+          "price": 16.99,
+          "sizes": ["Small", "Medium", "Large"],
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "sandwiches",
+      "name": "Sandwiches",
+      "items": [
+        {
+          "id": "club",
+          "name": "Club Sandwich",
+          "description": "Turkey, bacon, lettuce, tomato on toasted bread",
+          "price": 9.99,
+          "available": true
+        },
+        {
+          "id": "philly",
+          "name": "Philly Cheesesteak",
+          "description": "Sliced beef with peppers, onions, and cheese",
+          "price": 11.99,
+          "available": true
+        },
+        {
+          "id": "chicken",
+          "name": "Grilled Chicken Sandwich",
+          "description": "Grilled chicken breast with lettuce and mayo",
+          "price": 10.99,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "salads",
+      "name": "Salads",
+      "items": [
+        {
+          "id": "caesar",
+          "name": "Caesar Salad",
+          "description": "Romaine lettuce, croutons, parmesan, caesar dressing",
+          "price": 8.99,
+          "available": true
+        },
+        {
+          "id": "house",
+          "name": "House Salad",
+          "description": "Mixed greens with vegetables and choice of dressing",
+          "price": 7.99,
+          "available": true
+        },
+        {
+          "id": "cobb",
+          "name": "Cobb Salad",
+          "description": "Chicken, bacon, eggs, avocado, and blue cheese",
+          "price": 11.99,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "sides",
+      "name": "Sides",
+      "items": [
+        {
+          "id": "fries",
+          "name": "French Fries",
+          "description": "Crispy golden fries",
+          "price": 3.99,
+          "available": true
+        },
+        {
+          "id": "onion-rings",
+          "name": "Onion Rings",
+          "description": "Beer-battered onion rings",
+          "price": 4.99,
+          "available": true
+        },
+        {
+          "id": "coleslaw",
+          "name": "Coleslaw",
+          "description": "Creamy cabbage slaw",
+          "price": 2.99,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "beverages",
+      "name": "Beverages",
+      "items": [
+        {
+          "id": "coke",
+          "name": "Coca-Cola",
+          "description": "Classic Coke",
+          "price": 2.49,
+          "available": true
+        },
+        {
+          "id": "sprite",
+          "name": "Sprite",
+          "description": "Lemon-lime soda",
+          "price": 2.49,
+          "available": true
+        },
+        {
+          "id": "iced-tea",
+          "name": "Iced Tea",
+          "description": "Sweet or unsweetened",
+          "price": 2.49,
+          "available": true
+        },
+        {
+          "id": "lemonade",
+          "name": "Lemonade",
+          "description": "Fresh squeezed lemonade",
+          "price": 2.99,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "desserts",
+      "name": "Desserts",
+      "items": [
+        {
+          "id": "brownie",
+          "name": "Chocolate Brownie",
+          "description": "Warm brownie with ice cream",
+          "price": 5.99,
+          "available": true
+        },
+        {
+          "id": "cheesecake",
+          "name": "New York Cheesecake",
+          "description": "Classic cheesecake with berry topping",
+          "price": 6.99,
+          "available": true
+        },
+        {
+          "id": "apple-pie",
+          "name": "Apple Pie",
+          "description": "Homemade apple pie with cinnamon",
+          "price": 4.99,
+          "available": true
+        }
+      ]
+    }
+  ]
+}

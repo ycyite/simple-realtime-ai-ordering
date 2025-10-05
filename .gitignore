@@ -180,3 +180,13 @@ demo_chatgpt.html
 # API Keys and sensitive data
 config.py
 .env.local
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Claude Code
+.claude/
+
+# Temporary files
+nul
