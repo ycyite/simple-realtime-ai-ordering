@@ -385,7 +385,10 @@
 
         function renderMenu() {
             const restaurantInfo = document.getElementById('restaurantInfo');
-            restaurantInfo.textContent = `${menuData.restaurant.name} | ${menuData.restaurant.phone} | ${menuData.restaurant.hours}`;
+            restaurantInfo.innerHTML = `
+                <strong>${menuData.restaurant.name}</strong> | ${menuData.restaurant.phone} | ${menuData.restaurant.hours}
+                <button class="btn btn-primary btn-small" onclick="editRestaurantInfo()" style="margin-left: 15px;">✏️ Edit Restaurant Info</button>
+            `;
 
             const container = document.getElementById('menuContent');
             container.innerHTML = '';
@@ -541,6 +544,24 @@
             setTimeout(() => {
                 indicator.classList.remove('show');
             }, 3000);
+        }
+
+        function editRestaurantInfo() {
+            const name = prompt('Restaurant Name:', menuData.restaurant.name);
+            if (name === null) return; // User cancelled
+
+            const phone = prompt('Phone Number:', menuData.restaurant.phone);
+            if (phone === null) return;
+
+            const hours = prompt('Business Hours:', menuData.restaurant.hours);
+            if (hours === null) return;
+
+            menuData.restaurant.name = name;
+            menuData.restaurant.phone = phone;
+            menuData.restaurant.hours = hours;
+
+            renderMenu();
+            saveMenu();
         }
     </script>
 </body>
