@@ -273,21 +273,22 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
             const transcript = event.transcript.toLowerCase();
 
-            // Check if this is the final goodbye and hang up
+            // Check if this is the final goodbye and hang up after 2 seconds
             if (transcript.includes('drive safe') && transcript.includes('bye')) {
-              try {
-                // Hang up the call immediately
-                await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                  }
-                });
-                console.log('✅ Call ended via /hangup endpoint');
-              } catch (error) {
-                console.error('❌ Error hanging up call:', error);
-              }
+              setTimeout(async () => {
+                try {
+                  await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                      'Content-Type': 'application/json'
+                    }
+                  });
+                  console.log('✅ Call ended via /hangup endpoint');
+                } catch (error) {
+                  console.error('❌ Error hanging up call:', error);
+                }
+              }, 2000); // Wait 2 seconds before hanging up
             }
           }
 
