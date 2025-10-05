@@ -221,6 +221,10 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             console.log('🤖 AI says:', event.delta);
           }
 
+          if (event.type === 'response.output_audio_transcript.done') {
+            console.log('🤖 AI completed:', event.transcript);
+          }
+
           // Log conversation content
           if (event.type === 'conversation.item.created' ||
               event.type === 'response.audio_transcript.delta' ||
