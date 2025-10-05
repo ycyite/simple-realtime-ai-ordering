@@ -253,18 +253,19 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
         console.log('✅ Call accepted successfully');
         res.json({ success: true });
 
-        // Connect to WebSocket to listen for conversation events
-        const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${call_id}`, {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          },
-        });
+        // Try to connect to WebSocket to listen for conversation events (optional)
+        try {
+          const ws = new WebSocket(`wss://api.openai.com/v1/realtime?call_id=${call_id}`, {
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+          });
 
-        ws.on('open', () => {
-          console.log('🔌 WebSocket connected for call:', call_id);
-        });
+          ws.on('open', () => {
+            console.log('🔌 WebSocket connected for call:', call_id);
+          });
 
-        ws.on('message', async (data) => {
+          ws.on('message', async (data) => {
           const event = JSON.parse(data.toString());
           console.log('📨 WebSocket event:', event.type);
 
@@ -357,13 +358,18 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
         });
 
-        ws.on('error', (error) => {
-          console.error('❌ WebSocket error:', error);
-        });
+          ws.on('error', (error) => {
+            console.error('❌ WebSocket error (non-critical):', error.message);
+            console.log('ℹ️  Call will continue without WebSocket monitoring');
+          });
 
-        ws.on('close', () => {
-          console.log('🔌 WebSocket closed for call:', call_id);
-        });
+          ws.on('close', () => {
+            console.log('🔌 WebSocket closed for call:', call_id);
+          });
+        } catch (wsError) {
+          console.error('❌ WebSocket connection failed (non-critical):', wsError.message);
+          console.log('ℹ️  Call will continue without WebSocket monitoring');
+        }
       } else {
         const error = await acceptResponse.text();
         console.error('❌ Failed to accept call:', error);
