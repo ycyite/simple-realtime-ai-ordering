@@ -288,7 +288,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 } catch (error) {
                   console.error('❌ Error hanging up call:', error);
                 }
-              }, 2000); // Wait 2 seconds before hanging up
+              }, 3000); // Wait 3 seconds before hanging up
             }
           }
 
