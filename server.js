@@ -216,6 +216,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
           const event = JSON.parse(data.toString());
           console.log('📨 WebSocket event:', event.type);
 
+          // Print AI's speech transcript
+          if (event.type === 'response.output_audio_transcript.delta') {
+            console.log('🤖 AI says:', event.delta);
+          }
+
           // Log conversation content
           if (event.type === 'conversation.item.created' ||
               event.type === 'response.audio_transcript.delta' ||
@@ -247,60 +252,6 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
   }
 });
 
-// Function call webhook - receives function call requests from OpenAI
-app.post('/api/function-call', async (req, res) => {
-  const { call_id, function_name, arguments: args } = req.body;
-
-  console.log(`🔧 Function call: ${function_name}`, args);
-
-  if (function_name === 'save_order') {
-    try {
-      let orders = [];
-      try {
-        const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
-        orders = JSON.parse(ordersData);
-      } catch (err) {
-        if (err.code !== 'ENOENT') throw err;
-      }
-
-      const newOrder = {
-        ...args,
-        source: 'phone',
-        timestamp: new Date().toISOString(),
-        id: `phone-order-${Date.now()}`
-      };
-
-      orders.push(newOrder);
-      await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
-
-      console.log('✅ Phone order saved:', newOrder.id);
-
-      res.json({ success: true, orderId: newOrder.id });
-
-      // Hang up the call after saving the order
-      setTimeout(async () => {
-        try {
-          await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          console.log('✅ Call ended via /hangup endpoint');
-        } catch (error) {
-          console.error('❌ Error hanging up call:', error);
-        }
-      }, 5000); // Wait 5 seconds for goodbye message
-
-    } catch (error) {
-      console.error('❌ Error saving phone order:', error);
-      res.status(500).json({ success: false, error: error.message });
-    }
-  } else {
-    res.json({ success: true });
-  }
-});
 
 // Endpoint to get ephemeral token for client-side RealtimeSession
 app.post('/api/token', async (req, res) => {
