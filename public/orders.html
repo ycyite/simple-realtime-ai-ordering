@@ -237,6 +237,12 @@
             letter-spacing: 0.5px;
         }
 
+        .status-new {
+            background: rgba(33, 150, 243, 0.3);
+            border: 1px solid #2196F3;
+            color: #BBDEFB;
+        }
+
         .status-current {
             background: rgba(255, 152, 0, 0.3);
             border: 1px solid #FF9800;
@@ -247,6 +253,49 @@
             background: rgba(76, 175, 80, 0.3);
             border: 1px solid #4CAF50;
             color: #C8E6C9;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .confirm-btn, .complete-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .confirm-btn:hover, .complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .cancel-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .order-card.new {
+            border-left-color: #2196F3;
         }
 
         @media (max-width: 768px) {
@@ -289,20 +338,29 @@
         <div class="orders-grid">
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">🔥 Current Orders</h2>
+                    <h2 class="section-title">🆕 New Orders</h2>
                 </div>
-                <div id="currentOrders">
-                    <div class="no-orders">No current orders</div>
+                <div id="newOrders">
+                    <div class="no-orders">No new orders</div>
                 </div>
             </div>
 
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">✅ Order History</h2>
-                    <button class="clear-btn" onclick="clearHistory()">🗑️ Clear History</button>
+                    <h2 class="section-title">🔥 In Progress</h2>
                 </div>
-                <div id="orderHistory">
-                    <div class="no-orders">No order history</div>
+                <div id="inProgressOrders">
+                    <div class="no-orders">No orders in progress</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">✅ Completed</h2>
+                    <button class="clear-btn" onclick="clearCompleted()">🗑️ Clear</button>
+                </div>
+                <div id="completedOrders">
+                    <div class="no-orders">No completed orders</div>
                 </div>
             </div>
         </div>
@@ -333,40 +391,36 @@
         }
 
         function renderOrders() {
-            const now = new Date();
-            const currentOrders = [];
-            const historyOrders = [];
+            const newOrders = orders.filter(o => o.status === 'new' || !o.status);
+            const inProgressOrders = orders.filter(o => o.status === 'in_progress');
+            const completedOrders = orders.filter(o => o.status === 'completed');
 
-            // Separate current orders (within 30 minutes) from history
-            orders.forEach(order => {
-                const orderTime = new Date(order.timestamp);
-                const timeDiff = now - orderTime;
-
-                if (timeDiff < CURRENT_ORDER_TIME_LIMIT) {
-                    currentOrders.push(order);
-                } else {
-                    historyOrders.push(order);
-                }
-            });
-
-            // Render current orders
-            const currentContainer = document.getElementById('currentOrders');
-            if (currentOrders.length === 0) {
-                currentContainer.innerHTML = '<div class="no-orders">No current orders</div>';
+            // Render new orders
+            const newContainer = document.getElementById('newOrders');
+            if (newOrders.length === 0) {
+                newContainer.innerHTML = '<div class="no-orders">No new orders</div>';
             } else {
-                currentContainer.innerHTML = currentOrders.reverse().map(order => renderOrderCard(order, true)).join('');
+                newContainer.innerHTML = newOrders.reverse().map(order => renderOrderCard(order, 'new')).join('');
             }
 
-            // Render history orders
-            const historyContainer = document.getElementById('orderHistory');
-            if (historyOrders.length === 0) {
-                historyContainer.innerHTML = '<div class="no-orders">No order history</div>';
+            // Render in progress orders
+            const inProgressContainer = document.getElementById('inProgressOrders');
+            if (inProgressOrders.length === 0) {
+                inProgressContainer.innerHTML = '<div class="no-orders">No orders in progress</div>';
             } else {
-                historyContainer.innerHTML = historyOrders.reverse().map(order => renderOrderCard(order, false)).join('');
+                inProgressContainer.innerHTML = inProgressOrders.reverse().map(order => renderOrderCard(order, 'in_progress')).join('');
+            }
+
+            // Render completed orders
+            const completedContainer = document.getElementById('completedOrders');
+            if (completedOrders.length === 0) {
+                completedContainer.innerHTML = '<div class="no-orders">No completed orders</div>';
+            } else {
+                completedContainer.innerHTML = completedOrders.reverse().map(order => renderOrderCard(order, 'completed')).join('');
             }
         }
 
-        function renderOrderCard(order, isCurrent) {
+        function renderOrderCard(order, status) {
             const date = new Date(order.timestamp);
             const timeStr = date.toLocaleTimeString('en-US', {
                 hour: 'numeric',
@@ -378,16 +432,37 @@
                 day: 'numeric'
             });
 
-            const statusBadge = isCurrent
-                ? '<span class="status-badge status-current">In Progress</span>'
-                : '<span class="status-badge status-completed">Completed</span>';
+            let statusBadge = '';
+            let actionButtons = '';
+            let cardClass = '';
+
+            if (status === 'new') {
+                statusBadge = '<span class="status-badge status-new">New</span>';
+                actionButtons = `
+                    <div class="action-buttons">
+                        <button class="action-btn confirm-btn" onclick="confirmOrder('${order.id}')">✓ Confirm</button>
+                        <button class="action-btn cancel-btn" onclick="cancelOrder('${order.id}')">✗ Cancel</button>
+                    </div>`;
+                cardClass = 'new';
+            } else if (status === 'in_progress') {
+                statusBadge = '<span class="status-badge status-current">In Progress</span>';
+                actionButtons = `
+                    <div class="action-buttons">
+                        <button class="action-btn complete-btn" onclick="completeOrder('${order.id}')">✓ Complete</button>
+                        <button class="action-btn cancel-btn" onclick="cancelOrder('${order.id}')">✗ Cancel</button>
+                    </div>`;
+                cardClass = 'current';
+            } else if (status === 'completed') {
+                statusBadge = '<span class="status-badge status-completed">Completed</span>';
+                cardClass = '';
+            }
 
             const sourceIcon = order.source === 'phone' ? '📞' : '💻';
             const sourceLabel = order.source === 'phone' ? 'Phone' : 'Web';
             const phoneDisplay = order.phoneNumber ? `<div style="font-size: 0.9em; opacity: 0.9; margin-top: 5px;">📱 +1 ${order.phoneNumber}</div>` : '';
 
             return `
-                <div class="order-card ${isCurrent ? 'current' : ''}">
+                <div class="order-card ${cardClass}">
                     <div class="order-header">
                         <div>
                             <div class="order-name">👤 ${order.customerName || 'Guest'} <span style="font-size: 0.8em; opacity: 0.8;">${sourceIcon} ${sourceLabel}</span></div>
@@ -411,6 +486,7 @@
                             $${order.total.toFixed(2)}
                         </div>
                     </div>
+                    ${actionButtons}
                 </div>
             `;
         }
@@ -434,10 +510,54 @@
             document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
         }
 
-        function clearHistory() {
-            if (confirm('Are you sure you want to clear all order history? This cannot be undone.')) {
-                localStorage.removeItem('orders');
-                orders = [];
+        async function confirmOrder(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'in_progress';
+                await saveOrders();
+                renderOrders();
+            }
+        }
+
+        async function completeOrder(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'completed';
+                await saveOrders();
+                renderOrders();
+            }
+        }
+
+        async function cancelOrder(orderId) {
+            if (confirm('Are you sure you want to cancel this order?')) {
+                orders = orders.filter(o => o.id !== orderId);
+                await saveOrders();
+                renderOrders();
+                updateStats();
+            }
+        }
+
+        async function saveOrders() {
+            try {
+                // Save to server by updating orders.json
+                const response = await fetch('/api/orders/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orders)
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to save orders');
+                }
+            } catch (error) {
+                console.error('Error saving orders:', error);
+            }
+        }
+
+        function clearCompleted() {
+            if (confirm('Are you sure you want to clear all completed orders?')) {
+                orders = orders.filter(o => o.status !== 'completed');
+                saveOrders();
                 renderOrders();
                 updateStats();
             }
