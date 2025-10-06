@@ -374,7 +374,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   }
                 }));
 
-                // Wait 3 seconds for goodbye message to finish playing, then hang up
+                // Wait 5 seconds for goodbye message to finish playing, then hang up
                 setTimeout(async () => {
                   try {
                     await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
@@ -384,11 +384,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                         'Content-Type': 'application/json'
                       }
                     });
-                    console.log('✅ Call ended via /hangup endpoint (after 3s delay)');
+                    console.log('✅ Call ended via /hangup endpoint (after 5s delay)');
                   } catch (error) {
                     console.error('❌ Error hanging up call:', error);
                   }
-                }, 3000);
+                }, 5000);
               } catch (error) {
                 console.error('❌ Error ending call:', error);
               }
