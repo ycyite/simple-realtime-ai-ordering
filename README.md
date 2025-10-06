@@ -1,137 +1,137 @@
-# AI Phone Ordering SIP Server
+# Restaurant Management Portal - Frontend
 
-SIP server that connects Twilio phone calls to OpenAI Realtime API using WebRTC.
+A Next.js-based management portal for the AI-powered restaurant ordering system.
 
-## Architecture
+## Features
 
-```
-Phone Caller → Twilio PSTN → SIP/RTP → Server-side WebRTC → OpenAI Realtime API
-```
+### 📋 Orders Dashboard
+- View all orders with filtering (All, Undealt, Preparing, Completed)
+- Real-time order notifications with audio alerts
+- Accept, cancel, or complete orders
+- View order details including items, customer info, and notes
+- Auto-simulation of incoming orders for demo purposes
 
-## Requirements
+### 🍔 Menu Management
+- Full CRUD operations for menu items
+- Organize items by category
+- Toggle item availability
+- Price and description management
+- Easy category-based organization
 
-- Node.js 18+
-- OpenAI API key
-- Twilio account with phone number
-- Cloud platform with UDP support (Fly.io, AWS, DigitalOcean)
-- **Note**: Railway does NOT support UDP - use Fly.io instead
+### ⚙️ Restaurant Settings
+- Configure restaurant basic information (name, phone, address)
+- Customize AI welcome message
+- Edit AI prompt/instructions for call handling
+- View integration ID for backend linking
 
-## Quick Start
+### 🔔 Alert System
+- Continuous audio alerts for undealt orders
+- Visual notification banner
+- Manual alert dismissal
 
-### 1. Install Dependencies
+## Getting Started
+
+### Installation
 
 ```bash
 npm install
 ```
 
-### 2. Configure Environment
-
-Copy `.env.example` to `.env`:
+### Development
 
 ```bash
-OPENAI_API_KEY=your_openai_api_key_here
-
-SIP_PORT=5060
-SIP_DOMAIN=your-app.fly.dev
-PUBLIC_IP=your-app.fly.dev
+npm run dev
 ```
 
-### 3. Deploy to Fly.io
+Open [http://localhost:3000](http://localhost:3000) - automatically redirects to `/orders`.
+
+### Build for Production
 
 ```bash
-# Install Fly CLI
-curl -L https://fly.io/install.sh | sh
-
-# Login
-fly auth login
-
-# Create app
-fly apps create ai-ordering-sip-server
-
-# Set secrets
-fly secrets set OPENAI_API_KEY=your-openai-key
-
-# Deploy
-fly deploy
+npm run build
+npm start
 ```
 
-### 4. Configure Twilio
+## Project Structure
 
-1. Go to [Twilio Console](https://console.twilio.com/)
-2. Navigate to Phone Numbers → Manage → Active Numbers
-3. Select your phone number
-4. Under "Voice Configuration":
-   - Configure with: Webhooks, TwiML Bins, Functions, Studio, or Proxy
-   - A call comes in: Webhook
-   - URL: `https://your-app.fly.dev/twilio/voice`
-   - HTTP: POST
-5. Save
-
-### 5. Test
-
-Call your Twilio number. The AI agent should answer and take your order.
-
-## API Endpoints
-
-### Phone Integration
-
-- `POST /twilio/voice` - Twilio webhook (receives incoming calls)
-- SIP server on UDP port 5060
-
-### Management API
-
-- `GET /api/health` - Health check
-- `GET /api/menu` - Get menu data
-- `POST /api/menu` - Update menu
-- `GET /api/orders` - Get orders
-- `POST /api/orders` - Add order
-
-## Files
-
-- `server.js` - Main SIP server with WebRTC bridge to OpenAI
-- `menu.json` - Restaurant menu configuration
-- `orders.json` - Order history
-- `fly.toml` - Fly.io deployment configuration
-- `.env.example` - Environment variables template
-
-## How It Works
-
-1. Customer calls Twilio phone number
-2. Twilio webhook forwards to `/twilio/voice`
-3. Server responds with TwiML to dial SIP endpoint
-4. Twilio sends SIP INVITE to server on UDP port 5060
-5. Server creates WebRTC connection to OpenAI Realtime API
-6. Server bridges SIP/RTP audio to WebRTC
-7. AI agent handles the conversation
-8. Order is saved to `orders.json`
-
-## Monitoring
-
-View logs:
-
-```bash
-fly logs
+```
+frontend/
+├── app/
+│   ├── layout.tsx          # Root layout
+│   ├── page.tsx            # Home (redirects to /orders)
+│   ├── orders/
+│   │   └── page.tsx        # Orders dashboard
+│   ├── menu/
+│   │   └── page.tsx        # Menu management
+│   └── settings/
+│       └── page.tsx        # Restaurant settings
+├── components/
+│   ├── Navigation.tsx      # Main navigation bar
+│   └── AlertBanner.tsx     # Undealt orders alert
+├── hooks/
+│   └── useOrderAlert.ts    # Audio alert logic
+├── lib/
+│   └── mockData.ts         # Mock data for demo
+├── types/
+│   └── index.ts            # TypeScript interfaces
+└── public/
+    └── alert.mp3           # Alert sound (placeholder)
 ```
 
-Check health:
+## Mock Data & Demo Mode
 
-```bash
-curl https://your-app.fly.dev/api/health
-```
+The app currently runs with mock data for demonstration:
 
-## Troubleshooting
+- **Mock Orders**: 3 initial orders with different statuses
+- **Mock Menu**: 5 sample menu items across categories
+- **Auto-simulation**: New orders appear every 10 seconds (30% chance)
 
-**SIP INVITE not received**
-- Ensure UDP port 5060 is exposed (Fly.io does this automatically via `fly.toml`)
-- Railway does NOT support UDP - must use Fly.io, AWS, or DigitalOcean
+## Connecting to Backend
 
-**Audio issues**
-- Check codec compatibility (PCMU/PCMA)
-- Verify WebRTC connection state in logs
+To connect to a real backend API, replace the mock data imports with API calls:
 
-**Twilio webhook fails**
-- Verify webhook URL is correct
-- Check Twilio debugger: https://console.twilio.com/monitor/debugger
+1. Create an API client in `lib/api.ts`
+2. Replace `useState(mockOrders)` with data fetching hooks
+3. Implement WebSocket or polling for real-time order updates
+4. Update CRUD operations to call backend endpoints
+
+Example API endpoints you'll need:
+- `GET /api/orders` - Fetch orders
+- `POST /api/orders/:id/status` - Update order status
+- `GET /api/menu` - Fetch menu items
+- `POST /api/menu` - Add menu item
+- `PUT /api/menu/:id` - Update menu item
+- `DELETE /api/menu/:id` - Delete menu item
+- `GET /api/settings` - Fetch restaurant settings
+- `PUT /api/settings` - Update settings
+
+## Audio Alert
+
+The audio alert requires a real MP3 file at `public/alert.mp3`. Currently it's a placeholder text file.
+
+You can:
+1. Download a free alert sound from [freesound.org](https://freesound.org)
+2. Replace `public/alert.mp3` with the actual audio file
+3. Or use browser's notification API instead
+
+## Next Steps
+
+- [ ] Add authentication/login system
+- [ ] Connect to real backend API
+- [ ] Implement WebSocket for real-time updates
+- [ ] Add multi-restaurant support (tenant selection)
+- [ ] Add order analytics/statistics
+- [ ] Add export functionality for orders
+- [ ] Implement phone number management
+- [ ] Add user management for restaurant staff
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: React Hooks (useState, useEffect)
+- **Routing**: Next.js App Router
 
 ## License
 
