@@ -2,11 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import AlertBanner from '@/components/AlertBanner';
 import { Order } from '@/types';
 import { useOrderAlert } from '@/hooks/useOrderAlert';
 
 export default function OrdersPage() {
+  return (
+    <ProtectedRoute>
+      <OrdersContent />
+    </ProtectedRoute>
+  );
+}
+
+function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   // Load orders from API on mount
@@ -133,7 +142,8 @@ export default function OrdersPage() {
         {/* Header */}
         <div className="glass-card p-8 mb-8 text-center">
           <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-3" style={{ color: '#F2E4D6' }}>
-            <span className="text-4xl">📋</span> Order Management
+            <img src="/icons/list.png" alt="" className="w-12 h-12" />
+            Order Management
           </h1>
           <p style={{ color: '#F2E4D6', opacity: 0.9 }}>Track current orders and view order history</p>
         </div>
@@ -161,7 +171,8 @@ export default function OrdersPage() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-                  🔥 New Orders
+                  <img src="/icons/undealt.png" alt="" className="w-7 h-7" />
+                  New Orders
                   {orders.filter(o => o.status === 'undealt').length > 0 && (
                     <span className="px-3 py-1 rounded-full text-sm animate-pulse" style={{ backgroundColor: '#FFB975', color: '#174D5A' }}>
                       {orders.filter(o => o.status === 'undealt').length}
@@ -193,13 +204,14 @@ export default function OrdersPage() {
                     {/* Customer Name */}
                     <div className="mb-3">
                       <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        👤 {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
+                        <img src="/icons/user.png" alt="" className="w-6 h-6" />
+                        {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
                       </p>
                     </div>
 
                     {/* Pickup Time */}
                     <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-                      <span className="text-lg">🕐</span>
+                      <img src="/icons/clock.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Pickup Time:</span>
                       <span className="font-bold" style={{ color: '#FFB975' }}>
                         {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -208,7 +220,7 @@ export default function OrdersPage() {
 
                     {/* Phone Number */}
                     <div className="mb-4 flex items-center gap-2 text-sm text-gray-700">
-                      <span className="text-lg">📞</span>
+                      <img src="/icons/phone.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Phone:</span>
                       <span>{order.customerPhone}</span>
                     </div>
@@ -262,7 +274,8 @@ export default function OrdersPage() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-                  👨‍🍳 In Progress
+                  <img src="/icons/dealing.png" alt="" className="w-7 h-7" />
+                  In Progress
                   {orders.filter(o => o.status === 'preparing').length > 0 && (
                     <span className="px-3 py-1 rounded-full text-sm" style={{ backgroundColor: '#FFB975', color: '#174D5A' }}>
                       {orders.filter(o => o.status === 'preparing').length}
@@ -293,12 +306,13 @@ export default function OrdersPage() {
                   <div key={order.id} className="glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl" style={{ borderLeftColor: '#4C7A62' }}>
                     <div className="mb-3">
                       <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        👤 {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
+                        <img src="/icons/user.png" alt="" className="w-6 h-6" />
+                        {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
                       </p>
                     </div>
 
                     <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-                      <span className="text-lg">🕐</span>
+                      <img src="/icons/clock.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Pickup Time:</span>
                       <span className="font-bold" style={{ color: '#FFB975' }}>
                         {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -306,7 +320,7 @@ export default function OrdersPage() {
                     </div>
 
                     <div className="mb-4 flex items-center gap-2 text-sm text-gray-700">
-                      <span className="text-lg">📞</span>
+                      <img src="/icons/phone.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Phone:</span>
                       <span>{order.customerPhone}</span>
                     </div>
@@ -346,7 +360,8 @@ export default function OrdersPage() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-                  ✅ Completed
+                  <img src="/icons/check-mark.png" alt="" className="w-7 h-7" />
+                  Completed
                   {orders.filter(o => o.status === 'completed').length > 0 && (
                     <span className="px-3 py-1 rounded-full text-sm" style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}>
                       {orders.filter(o => o.status === 'completed').length}
@@ -377,12 +392,13 @@ export default function OrdersPage() {
                   <div key={order.id} className="glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl opacity-80" style={{ borderLeftColor: '#4C7A62' }}>
                     <div className="mb-3">
                       <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        👤 {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
+                        <img src="/icons/user.png" alt="" className="w-6 h-6" />
+                        {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
                       </p>
                     </div>
 
                     <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-                      <span className="text-lg">🕐</span>
+                      <img src="/icons/clock.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Pickup Time:</span>
                       <span className="font-bold" style={{ color: '#4C7A62' }}>
                         {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -390,7 +406,7 @@ export default function OrdersPage() {
                     </div>
 
                     <div className="mb-4 flex items-center gap-2 text-sm text-gray-700">
-                      <span className="text-lg">📞</span>
+                      <img src="/icons/phone.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Phone:</span>
                       <span>{order.customerPhone}</span>
                     </div>
