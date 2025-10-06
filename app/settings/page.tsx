@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { RestaurantSettings } from '@/types';
 
@@ -17,6 +17,25 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<RestaurantSettings>(defaultSettings);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<RestaurantSettings>(settings);
+
+  // Load restaurant data from menu API on mount
+  useEffect(() => {
+    fetch('/api/menu')
+      .then(res => res.json())
+      .then(data => {
+        const restaurantSettings: RestaurantSettings = {
+          id: '1',
+          name: data.restaurant?.name || '',
+          phone: data.restaurant?.phone || '',
+          address: data.restaurant?.location || '',
+          aiPrompt: '',
+          welcomeMessage: '',
+        };
+        setSettings(restaurantSettings);
+        setFormData(restaurantSettings);
+      })
+      .catch(err => console.error('Failed to load restaurant settings:', err));
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

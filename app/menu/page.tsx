@@ -1,11 +1,37 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { MenuItem } from '@/types';
 
 export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [restaurantName, setRestaurantName] = useState('');
+
+  // Load menu data from API on mount
+  useEffect(() => {
+    fetch('/api/menu')
+      .then(res => res.json())
+      .then(data => {
+        setRestaurantName(data.restaurant?.name || '');
+        // Flatten categories into menu items
+        const items: MenuItem[] = [];
+        data.categories?.forEach((category: any) => {
+          category.items?.forEach((item: any) => {
+            items.push({
+              id: item.id,
+              name: item.name,
+              description: item.description || '',
+              price: item.price,
+              category: category.name,
+              available: item.available !== false,
+            });
+          });
+        });
+        setMenuItems(items);
+      })
+      .catch(err => console.error('Failed to load menu:', err));
+  }, []);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('');

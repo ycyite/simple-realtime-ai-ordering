@@ -8,6 +8,28 @@ import { useOrderAlert } from '@/hooks/useOrderAlert';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+
+  // Load orders from API on mount
+  useEffect(() => {
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(data => {
+        // Convert API data to Order type
+        const formattedOrders: Order[] = (data || []).map((order: any) => ({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.phoneNumber || order.customerPhone || '',
+          items: order.items || [],
+          totalAmount: order.total || order.totalAmount || 0,
+          status: order.status || 'undealt',
+          createdAt: order.timestamp || order.createdAt || new Date().toISOString(),
+          notes: order.notes || '',
+        }));
+        setOrders(formattedOrders);
+      })
+      .catch(err => console.error('Failed to load orders:', err));
+  }, []);
+
   const [filter, setFilter] = useState<'all' | 'undealt' | 'preparing' | 'completed'>('all');
   const [undealtSearch, setUndealtSearch] = useState('');
   const [preparingSearch, setPreparingSearch] = useState('');
