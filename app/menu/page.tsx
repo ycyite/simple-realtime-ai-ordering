@@ -3,10 +3,9 @@
 import { useState, useRef } from 'react';
 import Navigation from '@/components/Navigation';
 import { MenuItem } from '@/types';
-import { mockMenu } from '@/lib/mockData';
 
 export default function MenuPage() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenu);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('');

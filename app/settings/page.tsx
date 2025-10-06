@@ -3,10 +3,18 @@
 import { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { RestaurantSettings } from '@/types';
-import { mockSettings } from '@/lib/mockData';
+
+const defaultSettings: RestaurantSettings = {
+  id: '1',
+  name: '',
+  phone: '',
+  address: '',
+  aiPrompt: '',
+  welcomeMessage: '',
+};
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<RestaurantSettings>(mockSettings);
+  const [settings, setSettings] = useState<RestaurantSettings>(defaultSettings);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<RestaurantSettings>(settings);
 

@@ -4,11 +4,10 @@ import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import AlertBanner from '@/components/AlertBanner';
 import { Order } from '@/types';
-import { mockOrders } from '@/lib/mockData';
 import { useOrderAlert } from '@/hooks/useOrderAlert';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<'all' | 'undealt' | 'preparing' | 'completed'>('all');
   const [undealtSearch, setUndealtSearch] = useState('');
   const [preparingSearch, setPreparingSearch] = useState('');
