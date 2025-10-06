@@ -193,32 +193,43 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   console.log('✅ Phone order saved:', newOrder.id);
 
                   // Send function result back to OpenAI
-                  ws.send(JSON.stringify({
-                    type: 'conversation.item.create',
-                    item: {
-                      type: 'function_call_output',
-                      call_id: event.call_id,
-                      output: JSON.stringify({ success: true, orderId: newOrder.id })
-                    }
-                  }));
+                  try {
+                    const responseMessage = JSON.stringify({
+                      type: 'conversation.item.create',
+                      item: {
+                        type: 'function_call_output',
+                        call_id: event.call_id,
+                        output: JSON.stringify({ success: true, orderId: newOrder.id })
+                      }
+                    });
+                    ws.send(responseMessage, { binary: false });
 
-                  // Continue the conversation
-                  ws.send(JSON.stringify({
-                    type: 'response.create'
-                  }));
+                    // Continue the conversation
+                    const continueMessage = JSON.stringify({
+                      type: 'response.create'
+                    });
+                    ws.send(continueMessage, { binary: false });
+                  } catch (sendError: any) {
+                    console.error('❌ Error sending WebSocket message:', sendError);
+                  }
 
                 } catch (error: any) {
                   console.error('❌ Error saving phone order:', error);
 
                   // Send error back to OpenAI
-                  ws.send(JSON.stringify({
-                    type: 'conversation.item.create',
-                    item: {
-                      type: 'function_call_output',
-                      call_id: event.call_id,
-                      output: JSON.stringify({ success: false, error: error.message })
-                    }
-                  }));
+                  try {
+                    const errorMessage = JSON.stringify({
+                      type: 'conversation.item.create',
+                      item: {
+                        type: 'function_call_output',
+                        call_id: event.call_id,
+                        output: JSON.stringify({ success: false, error: error.message })
+                      }
+                    });
+                    ws.send(errorMessage, { binary: false });
+                  } catch (sendError: any) {
+                    console.error('❌ Error sending WebSocket error message:', sendError);
+                  }
                 }
               }
 
@@ -228,14 +239,19 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   console.log('📞 AI requested to end call');
 
                   // Send function result back to OpenAI
-                  ws.send(JSON.stringify({
-                    type: 'conversation.item.create',
-                    item: {
-                      type: 'function_call_output',
-                      call_id: event.call_id,
-                      output: JSON.stringify({ success: true })
-                    }
-                  }));
+                  try {
+                    const endCallMessage = JSON.stringify({
+                      type: 'conversation.item.create',
+                      item: {
+                        type: 'function_call_output',
+                        call_id: event.call_id,
+                        output: JSON.stringify({ success: true })
+                      }
+                    });
+                    ws.send(endCallMessage, { binary: false });
+                  } catch (sendError: any) {
+                    console.error('❌ Error sending end_call WebSocket message:', sendError);
+                  }
 
                   // Wait 5 seconds for goodbye message to finish playing, then hang up
                   setTimeout(async () => {
