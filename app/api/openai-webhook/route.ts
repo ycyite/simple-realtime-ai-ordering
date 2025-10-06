@@ -3,6 +3,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import WebSocket from 'ws';
 
+// Force Node.js runtime (required for WebSocket)
+export const runtime = 'nodejs';
+
 const MENU_FILE = path.join(process.cwd(), 'menu.json');
 const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 

@@ -36,31 +36,26 @@ export default function OrdersPage() {
   const [completedSearch, setCompletedSearch] = useState('');
   const { isAlertActive, dismissAlert, playbackError } = useOrderAlert(orders);
 
-  // Simulate new orders coming in
+  // Poll for new orders every 5 seconds
   useEffect(() => {
-    const customerNames = ['Matthew', 'Eric', 'Sarah', 'David', 'Emma', 'Michael', 'Olivia', 'James', 'Sophia', 'Daniel'];
     const interval = setInterval(() => {
-      const shouldAddOrder = Math.random() > 0.7; // 30% chance every 10 seconds
-      if (shouldAddOrder) {
-        const newOrder: Order = {
-          id: `${Date.now()}`,
-          customerName: customerNames[Math.floor(Math.random() * customerNames.length)],
-          customerPhone: `+123456${Math.floor(Math.random() * 10000)}`,
-          items: [
-            {
-              menuItemId: '1',
-              name: 'Classic Burger',
-              quantity: Math.floor(Math.random() * 3) + 1,
-              price: 12.99,
-            },
-          ],
-          totalAmount: 12.99 * (Math.floor(Math.random() * 3) + 1),
-          status: 'undealt',
-          createdAt: new Date().toISOString(),
-        };
-        setOrders((prev) => [newOrder, ...prev]);
-      }
-    }, 10000); // Every 10 seconds
+      fetch('/api/orders')
+        .then(res => res.json())
+        .then(data => {
+          const formattedOrders: Order[] = (data || []).map((order: any) => ({
+            id: order.id,
+            customerName: order.customerName,
+            customerPhone: order.phoneNumber || order.customerPhone || '',
+            items: order.items || [],
+            totalAmount: order.total || order.totalAmount || 0,
+            status: order.status || 'undealt',
+            createdAt: order.timestamp || order.createdAt || new Date().toISOString(),
+            notes: order.notes || '',
+          }));
+          setOrders(formattedOrders);
+        })
+        .catch(err => console.error('Failed to refresh orders:', err));
+    }, 5000); // Every 5 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -73,9 +68,18 @@ export default function OrdersPage() {
   const undealtCount = orders.filter((o) => o.status === 'undealt').length;
 
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders((prev) =>
-      prev.map((order) => (order.id === orderId ? { ...order, status } : order))
+    // Update local state
+    const updatedOrders = orders.map((order) =>
+      order.id === orderId ? { ...order, status } : order
     );
+    setOrders(updatedOrders);
+
+    // Save to backend
+    fetch('/api/orders/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedOrders),
+    }).catch(err => console.error('Failed to update order status:', err));
   };
 
   const filterOrders = (ordersList: Order[], searchTerm: string) => {

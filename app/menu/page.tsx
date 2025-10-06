@@ -59,15 +59,44 @@ export default function MenuPage() {
     });
   };
 
+  // Save menu changes to backend
+  const saveMenuToBackend = (items: MenuItem[]) => {
+    // Rebuild menu structure with categories
+    const categories = Array.from(new Set(items.map(item => item.category)));
+    const menuData = {
+      restaurant: {
+        name: restaurantName,
+        phone: '',
+        location: ''
+      },
+      categories: categories.map(catName => ({
+        id: catName.toLowerCase().replace(/\s+/g, '_'),
+        name: catName,
+        items: items.filter(item => item.category === catName).map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          available: item.available
+        }))
+      }))
+    };
+
+    fetch('/api/menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(menuData),
+    }).catch(err => console.error('Failed to save menu:', err));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    let updatedItems: MenuItem[];
     if (editingItem) {
       // Update existing item
-      setMenuItems((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item
-        )
+      updatedItems = menuItems.map((item) =>
+        item.id === editingItem.id ? { ...item, ...formData } : item
       );
       setSuccessMessage(`"${formData.name}" has been updated successfully!`);
       setEditingItem(null);
@@ -81,9 +110,12 @@ export default function MenuPage() {
         category: formData.category!,
         available: formData.available!,
       };
-      setMenuItems((prev) => [...prev, newItem]);
+      updatedItems = [...menuItems, newItem];
       setSuccessMessage(`"${formData.name}" has been added successfully!`);
     }
+
+    setMenuItems(updatedItems);
+    saveMenuToBackend(updatedItems);
 
     // Show success message
     setShowSuccessMessage(true);
@@ -112,16 +144,18 @@ export default function MenuPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this item?')) {
-      setMenuItems((prev) => prev.filter((item) => item.id !== id));
+      const updatedItems = menuItems.filter((item) => item.id !== id);
+      setMenuItems(updatedItems);
+      saveMenuToBackend(updatedItems);
     }
   };
 
   const toggleAvailability = (id: string) => {
-    setMenuItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, available: !item.available } : item
-      )
+    const updatedItems = menuItems.map((item) =>
+      item.id === id ? { ...item, available: !item.available } : item
     );
+    setMenuItems(updatedItems);
+    saveMenuToBackend(updatedItems);
   };
 
   const cancelForm = () => {
