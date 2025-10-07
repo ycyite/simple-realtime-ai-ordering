@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 interface User {
   id: string;
@@ -22,46 +23,33 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { user: clerkUser, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
+  // Sync Clerk user to local user state
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // TODO: Replace with actual API call
-    // For now, mock authentication
-    if (email && password) {
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: 'Restaurant Admin',
+    if (isLoaded && clerkUser) {
+      const transformedUser: User = {
+        id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress,
+        phone: clerkUser.primaryPhoneNumber?.phoneNumber,
+        name: clerkUser.fullName || clerkUser.username || 'User',
       };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return true;
+      setUser(transformedUser);
+    } else if (isLoaded && !clerkUser) {
+      setUser(null);
     }
+  }, [clerkUser, isLoaded]);
+
+  // These methods are deprecated with Clerk, but kept for backward compatibility
+  const login = async (email: string, password: string): Promise<boolean> => {
+    console.warn('login() is deprecated. Use Clerk SignIn component instead.');
     return false;
   };
 
   const loginWithPhone = async (phone: string, password: string): Promise<boolean> => {
-    // TODO: Replace with actual API call
-    if (phone && password) {
-      const mockUser: User = {
-        id: '1',
-        phone,
-        name: 'Restaurant Admin',
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return true;
-    }
+    console.warn('loginWithPhone() is deprecated. Use Clerk SignIn component instead.');
     return false;
   };
 
@@ -71,36 +59,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     name: string
   ): Promise<boolean> => {
-    // TODO: Replace with actual API call
-    if (email || phone) {
-      const mockUser: User = {
-        id: Date.now().toString(),
-        email: email || undefined,
-        phone: phone || undefined,
-        name,
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return true;
-    }
+    console.warn('register() is deprecated. Use Clerk SignUp component instead.');
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await signOut();
     setUser(null);
-    localStorage.removeItem('user');
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!clerkUser,
         login,
         loginWithPhone,
         register,
         logout,
-        isLoading,
+        isLoading: !isLoaded,
       }}
     >
       {children}
