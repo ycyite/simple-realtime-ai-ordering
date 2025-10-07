@@ -56,7 +56,7 @@ export default function SignInPage() {
             routing="path"
             path="/signin"
             signUpUrl="/register"
-            afterSignInUrl="/orders"
+            fallbackRedirectUrl="/orders"
           />
         </div>
 
