@@ -174,26 +174,36 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 const inputDetails = usage.input_token_details || {};
                 const outputDetails = usage.output_token_details || {};
 
-                // Calculate totals
+                // Input token breakdown
                 const inputTextTokens = inputDetails.text_tokens || 0;
                 const inputAudioTokens = inputDetails.audio_tokens || 0;
                 const inputCachedTokens = inputDetails.cached_tokens || 0;
-                const inputUncachedTokens = inputTextTokens + inputAudioTokens - inputCachedTokens;
 
+                // Cached breakdown
+                const cachedDetails = inputDetails.cached_tokens_details || {};
+                const cachedTextTokens = cachedDetails.text_tokens || 0;
+                const cachedAudioTokens = cachedDetails.audio_tokens || 0;
+
+                // Uncached calculation
+                const uncachedTextTokens = inputTextTokens - cachedTextTokens;
+                const uncachedAudioTokens = inputAudioTokens - cachedAudioTokens;
+                const totalUncachedInput = uncachedTextTokens + uncachedAudioTokens;
+
+                // Output token breakdown
                 const outputTextTokens = outputDetails.text_tokens || 0;
                 const outputAudioTokens = outputDetails.audio_tokens || 0;
 
-                console.log('   📥 INPUT TOKENS (Total:', usage.input_tokens || 0, ')');
-                console.log('      • Text Tokens:', inputTextTokens);
-                console.log('      • Audio Tokens:', inputAudioTokens);
-                console.log('      • Cached Tokens:', inputCachedTokens);
-                console.log('      • Uncached Tokens:', inputUncachedTokens);
+                console.log('   📥 INPUT TOKENS (Total:', usage.input_tokens, ')');
+                console.log('      ├─ Cached Text:', cachedTextTokens);
+                console.log('      ├─ Cached Audio:', cachedAudioTokens);
+                console.log('      ├─ Uncached Text:', uncachedTextTokens);
+                console.log('      └─ Uncached Audio:', uncachedAudioTokens);
                 console.log('');
-                console.log('   📤 OUTPUT TOKENS (Total:', usage.output_tokens || 0, ')');
-                console.log('      • Text Tokens:', outputTextTokens);
-                console.log('      • Audio Tokens:', outputAudioTokens);
+                console.log('   📤 OUTPUT TOKENS (Total:', usage.output_tokens, ')');
+                console.log('      ├─ Text:', outputTextTokens);
+                console.log('      └─ Audio:', outputAudioTokens);
                 console.log('');
-                console.log('   💰 TOTAL TOKENS:', usage.total_tokens || 0);
+                console.log('   💰 TOTAL TOKENS:', usage.total_tokens);
               } else {
                 console.log('   No usage data available');
               }
