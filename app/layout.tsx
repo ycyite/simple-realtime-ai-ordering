@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Restaurant Management Portal",
+  title: "Counter Bell - Restaurant Management",
   description: "AI-powered restaurant ordering management system",
 };
 
