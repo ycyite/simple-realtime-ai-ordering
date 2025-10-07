@@ -8,10 +8,10 @@ export default function SignInPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #2d6a5f 0%, #4a8b7f 100%)' }}>
+      <div className="glass-white w-full max-w-md p-8 rounded-2xl">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center gap-3 mb-2">
             <img src="/icons/bell-dark.png" alt="" className="w-12 h-12" />
             <h1 className="text-3xl font-bold text-[#174D5A]">Counter Bell</h1>
@@ -38,13 +38,19 @@ export default function SignInPage() {
             appearance={{
               elements: {
                 rootBox: 'w-full',
-                card: 'glass-white shadow-none',
+                card: 'bg-transparent shadow-none p-0',
                 headerTitle: 'hidden',
                 headerSubtitle: 'hidden',
-                socialButtonsBlockButton: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
-                formButtonPrimary: 'bg-[#174D5A] hover:bg-[#0f3640]',
-                formFieldInput: 'border-gray-300 focus:ring-[#174D5A] focus:border-[#174D5A]',
-                footerActionLink: 'text-[#174D5A] hover:text-[#0f3640]',
+                socialButtonsBlockButton: 'hidden',
+                dividerRow: 'hidden',
+                formFieldLabel: 'text-gray-700 font-medium text-sm',
+                formFieldInput: 'w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#174D5A] focus:border-transparent bg-white',
+                formButtonPrimary: 'w-full bg-[#174D5A] text-white py-3 rounded-lg font-medium hover:bg-[#0f3640] transition-colors',
+                footerAction: 'text-center mt-6',
+                footerActionText: 'text-sm text-gray-600',
+                footerActionLink: 'text-[#174D5A] font-medium hover:underline',
+                identityPreviewText: 'text-gray-700',
+                formResendCodeLink: 'text-[#174D5A] hover:text-[#0f3640]',
               },
             }}
             routing="path"
