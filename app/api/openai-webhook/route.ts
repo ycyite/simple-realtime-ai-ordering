@@ -171,11 +171,29 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               console.log('='.repeat(60));
               if (event.response?.usage) {
                 const usage = event.response.usage;
-                console.log('   Total Tokens:', usage.total_tokens || 0);
-                console.log('   Input Tokens:', usage.input_tokens || 0);
-                console.log('   Output Tokens:', usage.output_tokens || 0);
-                console.log('   Input Token Details:', JSON.stringify(usage.input_token_details || {}, null, 2));
-                console.log('   Output Token Details:', JSON.stringify(usage.output_token_details || {}, null, 2));
+                const inputDetails = usage.input_token_details || {};
+                const outputDetails = usage.output_token_details || {};
+
+                // Calculate totals
+                const inputTextTokens = inputDetails.text_tokens || 0;
+                const inputAudioTokens = inputDetails.audio_tokens || 0;
+                const inputCachedTokens = inputDetails.cached_tokens || 0;
+                const inputUncachedTokens = inputTextTokens + inputAudioTokens - inputCachedTokens;
+
+                const outputTextTokens = outputDetails.text_tokens || 0;
+                const outputAudioTokens = outputDetails.audio_tokens || 0;
+
+                console.log('   📥 INPUT TOKENS (Total:', usage.input_tokens || 0, ')');
+                console.log('      • Text Tokens:', inputTextTokens);
+                console.log('      • Audio Tokens:', inputAudioTokens);
+                console.log('      • Cached Tokens:', inputCachedTokens);
+                console.log('      • Uncached Tokens:', inputUncachedTokens);
+                console.log('');
+                console.log('   📤 OUTPUT TOKENS (Total:', usage.output_tokens || 0, ')');
+                console.log('      • Text Tokens:', outputTextTokens);
+                console.log('      • Audio Tokens:', outputAudioTokens);
+                console.log('');
+                console.log('   💰 TOTAL TOKENS:', usage.total_tokens || 0);
               } else {
                 console.log('   No usage data available');
               }
