@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { auth } from '@clerk/nextjs/server';
 
 export const runtime = 'nodejs';
 
@@ -8,6 +9,14 @@ const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 
 export async function GET() {
   try {
+    const { userId } = await auth();
+
+    if (userId) {
+      console.log('=== LOGGED IN USER (Server-Side) ===');
+      console.log('User ID:', userId);
+      console.log('====================================');
+    }
+
     const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
     return NextResponse.json(JSON.parse(ordersData));
   } catch (error: any) {
