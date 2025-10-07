@@ -151,6 +151,20 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             },
           });
 
+          // Accumulate tokens across the entire call
+          let callStats = {
+            totalTokens: 0,
+            totalInputTokens: 0,
+            totalOutputTokens: 0,
+            cachedTextTokens: 0,
+            cachedAudioTokens: 0,
+            uncachedTextTokens: 0,
+            uncachedAudioTokens: 0,
+            outputTextTokens: 0,
+            outputAudioTokens: 0,
+            responseCount: 0
+          };
+
           ws.on('open', () => {
             console.log('🔌 WebSocket connected for call:', call_id);
           });
@@ -166,6 +180,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
             // Log usage data when response is complete
             if (event.type === 'response.done') {
+              callStats.responseCount++;
               console.log('\n' + '='.repeat(60));
               console.log('📊 RESPONSE USAGE STATS');
               console.log('='.repeat(60));
@@ -192,6 +207,17 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 // Output token breakdown
                 const outputTextTokens = outputDetails.text_tokens || 0;
                 const outputAudioTokens = outputDetails.audio_tokens || 0;
+
+                // Accumulate to call stats
+                callStats.totalTokens += usage.total_tokens;
+                callStats.totalInputTokens += usage.input_tokens;
+                callStats.totalOutputTokens += usage.output_tokens;
+                callStats.cachedTextTokens += cachedTextTokens;
+                callStats.cachedAudioTokens += cachedAudioTokens;
+                callStats.uncachedTextTokens += uncachedTextTokens;
+                callStats.uncachedAudioTokens += uncachedAudioTokens;
+                callStats.outputTextTokens += outputTextTokens;
+                callStats.outputAudioTokens += outputAudioTokens;
 
                 console.log('   📥 INPUT TOKENS (Total:', usage.input_tokens, ')');
                 console.log('      ├─ Cached Text:', cachedTextTokens);
@@ -331,6 +357,27 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
           ws.on('close', () => {
             console.log('🔌 WebSocket closed for call:', call_id);
+
+            // Print final accumulated call statistics
+            if (callStats.responseCount > 0) {
+              console.log('\n' + '='.repeat(60));
+              console.log('🏁 FINAL CALL SUMMARY - Call ID:', call_id);
+              console.log('='.repeat(60));
+              console.log('   Total AI Responses:', callStats.responseCount);
+              console.log('');
+              console.log('   📥 TOTAL INPUT TOKENS:', callStats.totalInputTokens);
+              console.log('      ├─ Cached Text:', callStats.cachedTextTokens);
+              console.log('      ├─ Cached Audio:', callStats.cachedAudioTokens);
+              console.log('      ├─ Uncached Text:', callStats.uncachedTextTokens);
+              console.log('      └─ Uncached Audio:', callStats.uncachedAudioTokens);
+              console.log('');
+              console.log('   📤 TOTAL OUTPUT TOKENS:', callStats.totalOutputTokens);
+              console.log('      ├─ Text:', callStats.outputTextTokens);
+              console.log('      └─ Audio:', callStats.outputAudioTokens);
+              console.log('');
+              console.log('   💰 GRAND TOTAL TOKENS:', callStats.totalTokens);
+              console.log('='.repeat(60) + '\n');
+            }
           });
         } catch (wsError: any) {
           console.error('❌ WebSocket connection failed (non-critical):', wsError.message);
