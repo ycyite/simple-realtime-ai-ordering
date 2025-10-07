@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AlertBanner from '@/components/AlertBanner';
 import { Order } from '@/types';
 import { useOrderAlert } from '@/hooks/useOrderAlert';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function OrdersPage() {
   return (
@@ -17,6 +18,16 @@ export default function OrdersPage() {
 
 function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { user } = useAuth();
+
+  // Print user JSON to console after successful login
+  useEffect(() => {
+    if (user) {
+      console.log('=== LOGGED IN USER DATA ===');
+      console.log(JSON.stringify(user, null, 2));
+      console.log('=========================');
+    }
+  }, [user]);
 
   // Load orders from API on mount
   useEffect(() => {
