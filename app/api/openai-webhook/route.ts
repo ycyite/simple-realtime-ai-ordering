@@ -161,6 +161,24 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               console.log('🤖 AI says:', event.transcript);
             }
 
+            // Log usage data when response is complete
+            if (event.type === 'response.done') {
+              console.log('\n' + '='.repeat(60));
+              console.log('📊 RESPONSE USAGE STATS');
+              console.log('='.repeat(60));
+              if (event.response?.usage) {
+                const usage = event.response.usage;
+                console.log('   Total Tokens:', usage.total_tokens || 0);
+                console.log('   Input Tokens:', usage.input_tokens || 0);
+                console.log('   Output Tokens:', usage.output_tokens || 0);
+                console.log('   Input Token Details:', JSON.stringify(usage.input_token_details || {}, null, 2));
+                console.log('   Output Token Details:', JSON.stringify(usage.output_token_details || {}, null, 2));
+              } else {
+                console.log('   No usage data available');
+              }
+              console.log('='.repeat(60) + '\n');
+            }
+
             // Handle function calls
             if (event.type === 'response.function_call_arguments.done') {
               const functionName = event.name;
