@@ -10,6 +10,9 @@ const MENU_FILE = path.join(process.cwd(), 'menu.json');
 const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 
 export async function POST(request: Request) {
+  // Log immediately when endpoint is hit
+  console.log('🚨 WEBHOOK ENDPOINT HIT - Request received at', new Date().toISOString());
+
   const { type, data } = await request.json();
 
   console.log('\n' + '='.repeat(60));
