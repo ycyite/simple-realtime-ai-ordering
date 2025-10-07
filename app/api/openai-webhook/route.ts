@@ -69,12 +69,12 @@ RESPONSE STYLE:
 - ALWAYS repeat the full order back with pickup time before confirming
 - Please say quickly
 
-MENU ITEMS:
+MENU (compact format - Name $Price):
 ${menu.categories.map((cat: any) =>
-  `${cat.name}:\n${cat.items.map((item: any) =>
-    `- ${item.name}: $${item.price}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
-  ).join('\n')}`
-).join('\n\n')}
+  `${cat.name}: ${cat.items.map((item: any) =>
+    `${item.name} $${item.price}`
+  ).join(', ')}`
+).join(' | ')}
 
 Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the customer speaks.`;
 
