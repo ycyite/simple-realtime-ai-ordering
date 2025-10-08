@@ -54,11 +54,27 @@ export async function POST(request: Request) {
         }
       }
 
-      // If restaurant is closed, do NOT accept the call
+      // If restaurant is closed, reject the call after 8 seconds
       if (!isOpen) {
-        console.log('🔴 RESTAURANT CLOSED - Call will NOT be answered');
-        console.log('ℹ️  Caller will hear ringing until they hang up');
-        return NextResponse.json({ success: true, message: 'Restaurant closed, call not accepted' });
+        console.log('🔴 RESTAURANT CLOSED - Call will be rejected after 8 seconds');
+
+        setTimeout(async () => {
+          try {
+            await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/reject`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status_code: 486 })
+            });
+            console.log('✅ Call rejected with status code 486 (Busy Here)');
+          } catch (error) {
+            console.error('❌ Error rejecting call:', error);
+          }
+        }, 8000);
+
+        return NextResponse.json({ success: true, message: 'Restaurant closed, call will be rejected' });
       }
 
       console.log('🟢 RESTAURANT OPEN - Accepting call');
