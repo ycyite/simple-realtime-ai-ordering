@@ -8,6 +8,7 @@ export const runtime = 'nodejs';
 
 const MENU_FILE = path.join(process.cwd(), 'menu.json');
 const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
+const STATUS_FILE = path.join(process.cwd(), 'restaurant-status.json');
 
 export async function POST(request: Request) {
   // Log immediately when endpoint is hit
@@ -38,6 +39,30 @@ export async function POST(request: Request) {
     }
 
     try {
+      // Check restaurant status before accepting call
+      let isOpen = true;
+      try {
+        const statusData = await fs.readFile(STATUS_FILE, 'utf-8');
+        const status = JSON.parse(statusData);
+        isOpen = status.isOpen;
+        console.log('🏪 Restaurant status:', isOpen ? 'OPEN' : 'CLOSED');
+      } catch (err: any) {
+        if (err.code === 'ENOENT') {
+          console.log('⚠️  Status file not found, defaulting to OPEN');
+        } else {
+          console.error('⚠️  Error reading status file, defaulting to OPEN:', err);
+        }
+      }
+
+      // If restaurant is closed, do NOT accept the call
+      if (!isOpen) {
+        console.log('🔴 RESTAURANT CLOSED - Call will NOT be answered');
+        console.log('ℹ️  Caller will hear ringing until they hang up');
+        return NextResponse.json({ success: true, message: 'Restaurant closed, call not accepted' });
+      }
+
+      console.log('🟢 RESTAURANT OPEN - Accepting call');
+
       // Load menu for AI context
       const menuData = await fs.readFile(MENU_FILE, 'utf-8');
       const menu = JSON.parse(menuData);

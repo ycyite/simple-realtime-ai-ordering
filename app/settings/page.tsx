@@ -26,6 +26,8 @@ function SettingsContent() {
   const [settings, setSettings] = useState<RestaurantSettings>(defaultSettings);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<RestaurantSettings>(settings);
+  const [isOpen, setIsOpen] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Load restaurant data from menu API on mount
   useEffect(() => {
@@ -44,7 +46,35 @@ function SettingsContent() {
         setFormData(restaurantSettings);
       })
       .catch(err => console.error('Failed to load restaurant settings:', err));
+
+    // Load restaurant status
+    fetch('/api/restaurant-status')
+      .then(res => res.json())
+      .then(data => {
+        setIsOpen(data.isOpen);
+      })
+      .catch(err => console.error('Failed to load restaurant status:', err));
   }, []);
+
+  const handleStatusToggle = async () => {
+    setIsUpdatingStatus(true);
+    try {
+      const newStatus = !isOpen;
+      const response = await fetch('/api/restaurant-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOpen: newStatus }),
+      });
+
+      if (response.ok) {
+        setIsOpen(newStatus);
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +92,53 @@ function SettingsContent() {
       <Navigation />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Restaurant Status Toggle */}
+        <div className="glass-white rounded-2xl shadow-2xl p-6 md:p-8 mb-6 border-2" style={{ borderColor: isOpen ? '#4C7A62' : '#dc2626' }}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-4 h-4 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold" style={{ color: '#174D5A' }}>
+                  Restaurant Status
+                </h2>
+                <p className={`text-lg font-semibold mt-1 ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
+                  {isOpen ? '🟢 OPEN - Accepting Calls' : '🔴 CLOSED - Not Accepting Calls'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleStatusToggle}
+              disabled={isUpdatingStatus}
+              className={`relative inline-flex h-12 w-24 md:h-14 md:w-28 items-center rounded-full transition-all duration-300 shadow-lg hover:shadow-xl ${
+                isUpdatingStatus ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}
+              style={{ backgroundColor: isOpen ? '#4C7A62' : '#dc2626' }}
+            >
+              <span
+                className={`inline-block h-10 w-10 md:h-12 md:w-12 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                  isOpen ? 'translate-x-12 md:translate-x-14' : 'translate-x-1'
+                }`}
+              >
+                {isUpdatingStatus && (
+                  <svg className="animate-spin h-full w-full p-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+              </span>
+            </button>
+          </div>
+
+          <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(242, 228, 214, 0.3)' }}>
+            <p className="text-sm" style={{ color: '#174D5A' }}>
+              {isOpen
+                ? '✓ Phone calls will be automatically answered by the AI assistant.'
+                : '✗ Phone calls will NOT be answered. Callers will hear ringing until they hang up.'}
+            </p>
+          </div>
+        </div>
+
         <div className="glass-card p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
             <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3" style={{ color: '#F2E4D6' }}>
