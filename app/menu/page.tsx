@@ -2,9 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { MenuItem } from '@/types';
 
 export default function MenuPage() {
+  return (
+    <ProtectedRoute>
+      <MenuContent />
+    </ProtectedRoute>
+  );
+}
+
+function MenuContent() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [restaurantName, setRestaurantName] = useState('');
 
@@ -178,7 +187,10 @@ export default function MenuPage() {
         {/* Mobile Menu Toggle Button */}
         <button
           onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          className="md:hidden fixed bottom-6 right-6 z-30 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 rounded-full shadow-2xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200"
+          className="md:hidden fixed bottom-6 right-6 z-30 p-4 rounded-full shadow-2xl transition-all duration-200 cursor-pointer"
+          style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f3640'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -195,15 +207,15 @@ export default function MenuPage() {
 
         {/* Left Sidebar - Category Navigation */}
         <div className={`
-          w-64 glass-white border-r border-purple-200 overflow-y-auto
+          w-64 glass-white border-r flex flex-col
           md:relative fixed inset-y-0 left-0 z-30
           transform transition-transform duration-300 ease-in-out
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}>
+        `} style={{ borderColor: 'rgba(23, 77, 90, 0.2)' }}>
           <div className="p-6 border-b" style={{ borderColor: '#174D5A' }}>
             <h2 className="text-xl font-bold" style={{ color: '#174D5A' }}>Categories</h2>
           </div>
-          <nav className="p-4">
+          <nav className="p-4 flex-1 overflow-y-auto">
             <ul className="space-y-2">
               {categories.map((category) => (
                 <li key={category}>
@@ -240,12 +252,13 @@ export default function MenuPage() {
             <div className="p-4 border-t" style={{ borderColor: '#174D5A' }}>
               <button
                 onClick={() => setIsAddingItem(true)}
-                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center gap-2"
                 style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
               >
-                + Add Item
+                <img src="/icons/add_item.png" alt="" className="w-6 h-6" />
+                Add Item
               </button>
             </div>
           )}
@@ -270,10 +283,11 @@ export default function MenuPage() {
         {/* Modal Overlay for Add/Edit Form */}
         {isAddingItem && (
           <div className="fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4">
-            <div className="glass-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 px-8 py-6 rounded-t-2xl" style={{ background: 'linear-gradient(135deg, #174D5A 0%, #4C7A62 100%)', color: '#F2E4D6' }}>
-                <h2 className="text-2xl font-bold">
-                  {editingItem ? '✏️ Edit Menu Item' : '➕ Add New Menu Item'}
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <img src="/icons/add_item.png" alt="" className="w-8 h-8" />
+                  {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: '#F2E4D6', opacity: 0.9 }}>
                   {editingItem ? 'Update the details below' : 'Fill in the details to create a new item'}
@@ -282,7 +296,7 @@ export default function MenuPage() {
               <form onSubmit={handleSubmit} className="p-4 md:p-8 space-y-4 md:space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
                       Item Name *
                     </label>
                     <input
@@ -293,11 +307,14 @@ export default function MenuPage() {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       placeholder="e.g., Classic Burger"
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 text-gray-800"
+                      style={{ borderColor: '#174D5A' }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
+                      onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
                       Price ($) *
                     </label>
                     <input
@@ -309,13 +326,16 @@ export default function MenuPage() {
                         setFormData({ ...formData, price: parseFloat(e.target.value) })
                       }
                       placeholder="0.00"
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 text-gray-800"
+                      style={{ borderColor: '#174D5A' }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
+                      onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
                     Description *
                   </label>
                   <textarea
@@ -326,12 +346,15 @@ export default function MenuPage() {
                     }
                     rows={4}
                     placeholder="Describe this delicious item..."
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                    className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 resize-none text-gray-800"
+                    style={{ borderColor: '#174D5A' }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
                     Category *
                   </label>
                   <input
@@ -343,7 +366,10 @@ export default function MenuPage() {
                       setFormData({ ...formData, category: e.target.value })
                     }
                     placeholder="e.g., Burgers, Drinks, Desserts"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 text-gray-800"
+                    style={{ borderColor: '#174D5A' }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
                   />
                   <datalist id="categories">
                     {categories.map((cat) => (
@@ -352,7 +378,7 @@ export default function MenuPage() {
                   </datalist>
                 </div>
 
-                <div className="flex items-center bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                <div className="flex items-center p-4 rounded-lg border-2" style={{ backgroundColor: 'rgba(242, 228, 214, 0.3)', borderColor: '#174D5A' }}>
                   <input
                     type="checkbox"
                     id="available"
@@ -360,18 +386,19 @@ export default function MenuPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, available: e.target.checked })
                     }
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-5 h-5 rounded focus:ring-2 cursor-pointer"
+                    style={{ accentColor: '#4C7A62' }}
                   />
-                  <label htmlFor="available" className="ml-3 text-sm font-medium text-gray-700">
+                  <label htmlFor="available" className="ml-3 text-sm font-medium cursor-pointer" style={{ color: '#174D5A' }}>
                     Available for ordering
                   </label>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <div className="flex justify-end space-x-3 pt-4 border-t" style={{ borderColor: '#174D5A' }}>
                   <button
                     type="button"
                     onClick={cancelForm}
-                    className="px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold"
+                    className="px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold cursor-pointer"
                     style={{ backgroundColor: '#F2E4D6', color: '#174D5A' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e8d8c7'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F2E4D6'}
@@ -380,12 +407,13 @@ export default function MenuPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95 font-bold shadow-lg hover:shadow-xl"
+                    className="px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95 font-bold shadow-lg hover:shadow-xl cursor-pointer"
                     style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
                   >
-                    {editingItem ? '✓ Update Item' : '✓ Add Item'}
+                    <img src="/icons/check-mark.png" alt="" className="w-6 h-6 inline mr-1" />
+                    {editingItem ? 'Update Item' : 'Add Item'}
                   </button>
                 </div>
               </form>
@@ -441,13 +469,16 @@ export default function MenuPage() {
                         </button>
                         <button
                           onClick={() => handleEdit(item)}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200 text-sm font-medium"
+                          className="px-3 py-1 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 text-sm font-medium cursor-pointer"
+                          style={{ backgroundColor: 'rgba(76, 122, 98, 0.2)', color: '#174D5A' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(76, 122, 98, 0.3)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(76, 122, 98, 0.2)'}
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 text-sm font-medium"
+                          className="px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 text-sm font-medium cursor-pointer"
                         >
                           Delete
                         </button>

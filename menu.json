@@ -1,8 +1,8 @@
 {
   "restaurant": {
     "name": "Matia's Kabab",
-    "phone": "(905) 388-9111",
-    "location": "Hamilton, ON"
+    "phone": "",
+    "location": ""
   },
   "categories": [
     {
@@ -14,11 +14,6 @@
           "name": "Chicken Shish Tawook",
           "description": "8 skewers of Shish Tawook",
           "price": 19.99,
-          "sizes": ["1/2 Kg", "1 Kg"],
-          "prices": {
-            "1/2 Kg": 19.99,
-            "1 Kg": 37.99
-          },
           "available": true
         },
         {
@@ -26,11 +21,6 @@
           "name": "Lamb Tikka",
           "description": "8 skewers of Lamb Tikka",
           "price": 19.99,
-          "sizes": ["1/2 Kg", "1 Kg"],
-          "prices": {
-            "1/2 Kg": 19.99,
-            "1 Kg": 37.99
-          },
           "available": true
         },
         {
@@ -38,11 +28,6 @@
           "name": "Mixed Kabab",
           "description": "6 Skewers of Kofta, 2 Skewers of Lamb Tikka and 2 Skewers of Shish Tawook",
           "price": 19.99,
-          "sizes": ["1/2 Kg", "1 Kg"],
-          "prices": {
-            "1/2 Kg": 19.99,
-            "1 Kg": 37.99
-          },
           "available": true
         },
         {
@@ -71,11 +56,6 @@
           "name": "Kabab",
           "description": "8 skewers of Kabab",
           "price": 19.99,
-          "sizes": ["1/2 Kg", "1 Kg"],
-          "prices": {
-            "1/2 Kg": 19.99,
-            "1 Kg": 34.99
-          },
           "available": true
         },
         {
@@ -83,18 +63,13 @@
           "name": "Liver",
           "description": "Liver skewers",
           "price": 19.99,
-          "sizes": ["1/2 Kg", "1 Kg"],
-          "prices": {
-            "1/2 Kg": 19.99,
-            "1 Kg": 34.99
-          },
           "available": true
         },
         {
           "id": "add_salad_rice",
           "name": "Add Salad & Rice",
           "description": "Additional side of salad and rice",
-          "price": 15.00,
+          "price": 15,
           "available": true
         }
       ]
@@ -251,7 +226,7 @@
       ]
     },
     {
-      "id": "lahm_bi_ajeen",
+      "id": "lahm_bi_ajeen_12\"",
       "name": "Lahm Bi Ajeen 12\"",
       "items": [
         {
@@ -354,7 +329,7 @@
           "id": "family_combo_1",
           "name": "Family Combo 1",
           "description": "4 Skewers Kabab + 4 Skewers Tikka + 1 Whole BBQ Chicken + Chicken & Beef Shawarma + Rice on Side + Pita Bread. Feeds 10-12 people",
-          "price": 99.00,
+          "price": 99,
           "available": true
         }
       ]
@@ -415,7 +390,7 @@
       ]
     },
     {
-      "id": "sale",
+      "id": "weekly_specials",
       "name": "Weekly Specials",
       "items": [
         {
@@ -621,7 +596,6 @@
           "name": "Rice",
           "description": "Rice",
           "price": 5.99,
-          "price_range": "5.99 - 10.49",
           "available": true
         },
         {
@@ -636,7 +610,6 @@
           "name": "French Fries",
           "description": "French fries",
           "price": 5.99,
-          "price_range": "5.99 - 6.99",
           "available": true
         },
         {

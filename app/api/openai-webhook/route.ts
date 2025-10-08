@@ -8,8 +8,12 @@ export const runtime = 'nodejs';
 
 const MENU_FILE = path.join(process.cwd(), 'menu.json');
 const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
+const STATUS_FILE = path.join(process.cwd(), 'restaurant-status.json');
 
 export async function POST(request: Request) {
+  // Log immediately when endpoint is hit
+  console.log('🚨 WEBHOOK ENDPOINT HIT - Request received at', new Date().toISOString());
+
   const { type, data } = await request.json();
 
   console.log('\n' + '='.repeat(60));
@@ -35,6 +39,46 @@ export async function POST(request: Request) {
     }
 
     try {
+      // Check restaurant status before accepting call
+      let isOpen = true;
+      try {
+        const statusData = await fs.readFile(STATUS_FILE, 'utf-8');
+        const status = JSON.parse(statusData);
+        isOpen = status.isOpen;
+        console.log('🏪 Restaurant status:', isOpen ? 'OPEN' : 'CLOSED');
+      } catch (err: any) {
+        if (err.code === 'ENOENT') {
+          console.log('⚠️  Status file not found, defaulting to OPEN');
+        } else {
+          console.error('⚠️  Error reading status file, defaulting to OPEN:', err);
+        }
+      }
+
+      // If restaurant is closed, reject the call after 8 seconds
+      if (!isOpen) {
+        console.log('🔴 RESTAURANT CLOSED - Call will be rejected after 8 seconds');
+
+        setTimeout(async () => {
+          try {
+            await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/reject`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status_code: 486 })
+            });
+            console.log('✅ Call rejected with status code 486 (Busy Here)');
+          } catch (error) {
+            console.error('❌ Error rejecting call:', error);
+          }
+        }, 8000);
+
+        return NextResponse.json({ success: true, message: 'Restaurant closed, call will be rejected' });
+      }
+
+      console.log('🟢 RESTAURANT OPEN - Accepting call');
+
       // Load menu for AI context
       const menuData = await fs.readFile(MENU_FILE, 'utf-8');
       const menu = JSON.parse(menuData);
@@ -148,6 +192,20 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             },
           });
 
+          // Accumulate tokens across the entire call
+          let callStats = {
+            totalTokens: 0,
+            totalInputTokens: 0,
+            totalOutputTokens: 0,
+            cachedTextTokens: 0,
+            cachedAudioTokens: 0,
+            uncachedTextTokens: 0,
+            uncachedAudioTokens: 0,
+            outputTextTokens: 0,
+            outputAudioTokens: 0,
+            responseCount: 0
+          };
+
           ws.on('open', () => {
             console.log('🔌 WebSocket connected for call:', call_id);
           });
@@ -159,6 +217,64 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             // Print AI's speech transcript
             if (event.type === 'response.output_audio_transcript.done') {
               console.log('🤖 AI says:', event.transcript);
+            }
+
+            // Log usage data when response is complete
+            if (event.type === 'response.done') {
+              callStats.responseCount++;
+              console.log('\n' + '='.repeat(60));
+              console.log('📊 RESPONSE USAGE STATS');
+              console.log('='.repeat(60));
+              if (event.response?.usage) {
+                const usage = event.response.usage;
+                const inputDetails = usage.input_token_details || {};
+                const outputDetails = usage.output_token_details || {};
+
+                // Input token breakdown
+                const inputTextTokens = inputDetails.text_tokens || 0;
+                const inputAudioTokens = inputDetails.audio_tokens || 0;
+                const inputCachedTokens = inputDetails.cached_tokens || 0;
+
+                // Cached breakdown
+                const cachedDetails = inputDetails.cached_tokens_details || {};
+                const cachedTextTokens = cachedDetails.text_tokens || 0;
+                const cachedAudioTokens = cachedDetails.audio_tokens || 0;
+
+                // Uncached calculation
+                const uncachedTextTokens = inputTextTokens - cachedTextTokens;
+                const uncachedAudioTokens = inputAudioTokens - cachedAudioTokens;
+                const totalUncachedInput = uncachedTextTokens + uncachedAudioTokens;
+
+                // Output token breakdown
+                const outputTextTokens = outputDetails.text_tokens || 0;
+                const outputAudioTokens = outputDetails.audio_tokens || 0;
+
+                // Accumulate to call stats
+                callStats.totalTokens += usage.total_tokens;
+                callStats.totalInputTokens += usage.input_tokens;
+                callStats.totalOutputTokens += usage.output_tokens;
+                callStats.cachedTextTokens += cachedTextTokens;
+                callStats.cachedAudioTokens += cachedAudioTokens;
+                callStats.uncachedTextTokens += uncachedTextTokens;
+                callStats.uncachedAudioTokens += uncachedAudioTokens;
+                callStats.outputTextTokens += outputTextTokens;
+                callStats.outputAudioTokens += outputAudioTokens;
+
+                console.log('   📥 INPUT TOKENS (Total:', usage.input_tokens, ')');
+                console.log('      ├─ Cached Text:', cachedTextTokens);
+                console.log('      ├─ Cached Audio:', cachedAudioTokens);
+                console.log('      ├─ Uncached Text:', uncachedTextTokens);
+                console.log('      └─ Uncached Audio:', uncachedAudioTokens);
+                console.log('');
+                console.log('   📤 OUTPUT TOKENS (Total:', usage.output_tokens, ')');
+                console.log('      ├─ Text:', outputTextTokens);
+                console.log('      └─ Audio:', outputAudioTokens);
+                console.log('');
+                console.log('   💰 TOTAL TOKENS:', usage.total_tokens);
+              } else {
+                console.log('   No usage data available');
+              }
+              console.log('='.repeat(60) + '\n');
             }
 
             // Handle function calls
@@ -282,6 +398,35 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
           ws.on('close', () => {
             console.log('🔌 WebSocket closed for call:', call_id);
+
+            // Print final accumulated call statistics
+            if (callStats.responseCount > 0) {
+              // Calculate costs for gpt-realtime pricing
+              const inputTextCost = (callStats.uncachedTextTokens * 4.00 / 1000000) + (callStats.cachedTextTokens * 0.40 / 1000000);
+              const inputAudioCost = (callStats.uncachedAudioTokens * 32.00 / 1000000) + (callStats.cachedAudioTokens * 0.40 / 1000000);
+              const outputTextCost = callStats.outputTextTokens * 16.00 / 1000000;
+              const outputAudioCost = callStats.outputAudioTokens * 64.00 / 1000000;
+              const totalCost = inputTextCost + inputAudioCost + outputTextCost + outputAudioCost;
+
+              console.log('\n' + '='.repeat(60));
+              console.log('🏁 FINAL CALL SUMMARY - Call ID:', call_id);
+              console.log('='.repeat(60));
+              console.log('   Total AI Responses:', callStats.responseCount);
+              console.log('');
+              console.log('   📥 TOTAL INPUT TOKENS:', callStats.totalInputTokens);
+              console.log('      ├─ Cached Text:', callStats.cachedTextTokens, `($${(callStats.cachedTextTokens * 0.40 / 1000000).toFixed(6)})`);
+              console.log('      ├─ Cached Audio:', callStats.cachedAudioTokens, `($${(callStats.cachedAudioTokens * 0.40 / 1000000).toFixed(6)})`);
+              console.log('      ├─ Uncached Text:', callStats.uncachedTextTokens, `($${(callStats.uncachedTextTokens * 4.00 / 1000000).toFixed(6)})`);
+              console.log('      └─ Uncached Audio:', callStats.uncachedAudioTokens, `($${(callStats.uncachedAudioTokens * 32.00 / 1000000).toFixed(6)})`);
+              console.log('');
+              console.log('   📤 TOTAL OUTPUT TOKENS:', callStats.totalOutputTokens);
+              console.log('      ├─ Text:', callStats.outputTextTokens, `($${(callStats.outputTextTokens * 16.00 / 1000000).toFixed(6)})`);
+              console.log('      └─ Audio:', callStats.outputAudioTokens, `($${(callStats.outputAudioTokens * 64.00 / 1000000).toFixed(6)})`);
+              console.log('');
+              console.log('   💰 GRAND TOTAL TOKENS:', callStats.totalTokens);
+              console.log('   💵 TOTAL COST: $' + totalCost.toFixed(6), `(≈ $${totalCost.toFixed(4)})`);
+              console.log('='.repeat(60) + '\n');
+            }
           });
         } catch (wsError: any) {
           console.error('❌ WebSocket connection failed (non-critical):', wsError.message);
