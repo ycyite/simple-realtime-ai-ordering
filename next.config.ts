@@ -1,20 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Skip environment variable validation during build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  // All API routes are now in Next.js - no proxy needed
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Don't bundle ws for server-side (keep it external)
-      config.externals = [...(config.externals || []), 'ws', 'bufferutil', 'utf-8-validate'];
-    }
-    return config;
+  /* config options here */
+  env: {
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL: '/signin',
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL: '/register',
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/orders',
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/orders',
   },
 };
 
