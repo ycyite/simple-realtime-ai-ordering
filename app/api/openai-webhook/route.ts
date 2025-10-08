@@ -193,7 +193,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
           });
 
           // Accumulate tokens across the entire call
-          let callStats = {
+          const callStats = {
             totalTokens: 0,
             totalInputTokens: 0,
             totalOutputTokens: 0,
