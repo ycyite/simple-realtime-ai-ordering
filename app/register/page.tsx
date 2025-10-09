@@ -56,7 +56,7 @@ export default function RegisterPage() {
             routing="path"
             path="/register"
             signInUrl="/signin"
-            forceRedirectUrl="/orders"
+            forceRedirectUrl="/restaurants"
           />
         </div>
 

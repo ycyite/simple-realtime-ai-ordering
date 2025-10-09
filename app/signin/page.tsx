@@ -56,7 +56,7 @@ export default function SignInPage() {
             routing="path"
             path="/signin"
             signUpUrl="/register"
-            forceRedirectUrl="/orders"
+            forceRedirectUrl="/restaurants"
           />
         </div>
 
