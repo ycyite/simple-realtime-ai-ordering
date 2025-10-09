@@ -3,15 +3,43 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [currentRestaurant, setCurrentRestaurant] = useState<any>(null);
+
+  useEffect(() => {
+    // Get current restaurant from localStorage
+    const restaurantId = localStorage.getItem('activeRestaurantId');
+    if (restaurantId) {
+      fetchRestaurantInfo(restaurantId);
+    }
+  }, []);
+
+  const fetchRestaurantInfo = async (restaurantId: string) => {
+    try {
+      const response = await fetch('/api/restaurants');
+      if (response.ok) {
+        const restaurants = await response.json();
+        const restaurant = restaurants.find((r: any) => r.id === restaurantId);
+        setCurrentRestaurant(restaurant);
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     router.push('/signin');
+  };
+
+  const switchRestaurant = () => {
+    localStorage.removeItem('activeRestaurantId');
+    router.push('/restaurants');
   };
 
   const links = [
@@ -27,8 +55,27 @@ export default function Navigation() {
           <div className="flex items-center space-x-2 sm:space-x-8">
             <h1 className="text-base sm:text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
               <img src="/icons/bell-light.png" alt="" className="w-6 h-6 sm:w-8 sm:h-8" />
-              Counter Bell
+              <span className="hidden sm:inline">Counter Bell</span>
             </h1>
+
+            {/* Restaurant Switcher */}
+            {currentRestaurant && (
+              <button
+                onClick={switchRestaurant}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-opacity-20"
+                style={{ backgroundColor: 'rgba(242, 228, 214, 0.1)', color: '#F2E4D6' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                }}
+              >
+                <span className="hidden sm:inline">🏪</span>
+                <span className="max-w-[100px] sm:max-w-[200px] truncate">{currentRestaurant.name}</span>
+                <span className="text-xs">↓</span>
+              </button>
+            )}
             <div className="hidden md:flex space-x-2">
               {links.map((link) => (
                 <Link
