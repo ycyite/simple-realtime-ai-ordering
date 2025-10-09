@@ -81,10 +81,31 @@ function SettingsContent() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSettings(formData);
-    setIsEditing(false);
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+        }),
+      });
+
+      if (response.ok) {
+        setSettings(formData);
+        setIsEditing(false);
+      } else {
+        console.error('Failed to update settings');
+        alert('Failed to save settings. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      alert('Failed to save settings. Please try again.');
+    }
   };
 
   const handleCancel = () => {
