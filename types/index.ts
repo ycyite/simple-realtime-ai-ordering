@@ -31,6 +31,4 @@ export interface RestaurantSettings {
   name: string;
   phone: string;
   address: string;
-  aiPrompt: string;
-  welcomeMessage: string;
 }

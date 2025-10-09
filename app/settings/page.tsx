@@ -10,8 +10,6 @@ const defaultSettings: RestaurantSettings = {
   name: '',
   phone: '',
   address: '',
-  aiPrompt: '',
-  welcomeMessage: '',
 };
 
 export default function SettingsPage() {
@@ -48,8 +46,6 @@ function SettingsContent() {
           name: data.restaurant?.name || '',
           phone: data.restaurant?.phone || '',
           address: data.restaurant?.location || '',
-          aiPrompt: '',
-          welcomeMessage: '',
         };
         setSettings(restaurantSettings);
         setFormData(restaurantSettings);
@@ -226,48 +222,6 @@ function SettingsContent() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
-                  Welcome Message
-                </label>
-                <textarea
-                  required
-                  value={formData.welcomeMessage}
-                  onChange={(e) =>
-                    setFormData({ ...formData, welcomeMessage: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 resize-none text-gray-800"
-                  style={{ borderColor: '#174D5A' }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
-                  onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
-                  placeholder="What the AI says when answering the phone..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
-                  AI Prompt / Instructions
-                </label>
-                <textarea
-                  required
-                  value={formData.aiPrompt}
-                  onChange={(e) =>
-                    setFormData({ ...formData, aiPrompt: e.target.value })
-                  }
-                  rows={8}
-                  className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 resize-none text-gray-800"
-                  style={{ borderColor: '#174D5A' }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
-                  onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
-                  placeholder="Instructions for how the AI should behave during calls..."
-                />
-                <p className="text-sm mt-2" style={{ color: '#4C7A62' }}>
-                  This prompt guides the AI's behavior during phone calls. Be specific about
-                  tone, order confirmation process, and how to handle special requests.
-                </p>
-              </div>
-
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t" style={{ borderColor: '#174D5A' }}>
                 <button
                   type="submit"
@@ -313,27 +267,6 @@ function SettingsContent() {
                   <dd className="mt-1 text-lg font-medium text-gray-900">{settings.address || 'Not set'}</dd>
                 </div>
               </dl>
-            </div>
-
-            <div className="glass-white rounded-2xl shadow-lg p-4 md:p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#174D5A' }}>
-                <img src="/icons/bell-dark.png" alt="" className="w-6 h-6" />
-                AI Configuration
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <dt className="text-sm font-semibold mb-2" style={{ color: '#4C7A62' }}>Welcome Message</dt>
-                  <dd className="mt-1 text-gray-900 p-4 rounded-lg" style={{ backgroundColor: 'rgba(242, 228, 214, 0.5)' }}>
-                    {settings.welcomeMessage || 'Not set'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-semibold mb-2" style={{ color: '#4C7A62' }}>AI Prompt</dt>
-                  <dd className="mt-1 text-gray-900 p-4 rounded-lg whitespace-pre-wrap" style={{ backgroundColor: 'rgba(242, 228, 214, 0.5)' }}>
-                    {settings.aiPrompt || 'Not set'}
-                  </dd>
-                </div>
-              </div>
             </div>
 
             <div className="glass-card p-4 md:p-6 border-l-4" style={{ borderLeftColor: '#FFB975' }}>
