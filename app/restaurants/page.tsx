@@ -15,12 +15,17 @@ interface Restaurant {
 
 export default function RestaurantsPage() {
   const router = useRouter();
-  const { userId } = useAuth();
+  const { userId, signOut } = useAuth();
   const { user } = useUser();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/signin');
+  };
 
   useEffect(() => {
     if (userId) {
@@ -80,6 +85,17 @@ export default function RestaurantsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Logout Button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2"
+          >
+            <span>Logout</span>
+            <span>→</span>
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
           <div className="text-6xl mb-4">🔔</div>
