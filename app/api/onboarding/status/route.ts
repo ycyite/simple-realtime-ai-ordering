@@ -12,28 +12,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's tenant
+    // Check if user has a tenant
     const user = await prisma.users.findUnique({
       where: { clerk_user_id: userId },
       include: { tenants: true }
     });
 
-    if (!user?.tenants) {
-      return NextResponse.json({ completed: false });
-    }
-
-    // Check if tenant has meaningful data (not just auto-generated defaults)
-    const tenant = user.tenants;
-    const completed = tenant.settings &&
-                     (tenant.settings as any).onboarding_completed === true;
+    // If user has a tenant, onboarding is complete
+    const completed = !!user?.tenant_id && !!user?.tenants;
 
     return NextResponse.json({
       completed,
-      tenant: {
-        name: tenant.name,
-        phone_number: tenant.phone_number,
-        address: tenant.address
-      }
+      tenant: user?.tenants ? {
+        name: user.tenants.name,
+        phone_number: user.tenants.phone_number,
+        address: user.tenants.address,
+        role: user.role
+      } : null
     });
   } catch (error) {
     console.error('Onboarding status check error:', error);
