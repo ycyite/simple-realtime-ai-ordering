@@ -10,13 +10,21 @@ const isProtectedRoute = createRouteMatcher([
   '/api/restaurants(.*)',
 ]);
 
+const isPublicRoute = createRouteMatcher([
+  '/signin(.*)',
+  '/register(.*)',
+  '/api/webhooks(.*)',
+]);
+
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  if (!isPublicRoute(req) && isProtectedRoute(req)) {
     await auth.protect();
   }
 }, {
   signInUrl: '/signin',
   signUpUrl: '/register',
+  signInFallbackRedirectUrl: '/restaurants',
+  signUpFallbackRedirectUrl: '/restaurants',
 });
 
 export const config = {
