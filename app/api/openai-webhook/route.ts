@@ -84,10 +84,11 @@ export async function POST(request: Request) {
 
       // Group menu items by category
       const menuByCategory = menuItems.reduce((acc: any, item) => {
-        if (!acc[item.category]) {
-          acc[item.category] = [];
+        const category = item.category || 'Other';
+        if (!acc[category]) {
+          acc[category] = [];
         }
-        acc[item.category].push({
+        acc[category].push({
           name: item.name,
           price: item.price,
           description: item.description
