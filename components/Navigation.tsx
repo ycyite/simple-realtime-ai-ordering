@@ -9,28 +9,13 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [currentRestaurant, setCurrentRestaurant] = useState<any>(null);
+  const [hasActiveRestaurant, setHasActiveRestaurant] = useState(false);
 
   useEffect(() => {
-    // Get current restaurant from localStorage
+    // Check if there's an active restaurant in localStorage
     const restaurantId = localStorage.getItem('activeRestaurantId');
-    if (restaurantId) {
-      fetchRestaurantInfo(restaurantId);
-    }
-  }, []);
-
-  const fetchRestaurantInfo = async (restaurantId: string) => {
-    try {
-      const response = await fetch('/api/restaurants');
-      if (response.ok) {
-        const restaurants = await response.json();
-        const restaurant = restaurants.find((r: any) => r.id === restaurantId);
-        setCurrentRestaurant(restaurant);
-      }
-    } catch (error) {
-      console.error('Error fetching restaurant:', error);
-    }
-  };
+    setHasActiveRestaurant(!!restaurantId);
+  }, [pathname]); // Re-check on route change
 
   const handleLogout = () => {
     logout();
@@ -59,7 +44,7 @@ export default function Navigation() {
             </h1>
 
             {/* Back to Restaurants */}
-            {currentRestaurant && (
+            {hasActiveRestaurant && (
               <button
                 onClick={switchRestaurant}
                 className="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:bg-opacity-20"
