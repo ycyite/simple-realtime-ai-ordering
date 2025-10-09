@@ -20,11 +20,6 @@ export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req) && isProtectedRoute(req)) {
     await auth.protect();
   }
-}, {
-  signInUrl: '/signin',
-  signUpUrl: '/register',
-  signInFallbackRedirectUrl: '/restaurants',
-  signUpFallbackRedirectUrl: '/restaurants',
 });
 
 export const config = {
