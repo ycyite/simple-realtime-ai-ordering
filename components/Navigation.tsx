@@ -58,11 +58,11 @@ export default function Navigation() {
               <span className="hidden sm:inline">Counter Bell</span>
             </h1>
 
-            {/* Restaurant Switcher */}
+            {/* Back to Restaurants */}
             {currentRestaurant && (
               <button
                 onClick={switchRestaurant}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-opacity-20"
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:bg-opacity-20"
                 style={{ backgroundColor: 'rgba(242, 228, 214, 0.1)', color: '#F2E4D6' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
@@ -70,10 +70,9 @@ export default function Navigation() {
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
                 }}
+                title="Back to restaurants"
               >
-                <span className="hidden sm:inline">🏪</span>
-                <span className="max-w-[100px] sm:max-w-[200px] truncate">{currentRestaurant.name}</span>
-                <span className="text-xs">↓</span>
+                ←
               </button>
             )}
             <div className="hidden md:flex space-x-2">
