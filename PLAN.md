@@ -7,7 +7,7 @@ Transform the current demo into a **multi-tenant SaaS platform** where restauran
 - Manage their menu, orders, and settings independently
 - Get dedicated phone numbers for customer calls
 - Access analytics and insights
-- Pay via subscription model
+- Pay-as-you-go with wallet/credit system (top-up model)
 
 ---
 
@@ -27,8 +27,7 @@ CREATE TABLE tenants (
   name VARCHAR(255) NOT NULL,
   slug VARCHAR(100) UNIQUE NOT NULL,
   phone_number VARCHAR(20),
-  subscription_tier VARCHAR(50) DEFAULT 'starter',
-  subscription_status VARCHAR(50) DEFAULT 'active',
+  wallet_balance DECIMAL(10,2) DEFAULT 0.00,
   stripe_customer_id VARCHAR(100),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
@@ -89,16 +88,16 @@ CREATE TABLE call_logs (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Subscriptions
-CREATE TABLE subscriptions (
+-- Wallet Transactions (for tracking top-ups and usage)
+CREATE TABLE wallet_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-  stripe_subscription_id VARCHAR(100) UNIQUE,
-  plan_name VARCHAR(50),
-  status VARCHAR(50),
-  current_period_start TIMESTAMP,
-  current_period_end TIMESTAMP,
-  cancel_at TIMESTAMP,
+  type VARCHAR(50) NOT NULL, -- 'top_up', 'call_charge', 'refund'
+  amount DECIMAL(10,2) NOT NULL,
+  balance_after DECIMAL(10,2) NOT NULL,
+  description TEXT,
+  stripe_payment_intent_id VARCHAR(100),
+  metadata JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -802,88 +801,43 @@ await prisma.callLog.create({
 
 ---
 
-## 📋 Phase 6: Billing & Subscriptions (Weeks 11-12)
+## 📋 Phase 6: Wallet & Pay-As-You-Go System (Weeks 11-12)
 
 ### 6.1 Pricing Strategy
 
+**Pay-as-you-go model with prepaid wallet credits:**
+
 ```typescript
-const pricingPlans = {
-  trial: {
-    name: 'Free Trial',
-    duration: 14, // days
-    price: 0,
-    limits: {
-      calls: 50,
-      phoneNumbers: 1,
-      users: 2
-    }
+const pricing = {
+  // Per-call pricing (deducted from wallet)
+  callCosts: {
+    // Based on OpenAI Realtime API pricing
+    inputTextToken: 0.000004,      // $4 per 1M tokens (uncached)
+    cachedTextToken: 0.0000004,    // $0.40 per 1M tokens (cached)
+    inputAudioToken: 0.000032,     // $32 per 1M tokens (uncached)
+    cachedAudioToken: 0.0000004,   // $0.40 per 1M tokens (cached)
+    outputTextToken: 0.000016,     // $16 per 1M tokens
+    outputAudioToken: 0.000064,    // $64 per 1M tokens
   },
-  starter: {
-    name: 'Starter',
-    price: 49,
-    period: 'month',
-    limits: {
-      calls: 100,
-      phoneNumbers: 1,
-      users: 3,
-      features: ['basic_analytics', 'email_support']
-    }
-  },
-  professional: {
-    name: 'Professional',
-    price: 149,
-    period: 'month',
-    limits: {
-      calls: 500,
-      phoneNumbers: 3,
-      users: 10,
-      features: [
-        'advanced_analytics',
-        'priority_support',
-        'custom_ai_prompts',
-        'api_access'
-      ]
-    }
-  },
-  enterprise: {
-    name: 'Enterprise',
-    price: 'custom',
-    limits: {
-      calls: -1, // unlimited
-      phoneNumbers: -1,
-      users: -1,
-      features: [
-        'all_features',
-        'white_label',
-        'dedicated_support',
-        'sla',
-        'custom_integrations'
-      ]
-    }
-  }
+
+  // Twilio costs
+  twilioPerMinute: 0.02,          // $0.02 per minute
+  twilioPerMonth: 1.00,           // $1/month per phone number
+
+  // Minimum top-up amounts
+  minTopUp: 10.00,                // $10 minimum
+  suggestedTopUps: [10, 25, 50, 100, 250, 500],
+
+  // New user bonus
+  signupBonus: 5.00,              // $5 free credits for new users
 };
 ```
 
-### 6.2 Stripe Integration
+### 6.2 Stripe Integration for Wallet Top-ups
 
 **Setup:**
 ```bash
 npm install stripe
-```
-
-**Create Products in Stripe Dashboard:**
-```
-Product: AI Ordering - Starter
-- Price: $49/month
-- ID: price_starter
-
-Product: AI Ordering - Professional
-- Price: $149/month
-- ID: price_professional
-
-Product: Call Usage (metered)
-- Price: $1 per call (over limit)
-- ID: price_call_usage
 ```
 
 **Implementation:**
@@ -895,66 +849,203 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16'
 });
 
-export async function createSubscription(
+// Create a one-time payment for wallet top-up
+export async function createTopUpPayment(
   tenantId: string,
-  priceId: string
+  amount: number // in dollars
 ) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId }
   });
 
-  const subscription = await stripe.subscriptions.create({
-    customer: tenant.stripeCustomerId!,
-    items: [
-      { price: priceId }, // Monthly plan
-      { price: 'price_call_usage' } // Usage-based
-    ],
-    payment_behavior: 'default_incomplete',
-    expand: ['latest_invoice.payment_intent'],
-    metadata: { tenantId }
-  });
+  // Create or get Stripe customer
+  let customerId = tenant.stripeCustomerId;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: tenant.email,
+      name: tenant.name,
+      metadata: { tenantId }
+    });
+    customerId = customer.id;
 
-  await prisma.subscription.create({
-    data: {
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { stripeCustomerId: customerId }
+    });
+  }
+
+  // Create payment intent
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: Math.round(amount * 100), // Convert to cents
+    currency: 'usd',
+    customer: customerId,
+    description: `Wallet top-up for ${tenant.name}`,
+    metadata: {
       tenantId,
-      stripeSubscriptionId: subscription.id,
-      planName: 'starter', // or 'professional'
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+      type: 'wallet_top_up'
     }
   });
 
-  return subscription;
+  return paymentIntent;
 }
 
-// Track usage
-export async function reportUsage(tenantId: string, callCount: number) {
-  const subscription = await prisma.subscription.findFirst({
-    where: { tenantId, status: 'active' }
+// Process successful payment and add credits to wallet
+export async function processTopUp(
+  tenantId: string,
+  amount: number,
+  paymentIntentId: string
+) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId }
   });
 
-  if (!subscription) return;
+  const newBalance = (tenant.walletBalance || 0) + amount;
 
-  const stripeSubscription = await stripe.subscriptions.retrieve(
-    subscription.stripeSubscriptionId
-  );
+  // Update wallet balance
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: { walletBalance: newBalance }
+  });
 
-  // Find the metered item
-  const meteredItem = stripeSubscription.items.data.find(
-    item => item.price.id === 'price_call_usage'
-  );
+  // Record transaction
+  await prisma.walletTransaction.create({
+    data: {
+      tenantId,
+      type: 'top_up',
+      amount,
+      balanceAfter: newBalance,
+      description: `Wallet top-up via Stripe`,
+      stripePaymentIntentId: paymentIntentId
+    }
+  });
 
-  if (meteredItem) {
-    await stripe.subscriptionItems.createUsageRecord(
-      meteredItem.id,
-      {
-        quantity: callCount,
-        timestamp: Math.floor(Date.now() / 1000),
-        action: 'increment'
-      }
-    );
+  return newBalance;
+}
+
+// Deduct cost from wallet after each call
+export async function deductCallCost(
+  tenantId: string,
+  callCost: number,
+  callId: string
+) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId }
+  });
+
+  if (tenant.walletBalance < callCost) {
+    throw new Error('Insufficient wallet balance');
   }
+
+  const newBalance = tenant.walletBalance - callCost;
+
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: { walletBalance: newBalance }
+  });
+
+  await prisma.walletTransaction.create({
+    data: {
+      tenantId,
+      type: 'call_charge',
+      amount: -callCost,
+      balanceAfter: newBalance,
+      description: `AI call cost`,
+      metadata: { callId }
+    }
+  });
+
+  return newBalance;
+}
+```
+
+### 6.3 Wallet UI Components
+
+**Wallet Dashboard Page:**
+```typescript
+// app/wallet/page.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+export default function WalletPage() {
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [topUpAmount, setTopUpAmount] = useState(25);
+
+  const suggestedAmounts = [10, 25, 50, 100, 250, 500];
+
+  async function handleTopUp(amount: number) {
+    const response = await fetch('/api/wallet/top-up', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount })
+    });
+
+    const { clientSecret } = await response.json();
+
+    // Redirect to Stripe Checkout or use Stripe Elements
+    // Implementation with Stripe checkout UI
+  }
+
+  return (
+    <div className="p-8">
+      {/* Wallet Balance Card */}
+      <div className="bg-gradient-to-r from-green-500 to-teal-600 rounded-xl p-8 text-white mb-8">
+        <h2 className="text-lg opacity-90">Wallet Balance</h2>
+        <div className="text-5xl font-bold mt-2">${balance.toFixed(2)}</div>
+        <p className="mt-4 opacity-80">
+          Credits are used for AI call processing and phone services
+        </p>
+      </div>
+
+      {/* Top-up Section */}
+      <div className="bg-white rounded-xl shadow p-6 mb-8">
+        <h3 className="text-xl font-bold mb-4">Add Credits</h3>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {suggestedAmounts.map(amount => (
+            <button
+              key={amount}
+              onClick={() => setTopUpAmount(amount)}
+              className={`p-4 rounded-lg border-2 transition ${
+                topUpAmount === amount
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-200 hover:border-green-300'
+              }`}
+            >
+              <div className="text-2xl font-bold">${amount}</div>
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => handleTopUp(topUpAmount)}
+          className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600"
+        >
+          Add ${topUpAmount} to Wallet
+        </button>
+      </div>
+
+      {/* Transaction History */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <h3 className="text-xl font-bold mb-4">Transaction History</h3>
+
+        <div className="space-y-3">
+          {transactions.map((tx: any) => (
+            <div key={tx.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+              <div>
+                <div className="font-medium">{tx.description}</div>
+                <div className="text-sm text-gray-500">{new Date(tx.createdAt).toLocaleString()}</div>
+              </div>
+              <div className={`font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 ```
 
