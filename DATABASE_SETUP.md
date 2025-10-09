@@ -121,9 +121,18 @@ CREATE TABLE tenants (
   slug VARCHAR(100) UNIQUE NOT NULL,
   phone_number VARCHAR(20),
   address TEXT,
+
+  -- Wallet & Billing
   wallet_balance DECIMAL(10,2) DEFAULT 0.00,
   stripe_customer_id VARCHAR(100),
-  status VARCHAR(50) DEFAULT 'active', -- 'active', 'suspended', 'trial'
+
+  -- Twilio Phone Number (for receiving calls)
+  twilio_phone_number VARCHAR(20) UNIQUE,
+
+  -- Restaurant Status
+  status VARCHAR(50) DEFAULT 'active', -- 'active', 'suspended', 'trial', 'cancelled'
+  is_open BOOLEAN DEFAULT true, -- Real-time open/closed status
+
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   settings JSONB
@@ -202,8 +211,19 @@ CREATE TABLE call_logs (
   call_sid VARCHAR(100),
   from_number VARCHAR(20),
   duration INTEGER, -- in seconds
+
+  -- Token usage breakdown (for accurate metering)
+  cached_text_input_tokens INTEGER DEFAULT 0,
+  uncached_text_input_tokens INTEGER DEFAULT 0,
+  cached_audio_input_tokens INTEGER DEFAULT 0,
+  uncached_audio_input_tokens INTEGER DEFAULT 0,
+  text_output_tokens INTEGER DEFAULT 0,
+  audio_output_tokens INTEGER DEFAULT 0,
+  total_tokens INTEGER DEFAULT 0,
+
+  -- Cost calculation
   cost DECIMAL(10,4),
-  tokens_used INTEGER,
+
   recording_url TEXT,
   transcript TEXT,
   created_at TIMESTAMP DEFAULT NOW()

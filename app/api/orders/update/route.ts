@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
-
-const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
 
 export async function POST(request: Request) {
   try {
     const updatedOrders = await request.json();
-    await fs.writeFile(ORDERS_FILE, JSON.stringify(updatedOrders, null, 2), 'utf-8');
+
+    // Update each order in the database
+    for (const order of updatedOrders) {
+      await prisma.orders.update({
+        where: { id: order.id },
+        data: {
+          status: order.status,
+          customer_name: order.customerName,
+          customer_phone: order.phoneNumber || order.customerPhone,
+          items: order.items,
+          total_amount: order.total || order.totalAmount,
+          pickup_time: order.pickupTime,
+          notes: order.notes
+        }
+      });
+    }
+
     console.log('✅ Orders updated');
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import WebSocket from 'ws';
+import { prisma } from '@/lib/prisma';
 
 // Force Node.js runtime (required for WebSocket)
 export const runtime = 'nodejs';
-
-const MENU_FILE = path.join(process.cwd(), 'menu.json');
-const ORDERS_FILE = path.join(process.cwd(), 'orders.json');
-const STATUS_FILE = path.join(process.cwd(), 'restaurant-status.json');
 
 export async function POST(request: Request) {
   // Log immediately when endpoint is hit
@@ -39,20 +34,19 @@ export async function POST(request: Request) {
     }
 
     try {
-      // Check restaurant status before accepting call
-      let isOpen = true;
-      try {
-        const statusData = await fs.readFile(STATUS_FILE, 'utf-8');
-        const status = JSON.parse(statusData);
-        isOpen = status.isOpen;
-        console.log('🏪 Restaurant status:', isOpen ? 'OPEN' : 'CLOSED');
-      } catch (err: any) {
-        if (err.code === 'ENOENT') {
-          console.log('⚠️  Status file not found, defaulting to OPEN');
-        } else {
-          console.error('⚠️  Error reading status file, defaulting to OPEN:', err);
-        }
+      // Get the first tenant (for now, single-tenant mode)
+      // TODO: In multi-tenant mode, extract phone number from SIP headers and query by twilio_phone_number
+      const tenant = await prisma.tenants.findFirst({
+        where: { status: 'active' }
+      });
+
+      if (!tenant) {
+        console.log('❌ No active tenant found');
+        return NextResponse.json({ error: 'No active restaurant' }, { status: 404 });
       }
+
+      const isOpen = tenant.is_open ?? true;
+      console.log('🏪 Restaurant status:', isOpen ? 'OPEN' : 'CLOSED');
 
       // If restaurant is closed, reject the call after 8 seconds
       if (!isOpen) {
@@ -79,14 +73,32 @@ export async function POST(request: Request) {
 
       console.log('🟢 RESTAURANT OPEN - Accepting call');
 
-      // Load menu for AI context
-      const menuData = await fs.readFile(MENU_FILE, 'utf-8');
-      const menu = JSON.parse(menuData);
+      // Load menu from database
+      const menuItems = await prisma.menu_items.findMany({
+        where: {
+          tenant_id: tenant.id,
+          available: true
+        },
+        orderBy: { category: 'asc' }
+      });
 
-      const menuContext = `You are a professional phone order-taking agent for ${menu.restaurant.name}.
+      // Group menu items by category
+      const menuByCategory = menuItems.reduce((acc: any, item) => {
+        if (!acc[item.category]) {
+          acc[item.category] = [];
+        }
+        acc[item.category].push({
+          name: item.name,
+          price: item.price,
+          description: item.description
+        });
+        return acc;
+      }, {});
+
+      const menuContext = `You are a professional phone order-taking agent for ${tenant.name}.
 
 IMPORTANT INSTRUCTIONS:
-- Start the conversation immediately by greeting the customer: "Thank you for calling ${menu.restaurant.name}! How can I help you today?"
+- Start the conversation immediately by greeting the customer: "Thank you for calling ${tenant.name}! How can I help you today?"
 - Keep responses SHORT and CLEAR - use simple sentences
 - Listen carefully to their order
 - When the customer finishes telling you what they want, confirm it: "Got it, [item name]" and then ask "Anything else?"
@@ -111,9 +123,9 @@ RESPONSE STYLE:
 - Please say quickly
 
 MENU ITEMS:
-${menu.categories.map((cat: any) =>
-  `${cat.name}:\n${cat.items.map((item: any) =>
-    `- ${item.name}: $${item.price}${item.sizes ? ` (Sizes: ${item.sizes.join(', ')})` : ''}`
+${Object.entries(menuByCategory).map(([categoryName, items]: [string, any]) =>
+  `${categoryName}:\n${items.map((item: any) =>
+    `- ${item.name}: $${Number(item.price).toFixed(2)}`
   ).join('\n')}`
 ).join('\n\n')}
 
@@ -285,26 +297,20 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               console.log(`🔧 Function call: ${functionName}`, args);
 
               if (functionName === 'save_order') {
-                // Save order to file
+                // Save order to database
                 try {
-                  let orders = [];
-                  try {
-                    const ordersData = await fs.readFile(ORDERS_FILE, 'utf-8');
-                    orders = JSON.parse(ordersData);
-                  } catch (err: any) {
-                    if (err.code !== 'ENOENT') throw err;
-                  }
-
-                  const newOrder = {
-                    ...args,
-                    phoneNumber: phoneNumber,
-                    source: 'phone',
-                    timestamp: new Date().toISOString(),
-                    id: `phone-order-${Date.now()}`
-                  };
-
-                  orders.push(newOrder);
-                  await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+                  const newOrder = await prisma.orders.create({
+                    data: {
+                      tenant_id: tenant.id,
+                      customer_name: args.customerName,
+                      customer_phone: phoneNumber,
+                      items: args.items, // JSONB field
+                      total_amount: args.total,
+                      status: 'undealt',
+                      source: 'phone',
+                      pickup_time: args.pickupTime
+                    }
+                  });
 
                   console.log('✅ Phone order saved:', newOrder.id);
 
@@ -396,10 +402,10 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             console.log('ℹ️  Call will continue without WebSocket monitoring');
           });
 
-          ws.on('close', () => {
+          ws.on('close', async () => {
             console.log('🔌 WebSocket closed for call:', call_id);
 
-            // Print final accumulated call statistics
+            // Print final accumulated call statistics and save to database
             if (callStats.responseCount > 0) {
               // Calculate costs for gpt-realtime pricing
               const inputTextCost = (callStats.uncachedTextTokens * 4.00 / 1000000) + (callStats.cachedTextTokens * 0.40 / 1000000);
@@ -426,6 +432,28 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               console.log('   💰 GRAND TOTAL TOKENS:', callStats.totalTokens);
               console.log('   💵 TOTAL COST: $' + totalCost.toFixed(6), `(≈ $${totalCost.toFixed(4)})`);
               console.log('='.repeat(60) + '\n');
+
+              // Save call log to database
+              try {
+                await prisma.call_logs.create({
+                  data: {
+                    tenant_id: tenant.id,
+                    call_sid: call_id,
+                    from_number: phoneNumber,
+                    cached_text_input_tokens: callStats.cachedTextTokens,
+                    uncached_text_input_tokens: callStats.uncachedTextTokens,
+                    cached_audio_input_tokens: callStats.cachedAudioTokens,
+                    uncached_audio_input_tokens: callStats.uncachedAudioTokens,
+                    text_output_tokens: callStats.outputTextTokens,
+                    audio_output_tokens: callStats.outputAudioTokens,
+                    total_tokens: callStats.totalTokens,
+                    cost: totalCost
+                  }
+                });
+                console.log('✅ Call log saved to database');
+              } catch (error) {
+                console.error('❌ Error saving call log:', error);
+              }
             }
           });
         } catch (wsError: any) {
