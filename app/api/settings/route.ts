@@ -4,6 +4,39 @@ import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
+// Get restaurant settings
+export async function GET() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's tenant
+    const user = await prisma.users.findUnique({
+      where: { clerk_user_id: userId },
+      include: { tenants: true }
+    });
+
+    if (!user?.tenants) {
+      return NextResponse.json({ error: 'No tenant found' }, { status: 404 });
+    }
+
+    const tenant = user.tenants;
+
+    return NextResponse.json({
+      id: tenant.id,
+      name: tenant.name,
+      phone: tenant.phone_number || '',
+      address: tenant.address || '',
+    });
+  } catch (error) {
+    console.error('Settings fetch error:', error);
+    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
+  }
+}
+
 // Update restaurant settings
 export async function POST(request: Request) {
   try {

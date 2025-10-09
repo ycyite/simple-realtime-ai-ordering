@@ -36,16 +36,16 @@ function SettingsContent() {
     }
   }, []);
 
-  // Load restaurant data from menu API on mount
+  // Load restaurant data from settings API on mount
   useEffect(() => {
-    fetch('/api/menu')
+    fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         const restaurantSettings: RestaurantSettings = {
-          id: '1',
-          name: data.restaurant?.name || '',
-          phone: data.restaurant?.phone || '',
-          address: data.restaurant?.location || '',
+          id: data.id || '1',
+          name: data.name || '',
+          phone: data.phone || '',
+          address: data.address || '',
         };
         setSettings(restaurantSettings);
         setFormData(restaurantSettings);
