@@ -11,7 +11,7 @@ export default function Home() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.push('/orders');
+        router.push('/restaurants');
       } else {
         router.push('/signin');
       }
