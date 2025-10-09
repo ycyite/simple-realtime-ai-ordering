@@ -16,21 +16,25 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
-    // Check if user already has a tenant set up
-    const checkTenant = async () => {
+    // Check if user has completed onboarding
+    const checkOnboarding = async () => {
       try {
-        const response = await fetch('/api/restaurant-status');
+        const response = await fetch('/api/onboarding/status');
         if (response.ok) {
-          // User already has a tenant, redirect to orders
-          router.push('/orders');
+          const data = await response.json();
+          if (data.completed) {
+            // User has completed onboarding, redirect to orders
+            router.push('/orders');
+          }
+          // If not completed, stay on onboarding page
         }
       } catch (err) {
-        // User doesn't have tenant yet, stay on onboarding
+        // Error checking status, stay on onboarding
       }
     };
 
     if (userId) {
-      checkTenant();
+      checkOnboarding();
     }
   }, [userId, router]);
 

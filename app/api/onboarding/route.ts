@@ -26,13 +26,14 @@ export async function POST(request: Request) {
     });
 
     if (existingUser?.tenants) {
-      // Update existing tenant
+      // Update existing tenant and mark onboarding as completed
       await prisma.tenants.update({
         where: { id: existingUser.tenant_id! },
         data: {
           name: restaurantName,
           phone_number: phoneNumber || null,
           address: address || null,
+          settings: { onboarding_completed: true },
           updated_at: new Date()
         }
       });
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
       counter++;
     }
 
-    // Create tenant
+    // Create tenant with onboarding completed flag
     const tenant = await prisma.tenants.create({
       data: {
         name: restaurantName,
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
         wallet_balance: 10.00, // $10 starting credit
         status: 'active',
         is_open: true,
+        settings: { onboarding_completed: true },
       },
     });
 
