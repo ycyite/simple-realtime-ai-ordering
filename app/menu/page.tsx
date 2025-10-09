@@ -17,6 +17,15 @@ function MenuContent() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [restaurantName, setRestaurantName] = useState('');
 
+  // Check if user has selected a restaurant, if not redirect to restaurants page
+  useEffect(() => {
+    const restaurantId = localStorage.getItem('activeRestaurantId');
+    if (!restaurantId) {
+      window.location.href = '/restaurants';
+      return;
+    }
+  }, []);
+
   // Load menu data from API on mount
   useEffect(() => {
     fetch('/api/menu')

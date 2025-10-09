@@ -18,6 +18,15 @@ export default function OrdersPage() {
 function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
 
+  // Check if user has selected a restaurant, if not redirect to restaurants page
+  useEffect(() => {
+    const restaurantId = localStorage.getItem('activeRestaurantId');
+    if (!restaurantId) {
+      window.location.href = '/restaurants';
+      return;
+    }
+  }, []);
+
   // Load orders from API on mount
   useEffect(() => {
     fetch('/api/orders')

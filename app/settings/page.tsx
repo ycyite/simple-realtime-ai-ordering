@@ -29,6 +29,15 @@ function SettingsContent() {
   const [isOpen, setIsOpen] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  // Check if user has selected a restaurant, if not redirect to restaurants page
+  useEffect(() => {
+    const restaurantId = localStorage.getItem('activeRestaurantId');
+    if (!restaurantId) {
+      window.location.href = '/restaurants';
+      return;
+    }
+  }, []);
+
   // Load restaurant data from menu API on mount
   useEffect(() => {
     fetch('/api/menu')
