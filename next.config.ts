@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/orders',
     NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/orders',
   },
+  serverExternalPackages: ['@prisma/client', 'prisma'],
 };
 
 export default nextConfig;
