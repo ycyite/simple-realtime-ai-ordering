@@ -114,10 +114,10 @@ function StaffContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen p-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
-            <div className="text-gray-500">Loading staff members...</div>
+            <div className="text-white">Loading staff members...</div>
           </div>
         </div>
       </div>
@@ -125,12 +125,12 @@ function StaffContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Staff Management</h1>
+          <h1 className="text-3xl font-bold text-white">Staff Management</h1>
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-white">
               {staff.length} team {staff.length === 1 ? 'member' : 'members'}
             </div>
             <button
