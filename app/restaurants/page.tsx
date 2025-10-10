@@ -47,9 +47,10 @@ export default function RestaurantsPage() {
     }
   };
 
-  const selectRestaurant = (restaurantId: string) => {
-    // Save selected restaurant to session/localStorage
+  const selectRestaurant = (restaurantId: string, role: string) => {
+    // Save selected restaurant and role to session/localStorage
     localStorage.setItem('activeRestaurantId', restaurantId);
+    localStorage.setItem('activeRestaurantRole', role);
     router.push('/orders');
   };
 
@@ -131,7 +132,7 @@ export default function RestaurantsPage() {
             {restaurants.map((restaurant) => (
               <div
                 key={restaurant.id}
-                onClick={() => selectRestaurant(restaurant.id)}
+                onClick={() => selectRestaurant(restaurant.id, restaurant.role)}
                 className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-transparent hover:border-orange-500"
               >
                 <div className="flex justify-between items-start mb-4">

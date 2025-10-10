@@ -10,11 +10,16 @@ export default function Navigation() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [hasActiveRestaurant, setHasActiveRestaurant] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if there's an active restaurant in localStorage
     const restaurantId = localStorage.getItem('activeRestaurantId');
     setHasActiveRestaurant(!!restaurantId);
+
+    // Get user role from localStorage (set when selecting restaurant)
+    const role = localStorage.getItem('activeRestaurantRole');
+    setUserRole(role);
   }, [pathname]); // Re-check on route change
 
   const handleLogout = () => {
@@ -24,12 +29,14 @@ export default function Navigation() {
 
   const switchRestaurant = () => {
     localStorage.removeItem('activeRestaurantId');
+    localStorage.removeItem('activeRestaurantRole');
     router.push('/restaurants');
   };
 
   const links = [
     { href: '/orders', label: 'Orders' },
     { href: '/menu', label: 'Menu' },
+    ...(userRole === 'owner' ? [{ href: '/staff', label: 'Staff' }] : []),
     { href: '/settings', label: 'Settings' },
   ];
 
