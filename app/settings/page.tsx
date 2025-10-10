@@ -27,6 +27,7 @@ function SettingsContent() {
   const [formData, setFormData] = useState<RestaurantSettings>(settings);
   const [isOpen, setIsOpen] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Check if user has selected a restaurant, if not redirect to restaurants page
   useEffect(() => {
@@ -35,6 +36,10 @@ function SettingsContent() {
       window.location.href = '/restaurants';
       return;
     }
+
+    // Get user role from localStorage
+    const role = localStorage.getItem('activeRestaurantRole');
+    setUserRole(role);
   }, []);
 
   // Load restaurant data from settings API on mount
@@ -166,6 +171,9 @@ function SettingsContent() {
           </div>
         </div>
 
+        {/* Only show settings section for owners */}
+        {userRole === 'owner' && (
+          <>
         <div className="glass-card p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
             <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3" style={{ color: '#F2E4D6' }}>
@@ -306,6 +314,8 @@ function SettingsContent() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

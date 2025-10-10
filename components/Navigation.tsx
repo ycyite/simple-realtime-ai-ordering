@@ -43,12 +43,24 @@ export default function Navigation() {
     router.push('/restaurants');
   };
 
-  const links = [
-    { href: '/orders', label: 'Orders' },
-    { href: '/menu', label: 'Menu' },
-    ...(userRole === 'owner' ? [{ href: '/staff', label: 'Staff' }] : []),
-    { href: '/settings', label: 'Settings' },
-  ];
+  // Define links based on user role
+  const links = [];
+
+  // Everyone can see Orders
+  links.push({ href: '/orders', label: 'Orders' });
+
+  // Managers and Owners can see Menu
+  if (userRole === 'manager' || userRole === 'owner') {
+    links.push({ href: '/menu', label: 'Menu' });
+  }
+
+  // Managers and Owners can see Staff
+  if (userRole === 'manager' || userRole === 'owner') {
+    links.push({ href: '/staff', label: 'Staff' });
+  }
+
+  // Everyone can see Settings (but managers will have limited access)
+  links.push({ href: '/settings', label: 'Settings' });
 
   return (
     <nav className="glass border-b border-opacity-20 shadow-lg" style={{ borderColor: '#F2E4D6' }}>
