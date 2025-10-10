@@ -39,6 +39,9 @@ export async function POST(request: Request) {
     }
 
     const tenant = invite.tenants;
+    if (!tenant) {
+      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+    }
 
     const email = user.emailAddresses[0]?.emailAddress || '';
     const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || email.split('@')[0];
