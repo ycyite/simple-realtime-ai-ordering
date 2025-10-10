@@ -19,19 +19,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invite code is required' }, { status: 400 });
     }
 
-    // Find tenant with this invite code
-    const tenant = await prisma.tenants.findFirst({
+    // Find valid invite code (unused and not expired)
+    const invite = await prisma.invite_codes.findFirst({
       where: {
-        settings: {
-          path: ['invite_code'],
-          equals: inviteCode
-        }
+        code: inviteCode,
+        is_used: false,
+        OR: [
+          { expires_at: null },
+          { expires_at: { gt: new Date() } }
+        ]
+      },
+      include: {
+        tenants: true
       }
     });
 
-    if (!tenant) {
-      return NextResponse.json({ error: 'Invalid invite code' }, { status: 404 });
+    if (!invite) {
+      return NextResponse.json({ error: 'Invalid or expired invite code' }, { status: 404 });
     }
+
+    const tenant = invite.tenants;
 
     const email = user.emailAddresses[0]?.emailAddress || '';
     const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || email.split('@')[0];
@@ -69,7 +76,17 @@ export async function POST(request: Request) {
       data: {
         user_id: dbUser.id,
         tenant_id: tenant.id,
-        role: 'staff' // Default role when joining
+        role: invite.role || 'staff' // Use role from invite code
+      }
+    });
+
+    // Mark invite code as used
+    await prisma.invite_codes.update({
+      where: { id: invite.id },
+      data: {
+        is_used: true,
+        used_by_user_id: dbUser.id,
+        used_at: new Date()
       }
     });
 
@@ -81,7 +98,7 @@ export async function POST(request: Request) {
         id: tenant.id,
         name: tenant.name,
         slug: tenant.slug,
-        role: 'staff'
+        role: invite.role || 'staff'
       }
     });
   } catch (error) {

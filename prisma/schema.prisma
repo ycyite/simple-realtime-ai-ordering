@@ -93,26 +93,26 @@ model tenants {
   updated_at          DateTime?             @default(now()) @db.Timestamp(6)
   settings            Json?
   call_logs           call_logs[]
+  invite_codes        invite_codes[]
   menu_items          menu_items[]
   orders              orders[]
   user_tenants        user_tenants[]
   users_last_active   users[]               @relation("LastActiveTenant")
   wallet_transactions wallet_transactions[]
-  invite_codes        invite_codes[]
 }
 
 model users {
-  id                   String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clerk_user_id        String         @unique @db.VarChar(255)
-  email                String         @db.VarChar(255)
-  name                 String         @db.VarChar(255)
-  created_at           DateTime?      @default(now()) @db.Timestamp(6)
-  last_login           DateTime?      @db.Timestamp(6)
-  last_active_tenant_id String?       @db.Uuid
-  user_tenants         user_tenants[]
-  created_invites     invite_codes[]    @relation("CreatedInvites")
-  used_invites        invite_codes[]    @relation("UsedInvites")
-  last_active_tenant   tenants?       @relation("LastActiveTenant", fields: [last_active_tenant_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  id                    String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clerk_user_id         String         @unique @db.VarChar(255)
+  email                 String         @db.VarChar(255)
+  name                  String         @db.VarChar(255)
+  created_at            DateTime?      @default(now()) @db.Timestamp(6)
+  last_login            DateTime?      @db.Timestamp(6)
+  last_active_tenant_id String?        @db.Uuid
+  created_invites       invite_codes[] @relation("CreatedInvites")
+  used_invites          invite_codes[] @relation("UsedInvites")
+  user_tenants          user_tenants[]
+  last_active_tenant    tenants?       @relation("LastActiveTenant", fields: [last_active_tenant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([clerk_user_id], map: "idx_users_clerk_id")
 }
@@ -134,12 +134,12 @@ model wallet_transactions {
 
 model user_tenants {
   id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id    String    @db.Uuid
-  tenant_id  String    @db.Uuid
+  user_id    String?   @db.Uuid
+  tenant_id  String?   @db.Uuid
   role       String?   @default("staff") @db.VarChar(50)
   created_at DateTime? @default(now()) @db.Timestamp(6)
-  tenants    tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants    tenants?  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, tenant_id])
   @@index([tenant_id], map: "idx_user_tenants_tenant_id")
@@ -148,7 +148,7 @@ model user_tenants {
 
 model invite_codes {
   id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  tenant_id          String    @db.Uuid
+  tenant_id          String?   @db.Uuid
   code               String    @unique @db.VarChar(20)
   role               String?   @default("staff") @db.VarChar(50)
   created_by_user_id String?   @db.Uuid
@@ -157,9 +157,9 @@ model invite_codes {
   used_at            DateTime? @db.Timestamp(6)
   expires_at         DateTime? @db.Timestamp(6)
   created_at         DateTime? @default(now()) @db.Timestamp(6)
-  tenants            tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  created_by         users?    @relation("CreatedInvites", fields: [created_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  used_by            users?    @relation("UsedInvites", fields: [used_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  created_by         users?    @relation("CreatedInvites", fields: [created_by_user_id], references: [id], onUpdate: NoAction)
+  tenants            tenants?  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  used_by            users?    @relation("UsedInvites", fields: [used_by_user_id], references: [id], onUpdate: NoAction)
 
   @@index([tenant_id], map: "idx_invite_codes_tenant_id")
   @@index([code], map: "idx_invite_codes_code")
