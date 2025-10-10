@@ -101,25 +101,32 @@ export async function POST(request: Request) {
       where: { clerk_user_id: userId }
     });
 
-    if (existingUser) {
-      // Update user to link to new tenant (for now, old schema)
-      await prisma.users.update({
-        where: { id: existingUser.id },
+    if (!existingUser) {
+      // Create user if doesn't exist
+      const newUser = await prisma.users.create({
         data: {
+          clerk_user_id: userId,
+          email,
+          name,
+        },
+      });
+
+      // Create user_tenant relationship
+      await prisma.user_tenants.create({
+        data: {
+          user_id: newUser.id,
           tenant_id: tenant.id,
           role: 'owner'
         }
       });
     } else {
-      // Create user
-      await prisma.users.create({
+      // User exists, just create the relationship
+      await prisma.user_tenants.create({
         data: {
+          user_id: existingUser.id,
           tenant_id: tenant.id,
-          clerk_user_id: userId,
-          email,
-          name,
-          role: 'owner',
-        },
+          role: 'owner'
+        }
       });
     }
 
