@@ -259,4 +259,3 @@ function InviteCodesContent() {
     </div>
   );
 }
-}
