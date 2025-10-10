@@ -89,49 +89,49 @@ export default function Navigation() {
   links.push({ href: '/settings', label: 'Settings', icon: '⚙️' });
 
   return (
-    <nav className="glass border-b border-opacity-20 shadow-lg" style={{ borderColor: '#F2E4D6' }}>
+    <nav className="glass border-b border-opacity-20 shadow-lg relative" style={{ borderColor: '#F2E4D6', zIndex: 100 }}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
-        <div className="flex justify-between items-center h-14 sm:h-16">
-          {/* Left: Logo */}
-          <div className="flex items-center">
+        <div className="flex justify-between items-center h-16">
+          {/* Left: Logo + Desktop Navigation */}
+          <div className="flex items-center space-x-4 sm:space-x-6">
             <h1 className="text-base sm:text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
               <img src="/icons/bell-light.png" alt="" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span className="hidden sm:inline">Counter Bell</span>
+              <span>Counter Bell</span>
             </h1>
-          </div>
 
-          {/* Center: Desktop Navigation */}
-          <div className="hidden md:flex space-x-2">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-out cursor-pointer"
-                style={{
-                  color: pathname === link.href ? '#FFB975' : '#F2E4D6',
-                  backgroundColor: pathname === link.href ? 'rgba(255, 185, 117, 0.25)' : 'transparent',
-                  fontSize: pathname === link.href ? '0.9375rem' : '0.875rem',
-                }}
-                onMouseEnter={(e) => {
-                  if (pathname !== link.href) {
-                    e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (pathname !== link.href) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  } else {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.25)';
-                  }
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {/* Desktop Navigation - Now on left side */}
+            <div className="hidden md:flex space-x-2">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-out cursor-pointer"
+                  style={{
+                    color: pathname === link.href ? '#FFB975' : '#F2E4D6',
+                    backgroundColor: pathname === link.href ? 'rgba(255, 185, 117, 0.25)' : 'transparent',
+                    fontSize: pathname === link.href ? '0.9375rem' : '0.875rem',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (pathname !== link.href) {
+                      e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (pathname !== link.href) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    } else {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.25)';
+                    }
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Right: User Info & Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Restaurant Dropdown - Desktop */}
             {hasActiveRestaurant && restaurantName && (
               <div className="hidden md:block relative" ref={restaurantMenuRef}>
@@ -165,11 +165,12 @@ export default function Navigation() {
 
                 {showRestaurantMenu && (
                   <div
-                    className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg shadow-xl z-50 overflow-hidden animate-fadeIn"
+                    className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg shadow-xl overflow-hidden animate-fadeIn"
                     style={{
                       backgroundColor: 'rgba(23, 77, 90, 0.98)',
                       border: '1px solid rgba(242, 228, 214, 0.2)',
-                      backdropFilter: 'blur(10px)'
+                      backdropFilter: 'blur(10px)',
+                      zIndex: 9999
                     }}
                   >
                     <button
@@ -245,11 +246,12 @@ export default function Navigation() {
               {/* Mobile Dropdown Menu */}
               {showMobileMenu && (
                 <div
-                  className="absolute top-full mt-2 right-0 w-64 rounded-lg shadow-xl z-50 overflow-hidden animate-fadeIn"
+                  className="absolute top-full mt-2 right-0 w-64 rounded-lg shadow-xl overflow-hidden animate-fadeIn"
                   style={{
                     backgroundColor: 'rgba(23, 77, 90, 0.98)',
                     border: '1px solid rgba(242, 228, 214, 0.2)',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    zIndex: 9999
                   }}
                 >
                   {/* Restaurant Name */}
