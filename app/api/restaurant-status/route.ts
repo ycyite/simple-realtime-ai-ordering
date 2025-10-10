@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenantId } from '@/lib/tenant-access';
 import { auth } from '@clerk/nextjs/server';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { userId } = await auth();
 

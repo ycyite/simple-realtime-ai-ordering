@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenantId } from '@/lib/tenant-access';
 import { auth } from '@clerk/nextjs/server';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { userId } = await auth();
 
@@ -12,19 +13,18 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
-      select: { tenant_id: true }
-    });
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
-    if (!user?.tenant_id) {
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
       return NextResponse.json({ categories: [] });
     }
 
     // Get menu items for this tenant
     const menuItems = await prisma.menu_items.findMany({
-      where: { tenant_id: user.tenant_id },
+      where: { tenant_id: access.tenantId },
       orderBy: [
         { category: 'asc' },
         { name: 'asc' }
@@ -68,27 +68,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
-      select: { tenant_id: true }
-    });
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
-    if (!user?.tenant_id) {
-      return NextResponse.json({ error: 'No tenant found' }, { status: 404 });
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
     const { categories } = await request.json();
 
     // Delete existing menu items for this tenant
     await prisma.menu_items.deleteMany({
-      where: { tenant_id: user.tenant_id }
+      where: { tenant_id: access.tenantId }
     });
 
     // Insert new menu items
     const menuItems = categories.flatMap((category: any) =>
       category.items.map((item: any) => ({
-        tenant_id: user.tenant_id,
+        tenant_id: access.tenantId,
         name: item.name,
         description: item.description || null,
         price: item.price,
