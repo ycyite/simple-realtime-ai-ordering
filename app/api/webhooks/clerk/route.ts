@@ -94,7 +94,7 @@ export async function POST(request: Request) {
           // If no other owners, delete the tenant (will cascade delete user_tenants)
           if (otherOwners === 0) {
             await prisma.tenants.delete({
-              where: { id: ut.tenant_id }
+              where: { id: ut.tenant_id as string }
             });
             console.log(`✅ Deleted tenant ${ut.tenant_id} (last owner removed)`);
           }

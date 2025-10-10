@@ -37,13 +37,15 @@ export async function GET(request: Request) {
       ]
     });
 
-    const formattedStaff = staffMembers.map(member => ({
-      id: member.users.id,
-      name: member.users.name,
-      email: member.users.email,
-      role: member.role || 'staff',
-      joinedAt: member.created_at?.toISOString() || new Date().toISOString()
-    }));
+    const formattedStaff = staffMembers
+      .filter(member => member.users !== null)
+      .map(member => ({
+        id: member.users!.id,
+        name: member.users!.name,
+        email: member.users!.email,
+        role: member.role || 'staff',
+        joinedAt: member.created_at?.toISOString() || new Date().toISOString()
+      }));
 
     return NextResponse.json(formattedStaff);
   } catch (error) {

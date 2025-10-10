@@ -24,16 +24,18 @@ export async function GET() {
     });
 
     // Map to restaurant array
-    const restaurants = userTenants.map(ut => ({
-      id: ut.tenants.id,
-      name: ut.tenants.name,
-      slug: ut.tenants.slug,
-      address: ut.tenants.address,
-      phone_number: ut.tenants.phone_number,
-      is_open: ut.tenants.is_open,
-      role: ut.role || 'staff',
-      wallet_balance: ut.tenants.wallet_balance
-    }));
+    const restaurants = userTenants
+      .filter(ut => ut.tenants !== null)
+      .map(ut => ({
+        id: ut.tenants!.id,
+        name: ut.tenants!.name,
+        slug: ut.tenants!.slug,
+        address: ut.tenants!.address,
+        phone_number: ut.tenants!.phone_number,
+        is_open: ut.tenants!.is_open,
+        role: ut.role || 'staff',
+        wallet_balance: ut.tenants!.wallet_balance
+      }));
 
     return NextResponse.json(restaurants);
   } catch (error) {

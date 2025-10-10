@@ -30,7 +30,7 @@ export async function getActiveTenantId(
   }
 
   return {
-    tenantId: userTenant.tenant_id,
+    tenantId: userTenant.tenant_id as string,
     role: userTenant.role || 'staff'
   };
 }
