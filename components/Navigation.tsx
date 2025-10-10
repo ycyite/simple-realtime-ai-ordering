@@ -132,35 +132,46 @@ export default function Navigation() {
 
           {/* Right: User Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Restaurant Dropdown - Desktop */}
-            {hasActiveRestaurant && restaurantName && (
+            {/* User Info with Restaurant - Desktop */}
+            {user && (
               <div className="hidden md:block relative" ref={restaurantMenuRef}>
                 <button
                   onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ease-out cursor-pointer hover:scale-105"
+                  className="text-right px-3 py-2 rounded-lg transition-all duration-200 ease-out cursor-pointer hover:scale-105"
                   style={{
-                    backgroundColor: 'rgba(255, 185, 117, 0.2)',
-                    color: '#FFB975',
-                    border: '1px solid rgba(255, 185, 117, 0.3)'
+                    backgroundColor: 'rgba(242, 228, 214, 0.1)',
+                    border: '1px solid rgba(242, 228, 214, 0.2)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.3)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.15)';
                     e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.3)';
                   }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.2)';
+                  }}
                 >
-                  <span>{restaurantName}</span>
-                  <svg
-                    className={`w-4 h-4 transition-transform duration-200 ${showRestaurantMenu ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold" style={{ color: '#F2E4D6' }}>
+                        {user.name}
+                      </p>
+                      {hasActiveRestaurant && restaurantName && (
+                        <p className="text-xs font-medium" style={{ color: '#FFB975' }}>
+                          {restaurantName}
+                        </p>
+                      )}
+                    </div>
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${showRestaurantMenu ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ color: '#F2E4D6' }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
 
                 {showRestaurantMenu && (
@@ -190,18 +201,6 @@ export default function Navigation() {
                     </button>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* User Info - Desktop */}
-            {user && (
-              <div className="text-right hidden md:block">
-                <p className="text-sm font-semibold" style={{ color: '#F2E4D6' }}>
-                  {user.name}
-                </p>
-                <p className="text-xs" style={{ color: '#FFB975' }}>
-                  {user.email || user.phone}
-                </p>
               </div>
             )}
 
