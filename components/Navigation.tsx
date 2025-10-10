@@ -9,8 +9,18 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [hasActiveRestaurant, setHasActiveRestaurant] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [hasActiveRestaurant, setHasActiveRestaurant] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('activeRestaurantId');
+    }
+    return false;
+  });
+  const [userRole, setUserRole] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('activeRestaurantRole');
+    }
+    return null;
+  });
 
   useEffect(() => {
     // Check if there's an active restaurant in localStorage
