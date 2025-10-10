@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     }
 
     // Get active restaurant ID from header
-    const activeRestaurantId = request.headers.get('x-restaurant-id');
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
     const access = await getActiveTenantId(userId, activeRestaurantId);
 
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     // Get active restaurant ID from header
-    const activeRestaurantId = request.headers.get('x-restaurant-id');
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
     const access = await getActiveTenantId(userId, activeRestaurantId);
 
@@ -103,7 +103,7 @@ export async function DELETE(request: Request) {
     }
 
     // Get active restaurant ID from header
-    const activeRestaurantId = request.headers.get('x-restaurant-id');
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
     const access = await getActiveTenantId(userId, activeRestaurantId);
 
