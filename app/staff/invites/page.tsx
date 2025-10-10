@@ -134,7 +134,18 @@ function InviteCodesContent() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out hover:scale-105 cursor-pointer"
+            style={{
+              backgroundColor: 'rgba(255, 185, 117, 0.9)',
+              color: '#174D5A',
+              border: '1px solid rgba(255, 185, 117, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.9)';
+            }}
           >
             + Create Invite Code
           </button>
@@ -174,7 +185,14 @@ function InviteCodesContent() {
                         <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{code.code}</code>
                         <button
                           onClick={() => copyToClipboard(code.code)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          className="px-2 py-1 text-xs font-semibold rounded transition-colors cursor-pointer"
+                          style={{ color: '#174D5A' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
                         >
                           Copy
                         </button>
@@ -195,7 +213,14 @@ function InviteCodesContent() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => deleteInviteCode(code.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="px-3 py-1.5 text-sm font-semibold rounded transition-colors cursor-pointer"
+                        style={{ color: '#EF4444' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                       >
                         Delete
                       </button>
@@ -241,15 +266,43 @@ function InviteCodesContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out cursor-pointer"
+                  style={{
+                    backgroundColor: 'rgba(242, 228, 214, 0.1)',
+                    color: '#174D5A',
+                    border: '1px solid rgba(242, 228, 214, 0.2)'
+                  }}
                   disabled={creating}
+                  onMouseEnter={(e) => {
+                    if (!creating) {
+                      e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createInviteCode}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out cursor-pointer"
+                  style={{
+                    backgroundColor: creating ? 'rgba(255, 185, 117, 0.5)' : 'rgba(255, 185, 117, 0.9)',
+                    color: '#174D5A',
+                    border: '1px solid rgba(255, 185, 117, 0.3)'
+                  }}
                   disabled={creating}
+                  onMouseEnter={(e) => {
+                    if (!creating) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!creating) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.9)';
+                    }
+                  }}
                 >
                   {creating ? 'Creating...' : 'Create Code'}
                 </button>

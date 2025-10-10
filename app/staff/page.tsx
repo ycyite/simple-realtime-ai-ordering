@@ -135,7 +135,18 @@ function StaffContent() {
             </div>
             <button
               onClick={() => router.push('/staff/invites')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out hover:scale-105 cursor-pointer"
+              style={{
+                backgroundColor: 'rgba(255, 185, 117, 0.9)',
+                color: '#174D5A',
+                border: '1px solid rgba(255, 185, 117, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.9)';
+              }}
             >
               Manage Invite Codes
             </button>
@@ -185,7 +196,14 @@ function StaffContent() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => deleteStaff(member.id, member.name)}
-                      className="text-red-600 hover:text-red-900"
+                      className="px-3 py-1.5 text-sm font-semibold rounded transition-colors cursor-pointer"
+                      style={{ color: '#EF4444' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
                       Remove
                     </button>
