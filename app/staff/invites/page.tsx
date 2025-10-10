@@ -16,6 +16,15 @@ interface InviteCode {
 }
 
 export default function InviteCodesPage() {
+  return (
+    <ProtectedRoute>
+      <Navigation />
+      <InviteCodesContent />
+    </ProtectedRoute>
+  );
+}
+
+function InviteCodesContent() {
   const router = useRouter();
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
   const [loading, setLoading] = useState(true);

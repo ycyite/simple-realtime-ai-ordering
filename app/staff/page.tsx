@@ -2,6 +2,8 @@
 import { apiFetch } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Navigation from '@/components/Navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface StaffMember {
   id: string;
@@ -12,6 +14,15 @@ interface StaffMember {
 }
 
 export default function StaffPage() {
+  return (
+    <ProtectedRoute>
+      <Navigation />
+      <StaffContent />
+    </ProtectedRoute>
+  );
+}
+
+function StaffContent() {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,16 +107,6 @@ export default function StaffPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Staff Management</h1>
-          <div className="text-center py-12">Loading staff members...</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Staff Management</h1>
