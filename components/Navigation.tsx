@@ -15,21 +15,26 @@ export default function Navigation() {
     }
     return false;
   });
+  const [restaurantName, setRestaurantName] = useState<string>('');
   const [userRole, setUserRole] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('activeRestaurantRole');
     }
     return null;
   });
+  const [showRestaurantMenu, setShowRestaurantMenu] = useState(false);
 
   // For sliding indicator animation
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const navRef = useRef<HTMLDivElement>(null);
+  const restaurantMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check if there's an active restaurant in localStorage
     const restaurantId = localStorage.getItem('activeRestaurantId');
+    const restaurantNameStored = localStorage.getItem('activeRestaurantName');
     setHasActiveRestaurant(!!restaurantId);
+    setRestaurantName(restaurantNameStored || '');
 
     // Get user role from localStorage (set when selecting restaurant)
     const role = localStorage.getItem('activeRestaurantRole');
@@ -44,19 +49,34 @@ export default function Navigation() {
         setIndicatorStyle({
           left: activeLink.offsetLeft,
           width: activeLink.offsetWidth,
+          opacity: 1, // Make visible after first calculation
         });
       }
     }
   }, [pathname, userRole]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (restaurantMenuRef.current && !restaurantMenuRef.current.contains(event.target as Node)) {
+        setShowRestaurantMenu(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     logout();
     router.push('/signin');
   };
 
-  const switchRestaurant = () => {
+  const handleSwitchRestaurant = () => {
     localStorage.removeItem('activeRestaurantId');
+    localStorage.removeItem('activeRestaurantName');
     localStorage.removeItem('activeRestaurantRole');
+    setShowRestaurantMenu(false);
     router.push('/restaurants');
   };
 
@@ -89,6 +109,68 @@ export default function Navigation() {
               <span className="hidden sm:inline">Counter Bell</span>
             </h1>
 
+            {/* Restaurant Name Dropdown */}
+            {hasActiveRestaurant && restaurantName && (
+              <div className="relative" ref={restaurantMenuRef}>
+                <button
+                  onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-out cursor-pointer hover:scale-105"
+                  style={{
+                    backgroundColor: 'rgba(255, 185, 117, 0.2)',
+                    color: '#FFB975',
+                    border: '1px solid rgba(255, 185, 117, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.3)';
+                  }}
+                >
+                  <span className="hidden sm:inline">{restaurantName}</span>
+                  <span className="inline sm:hidden">{restaurantName.substring(0, 10)}{restaurantName.length > 10 ? '...' : ''}</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform duration-300 ${showRestaurantMenu ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showRestaurantMenu && (
+                  <div
+                    className="absolute top-full mt-2 left-0 min-w-[200px] rounded-lg shadow-xl z-50 overflow-hidden"
+                    style={{
+                      backgroundColor: 'rgba(23, 77, 90, 0.95)',
+                      border: '1px solid rgba(242, 228, 214, 0.2)',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  >
+                    <button
+                      onClick={handleSwitchRestaurant}
+                      className="w-full px-4 py-3 text-left text-sm font-medium transition-all duration-200 cursor-pointer"
+                      style={{ color: '#F2E4D6' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                        e.currentTarget.style.color = '#FFB975';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#F2E4D6';
+                      }}
+                    >
+                      🔄 Switch Restaurant
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Desktop Navigation with Sliding Indicator */}
             <div className="hidden md:flex relative" ref={navRef}>
               {/* Animated sliding indicator */}
@@ -98,6 +180,7 @@ export default function Navigation() {
                   left: `${indicatorStyle.left}px`,
                   width: `${indicatorStyle.width}px`,
                   backgroundColor: '#FFB975',
+                  opacity: indicatorStyle.opacity,
                 }}
               />
 
@@ -162,31 +245,6 @@ export default function Navigation() {
 
           {/* User Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Switch Restaurant Button */}
-            {hasActiveRestaurant && (
-              <button
-                onClick={switchRestaurant}
-                className="px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ease-out hover:scale-105"
-                style={{
-                  backgroundColor: 'rgba(242, 228, 214, 0.1)',
-                  color: '#F2E4D6',
-                  border: '1px solid rgba(242, 228, 214, 0.2)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
-                  e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.2)';
-                }}
-                title="Switch restaurant"
-              >
-                <span className="hidden sm:inline">Switch</span>
-                <span className="inline sm:hidden">⇄</span>
-              </button>
-            )}
-
             {user && (
               <>
                 <div className="text-right hidden sm:block">
