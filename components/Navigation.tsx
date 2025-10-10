@@ -24,9 +24,6 @@ export default function Navigation() {
   });
   const [showRestaurantMenu, setShowRestaurantMenu] = useState(false);
 
-  // For bubble animation
-  const [bubbleStyle, setBubbleStyle] = useState({ left: 0, width: 0, opacity: 0 });
-  const navRef = useRef<HTMLDivElement>(null);
   const restaurantMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,20 +37,6 @@ export default function Navigation() {
     const role = localStorage.getItem('activeRestaurantRole');
     setUserRole(role);
   }, [pathname]); // Re-check on route change
-
-  // Update bubble position when pathname or role changes
-  useEffect(() => {
-    if (navRef.current) {
-      const activeLink = navRef.current.querySelector(`[href="${pathname}"]`) as HTMLElement;
-      if (activeLink) {
-        setBubbleStyle({
-          left: activeLink.offsetLeft,
-          width: activeLink.offsetWidth,
-          opacity: 1, // Make visible after first calculation
-        });
-      }
-    }
-  }, [pathname, userRole]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -109,12 +92,62 @@ export default function Navigation() {
               <span className="hidden sm:inline">Counter Bell</span>
             </h1>
 
+            {/* Desktop Navigation with Simple Transitions */}
+            <div className="hidden md:flex space-x-2">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-out cursor-pointer"
+                  style={{
+                    color: pathname === link.href ? '#FFB975' : '#F2E4D6',
+                    backgroundColor: pathname === link.href ? 'rgba(255, 185, 117, 0.25)' : 'transparent',
+                    fontSize: pathname === link.href ? '0.9375rem' : '0.875rem',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (pathname !== link.href) {
+                      e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (pathname !== link.href) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    } else {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.25)';
+                    }
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="flex md:hidden space-x-1">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-2 py-1 rounded-lg text-xs font-semibold transition-all duration-200 ease-out cursor-pointer"
+                  style={{
+                    color: pathname === link.href ? '#FFB975' : '#F2E4D6',
+                    backgroundColor: pathname === link.href ? 'rgba(255, 185, 117, 0.25)' : 'transparent',
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* User Info & Actions */}
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Restaurant Name Dropdown */}
             {hasActiveRestaurant && restaurantName && (
               <div className="relative" ref={restaurantMenuRef}>
                 <button
                   onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-out cursor-pointer hover:scale-105"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ease-out cursor-pointer hover:scale-105"
                   style={{
                     backgroundColor: 'rgba(255, 185, 117, 0.2)',
                     color: '#FFB975',
@@ -132,7 +165,7 @@ export default function Navigation() {
                   <span className="hidden sm:inline">{restaurantName}</span>
                   <span className="inline sm:hidden">{restaurantName.substring(0, 10)}{restaurantName.length > 10 ? '...' : ''}</span>
                   <svg
-                    className={`w-4 h-4 transition-transform duration-300 ${showRestaurantMenu ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 transition-transform duration-200 ${showRestaurantMenu ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -141,12 +174,12 @@ export default function Navigation() {
                   </svg>
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Dropdown Menu - Right aligned to prevent overlap */}
                 {showRestaurantMenu && (
                   <div
-                    className="absolute top-full mt-2 left-0 min-w-[200px] rounded-lg shadow-xl z-50 overflow-hidden"
+                    className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg shadow-xl z-50 overflow-hidden animate-fadeIn"
                     style={{
-                      backgroundColor: 'rgba(23, 77, 90, 0.95)',
+                      backgroundColor: 'rgba(23, 77, 90, 0.98)',
                       border: '1px solid rgba(242, 228, 214, 0.2)',
                       backdropFilter: 'blur(10px)'
                     }}
@@ -171,71 +204,6 @@ export default function Navigation() {
               </div>
             )}
 
-            {/* Desktop Navigation with Bubble Background */}
-            <div className="hidden md:flex relative" ref={navRef}>
-              {/* Animated bubble background */}
-              <div
-                className="absolute inset-y-0 rounded-lg transition-all duration-500 ease-out"
-                style={{
-                  left: `${bubbleStyle.left}px`,
-                  width: `${bubbleStyle.width}px`,
-                  backgroundColor: 'rgba(255, 185, 117, 0.2)',
-                  opacity: bubbleStyle.opacity,
-                  zIndex: 0,
-                }}
-              />
-
-              <div className="flex space-x-2 relative z-10">
-                {links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="px-4 py-2 rounded-lg font-semibold transition-all duration-300 ease-out cursor-pointer relative"
-                    style={{
-                      color: pathname === link.href ? '#FFB975' : '#F2E4D6',
-                      fontSize: pathname === link.href ? '0.95rem' : '0.875rem',
-                      transform: pathname === link.href ? 'scale(1.05)' : 'scale(1)',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (pathname !== link.href) {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (pathname !== link.href) {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }
-                    }}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Mobile Navigation */}
-            <div className="flex md:hidden space-x-1">
-              {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="px-2 py-1 rounded-lg text-xs font-semibold transition-all duration-300 ease-out cursor-pointer"
-                  style={{
-                    color: pathname === link.href ? '#FFB975' : '#F2E4D6',
-                    backgroundColor: pathname === link.href
-                      ? 'rgba(255, 185, 117, 0.2)'
-                      : 'transparent',
-                    transform: pathname === link.href ? 'scale(1.05)' : 'scale(1)',
-                  }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* User Info & Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
             {user && (
               <>
                 <div className="text-right hidden sm:block">
@@ -248,7 +216,7 @@ export default function Navigation() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ease-out hover:scale-105 cursor-pointer"
+                  className="px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ease-out hover:scale-105 cursor-pointer"
                   style={{
                     backgroundColor: 'rgba(242, 228, 214, 0.1)',
                     color: '#F2E4D6',
@@ -270,6 +238,22 @@ export default function Navigation() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.15s ease-out;
+        }
+      `}</style>
     </nav>
   );
 }
