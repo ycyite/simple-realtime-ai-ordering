@@ -57,57 +57,55 @@ export async function POST(request: Request) {
       const name = `${first_name || ''} ${last_name || ''}`.trim() || email?.split('@')[0] || 'User';
 
       // Just create user record without tenant
-      // Tenant will be created during onboarding or when accepting an invitation
+      // Tenant will be linked via user_tenants when creating/joining restaurant
       await prisma.users.create({
         data: {
           clerk_user_id: id,
           email: email || '',
           name,
-          role: 'owner', // Default role, will be updated if joining existing tenant
         },
       });
 
-      console.log(`✅ Created user ${email} (no tenant yet - pending onboarding)`);
+      console.log(`✅ Created user ${email} (no tenant - will be linked when creating/joining restaurant)`);
     }
 
     if (eventType === 'user.deleted') {
       const { id } = evt.data;
 
-      const user = await prisma.users.findUnique({
-        where: { clerk_user_id: id },
+      // Get user's tenant relationships
+      const userTenants = await prisma.user_tenants.findMany({
+        where: {
+          users: { clerk_user_id: id }
+        },
         select: { tenant_id: true, role: true }
       });
 
-      // Only delete tenant if user was the owner and no other owners exist
-      if (user?.tenant_id && user.role === 'owner') {
-        const otherOwners = await prisma.users.count({
-          where: {
-            tenant_id: user.tenant_id,
-            role: 'owner',
-            clerk_user_id: { not: id }
-          }
-        });
+      // For each tenant where user is owner, check if there are other owners
+      for (const ut of userTenants) {
+        if (ut.role === 'owner') {
+          const otherOwners = await prisma.user_tenants.count({
+            where: {
+              tenant_id: ut.tenant_id,
+              role: 'owner',
+              user_id: { not: (await prisma.users.findUnique({ where: { clerk_user_id: id } }))?.id }
+            }
+          });
 
-        // If no other owners, delete the tenant (will cascade delete users)
-        if (otherOwners === 0) {
-          await prisma.tenants.delete({
-            where: { id: user.tenant_id }
-          });
-          console.log(`✅ Deleted tenant (last owner removed)`);
-        } else {
-          // Just delete the user
-          await prisma.users.delete({
-            where: { clerk_user_id: id }
-          });
-          console.log(`✅ Deleted user ${id} (tenant has other owners)`);
+          // If no other owners, delete the tenant (will cascade delete user_tenants)
+          if (otherOwners === 0) {
+            await prisma.tenants.delete({
+              where: { id: ut.tenant_id }
+            });
+            console.log(`✅ Deleted tenant ${ut.tenant_id} (last owner removed)`);
+          }
         }
-      } else {
-        // Just delete the user
-        await prisma.users.delete({
-          where: { clerk_user_id: id }
-        });
-        console.log(`✅ Deleted user ${id}`);
       }
+
+      // Delete user (will cascade delete user_tenants relationships)
+      await prisma.users.delete({
+        where: { clerk_user_id: id }
+      });
+      console.log(`✅ Deleted user ${id}`);
     }
 
     return NextResponse.json({ success: true });
