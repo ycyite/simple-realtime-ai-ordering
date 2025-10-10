@@ -13,6 +13,18 @@ interface StaffMember {
   joinedAt: string;
 }
 
+interface InviteCode {
+  id: string;
+  code: string;
+  role: string;
+  created_at: string;
+  expires_at: string | null;
+  created_by: {
+    name: string;
+    email: string;
+  };
+}
+
 export default function StaffPage() {
   return (
     <ProtectedRoute>
@@ -26,6 +38,15 @@ function StaffContent() {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Invite Codes Modal State
+  const [showInviteCodesModal, setShowInviteCodesModal] = useState(false);
+  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
+  const [loadingInvites, setLoadingInvites] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newCodeRole, setNewCodeRole] = useState('staff');
+  const [expiresInDays, setExpiresInDays] = useState(7);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     const restaurantId = localStorage.getItem('activeRestaurantId');
@@ -93,6 +114,69 @@ function StaffContent() {
     }
   };
 
+  // Invite Codes Functions
+  const loadInviteCodes = () => {
+    setLoadingInvites(true);
+    apiFetch('/api/invite-codes')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setInviteCodes(data);
+        }
+        setLoadingInvites(false);
+      })
+      .catch(err => {
+        console.error('Failed to load invite codes:', err);
+        setLoadingInvites(false);
+      });
+  };
+
+  const handleOpenInviteCodesModal = () => {
+    setShowInviteCodesModal(true);
+    loadInviteCodes();
+  };
+
+  const createInviteCode = async () => {
+    setCreating(true);
+    try {
+      const res = await apiFetch('/api/invite-codes', {
+        method: 'POST',
+        body: JSON.stringify({ role: newCodeRole, expiresInDays })
+      });
+
+      if (res.ok) {
+        setShowCreateModal(false);
+        loadInviteCodes();
+      }
+    } catch (err) {
+      console.error('Failed to create invite code:', err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const deleteInviteCode = async (codeId: string) => {
+    if (!confirm('Are you sure you want to delete this invite code?')) return;
+
+    try {
+      const res = await apiFetch('/api/invite-codes', {
+        method: 'DELETE',
+        body: JSON.stringify({ codeId })
+      });
+
+      if (res.ok) {
+        loadInviteCodes();
+      }
+    } catch (err) {
+      console.error('Failed to delete invite code:', err);
+    }
+  };
+
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    alert('Code copied to clipboard!');
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role.toLowerCase()) {
       case 'owner':
@@ -102,6 +186,10 @@ function StaffContent() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getInviteRoleBadgeColor = (role: string) => {
+    return role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800';
   };
 
   const formatDate = (dateString: string) => {
@@ -135,7 +223,7 @@ function StaffContent() {
             </div>
           </div>
           <button
-            onClick={() => router.push('/staff/invites')}
+            onClick={handleOpenInviteCodesModal}
             className="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out hover:scale-105 cursor-pointer whitespace-nowrap"
             style={{
               backgroundColor: 'rgba(255, 185, 117, 0.9)',
@@ -221,6 +309,228 @@ function StaffContent() {
           )}
         </div>
       </div>
+
+      {/* Invite Codes Modal */}
+      {showInviteCodesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="glass-card rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold" style={{ color: '#F2E4D6' }}>Invite Codes</h2>
+                <p className="text-sm mt-1" style={{ color: '#F2E4D6', opacity: 0.8 }}>Manage one-time invite codes for your team</p>
+              </div>
+              <button
+                onClick={() => setShowInviteCodesModal(false)}
+                className="p-2 rounded-lg transition-colors cursor-pointer"
+                style={{ color: '#F2E4D6' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mb-6 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out hover:scale-105 cursor-pointer"
+              style={{
+                backgroundColor: 'rgba(255, 185, 117, 0.9)',
+                color: '#174D5A',
+                border: '1px solid rgba(255, 185, 117, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.9)';
+              }}
+            >
+              + Create Invite Code
+            </button>
+
+            {loadingInvites ? (
+              <div className="text-center py-12" style={{ color: '#F2E4D6' }}>Loading invite codes...</div>
+            ) : inviteCodes.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center text-gray-500">
+                No active invite codes. Create one to invite team members!
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Code
+                      </th>
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created By
+                      </th>
+                      <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expires
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {inviteCodes.map((code) => (
+                      <tr key={code.id} className="hover:bg-gray-50">
+                        <td className="px-4 sm:px-6 py-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <code className="text-xs sm:text-sm font-mono bg-gray-100 px-2 py-1 rounded break-all">{code.code}</code>
+                            <button
+                              onClick={() => copyToClipboard(code.code)}
+                              className="px-2 py-1 text-xs font-semibold rounded transition-colors cursor-pointer self-start sm:self-auto"
+                              style={{ color: '#174D5A' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <div className="sm:hidden mt-2 space-y-1">
+                            <div>
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getInviteRoleBadgeColor(code.role)}`}>
+                                {code.role}
+                              </span>
+                            </div>
+                            <div className="md:hidden text-xs text-gray-500">
+                              By: {code.created_by.name}
+                            </div>
+                            <div className="lg:hidden text-xs text-gray-500">
+                              Expires: {code.expires_at ? formatDate(code.expires_at) : 'Never'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getInviteRoleBadgeColor(code.role)}`}>
+                            {code.role}
+                          </span>
+                        </td>
+                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{code.created_by.name}</div>
+                          <div className="text-xs text-gray-500">{code.created_by.email}</div>
+                        </td>
+                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {code.expires_at ? formatDate(code.expires_at) : 'Never'}
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => deleteInviteCode(code.id)}
+                            className="px-3 py-1.5 text-sm font-semibold rounded transition-colors cursor-pointer"
+                            style={{ color: '#EF4444' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Create Invite Code Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Create Invite Code</h2>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+              <select
+                value={newCodeRole}
+                onChange={(e) => setNewCodeRole(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
+              </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Expires In (Days)</label>
+              <input
+                type="number"
+                value={expiresInDays}
+                onChange={(e) => setExpiresInDays(parseInt(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                min="1"
+                max="90"
+              />
+              <p className="text-xs text-gray-500 mt-1">Leave blank for no expiration (not recommended)</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out cursor-pointer"
+                style={{
+                  backgroundColor: 'rgba(242, 228, 214, 0.1)',
+                  color: '#174D5A',
+                  border: '1px solid rgba(242, 228, 214, 0.2)'
+                }}
+                disabled={creating}
+                onMouseEnter={(e) => {
+                  if (!creating) {
+                    e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createInviteCode}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out cursor-pointer"
+                style={{
+                  backgroundColor: creating ? 'rgba(255, 185, 117, 0.5)' : 'rgba(255, 185, 117, 0.9)',
+                  color: '#174D5A',
+                  border: '1px solid rgba(255, 185, 117, 0.3)'
+                }}
+                disabled={creating}
+                onMouseEnter={(e) => {
+                  if (!creating) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!creating) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.9)';
+                  }
+                }}
+              >
+                {creating ? 'Creating...' : 'Create Code'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

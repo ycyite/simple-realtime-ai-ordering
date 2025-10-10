@@ -132,73 +132,71 @@ export default function Navigation() {
 
           {/* Right: User Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* User Info with Restaurant - Desktop */}
+            {/* User Info - Desktop */}
             {user && (
-              <div className="hidden md:block relative" ref={restaurantMenuRef}>
-                <button
-                  onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
-                  className="text-right px-3 py-2 rounded-lg transition-all duration-200 ease-out cursor-pointer hover:scale-105"
-                  style={{
-                    backgroundColor: 'rgba(242, 228, 214, 0.1)',
-                    border: '1px solid rgba(242, 228, 214, 0.2)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.2)';
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold" style={{ color: '#F2E4D6' }}>
-                        {user.name}
-                      </p>
-                      {hasActiveRestaurant && restaurantName && (
-                        <p className="text-xs font-medium" style={{ color: '#FFB975' }}>
-                          {restaurantName}
-                        </p>
-                      )}
-                    </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${showRestaurantMenu ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      style={{ color: '#F2E4D6' }}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </button>
-
-                {showRestaurantMenu && (
-                  <div
-                    className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg shadow-xl overflow-hidden animate-fadeIn"
-                    style={{
-                      backgroundColor: 'rgba(23, 77, 90, 0.98)',
-                      border: '1px solid rgba(242, 228, 214, 0.2)',
-                      backdropFilter: 'blur(10px)',
-                      zIndex: 9999
-                    }}
-                  >
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-semibold" style={{ color: '#F2E4D6' }}>
+                  {user.name}
+                </p>
+                {hasActiveRestaurant && restaurantName && (
+                  <div className="relative" ref={restaurantMenuRef}>
                     <button
-                      onClick={handleSwitchRestaurant}
-                      className="w-full px-4 py-3 text-left text-sm font-medium transition-all duration-200 cursor-pointer"
-                      style={{ color: '#F2E4D6' }}
+                      onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
+                      className="flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ease-out cursor-pointer hover:scale-105"
+                      style={{
+                        backgroundColor: 'rgba(255, 185, 117, 0.2)',
+                        border: '1px solid rgba(255, 185, 117, 0.3)'
+                      }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
-                        e.currentTarget.style.color = '#FFB975';
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.3)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.4)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#F2E4D6';
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.3)';
                       }}
                     >
-                      Switch Restaurant
+                      <span className="text-sm font-semibold" style={{ color: '#FFB975' }}>
+                        {restaurantName}
+                      </span>
+                      <svg
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${showRestaurantMenu ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        style={{ color: '#FFB975' }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </button>
+
+                    {showRestaurantMenu && (
+                      <div
+                        className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg shadow-xl overflow-hidden animate-fadeIn"
+                        style={{
+                          backgroundColor: 'rgba(23, 77, 90, 0.98)',
+                          border: '1px solid rgba(242, 228, 214, 0.2)',
+                          backdropFilter: 'blur(10px)',
+                          zIndex: 9999
+                        }}
+                      >
+                        <button
+                          onClick={handleSwitchRestaurant}
+                          className="w-full px-4 py-3 text-left text-sm font-medium transition-all duration-200 cursor-pointer"
+                          style={{ color: '#F2E4D6' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                            e.currentTarget.style.color = '#FFB975';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#F2E4D6';
+                          }}
+                        >
+                          Switch Restaurant
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
