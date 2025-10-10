@@ -9,11 +9,13 @@ export async function POST(request: Request) {
   // Log immediately when endpoint is hit
   console.log('🚨 WEBHOOK ENDPOINT HIT - Request received at', new Date().toISOString());
 
-  const { type, data } = await request.json();
+  const body = await request.json();
+  const { type, data } = body;
 
   console.log('\n' + '='.repeat(60));
   console.log('📞 OPENAI SIP WEBHOOK RECEIVED');
   console.log('='.repeat(60));
+  console.log("   Full Body:", JSON.stringify(body, null, 2));
   console.log(`   Event Type: ${type}`);
   console.log(`   Call ID: ${data?.call_id}`);
   console.log(`   SIP Headers:`, JSON.stringify(data?.sip_headers, null, 2));
@@ -40,9 +42,9 @@ export async function POST(request: Request) {
 
       if (diversionHeader) {
         // Extract phone number from format: <sip:+13659063275@twilio.com>;reason=unconditional
-        const phoneMatch = diversionHeader.value.match(/\+1(\d+)/);
+        const phoneMatch = diversionHeader.value.match(/(\+1\d+)/);
         if (phoneMatch) {
-          restaurantPhoneNumber = phoneMatch[1]; // Store without +1
+          restaurantPhoneNumber = phoneMatch[1]; // Store with +1
           console.log("🏪 Restaurant phone number (Diversion):", restaurantPhoneNumber);
         }
       }

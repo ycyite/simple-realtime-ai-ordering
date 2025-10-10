@@ -1,22 +1,30 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
+import { getActiveTenantId } from '@/lib/tenant-access';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Get the first active tenant (single-tenant mode for now)
-    const tenant = await prisma.tenants.findFirst({
-      where: { status: 'active' }
-    });
+    const { userId } = await auth();
 
-    if (!tenant) {
-      return NextResponse.json([]);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
+
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No access to restaurant' }, { status: 403 });
     }
 
     // Fetch all orders for this tenant, ordered by newest first
     const orders = await prisma.orders.findMany({
-      where: { tenant_id: tenant.id },
+      where: { tenant_id: access.tenantId },
       orderBy: { created_at: 'desc' }
     });
 
@@ -45,12 +53,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const tenant = await prisma.tenants.findFirst({
-      where: { status: 'active' }
-    });
+    const { userId } = await auth();
 
-    if (!tenant) {
-      return NextResponse.json({ error: 'No active tenant' }, { status: 404 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
+
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No access to restaurant' }, { status: 403 });
     }
 
     const newOrder = await request.json();
@@ -58,7 +73,7 @@ export async function POST(request: Request) {
     // Create order in database
     const order = await prisma.orders.create({
       data: {
-        tenant_id: tenant.id,
+        tenant_id: access.tenantId,
         customer_name: newOrder.customerName,
         customer_phone: newOrder.customerPhone || '',
         items: newOrder.items,
@@ -79,19 +94,26 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
-    const tenant = await prisma.tenants.findFirst({
-      where: { status: 'active' }
-    });
+    const { userId } = await auth();
 
-    if (!tenant) {
-      return NextResponse.json({ error: 'No active tenant' }, { status: 404 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
+
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No access to restaurant' }, { status: 403 });
     }
 
     // Delete all orders for this tenant
     await prisma.orders.deleteMany({
-      where: { tenant_id: tenant.id }
+      where: { tenant_id: access.tenantId }
     });
 
     console.log('✅ All orders cleared');
