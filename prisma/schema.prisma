@@ -98,6 +98,7 @@ model tenants {
   user_tenants        user_tenants[]
   users_last_active   users[]               @relation("LastActiveTenant")
   wallet_transactions wallet_transactions[]
+  invite_codes        invite_codes[]
 }
 
 model users {
@@ -109,6 +110,8 @@ model users {
   last_login           DateTime?      @db.Timestamp(6)
   last_active_tenant_id String?       @db.Uuid
   user_tenants         user_tenants[]
+  created_invites     invite_codes[]    @relation("CreatedInvites")
+  used_invites        invite_codes[]    @relation("UsedInvites")
   last_active_tenant   tenants?       @relation("LastActiveTenant", fields: [last_active_tenant_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([clerk_user_id], map: "idx_users_clerk_id")
@@ -141,4 +144,24 @@ model user_tenants {
   @@unique([user_id, tenant_id])
   @@index([tenant_id], map: "idx_user_tenants_tenant_id")
   @@index([user_id], map: "idx_user_tenants_user_id")
+}
+
+model invite_codes {
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  tenant_id          String    @db.Uuid
+  code               String    @unique @db.VarChar(20)
+  role               String?   @default("staff") @db.VarChar(50)
+  created_by_user_id String?   @db.Uuid
+  is_used            Boolean?  @default(false)
+  used_by_user_id    String?   @db.Uuid
+  used_at            DateTime? @db.Timestamp(6)
+  expires_at         DateTime? @db.Timestamp(6)
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+  tenants            tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_by         users?    @relation("CreatedInvites", fields: [created_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  used_by            users?    @relation("UsedInvites", fields: [used_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "idx_invite_codes_tenant_id")
+  @@index([code], map: "idx_invite_codes_code")
+  @@index([is_used], map: "idx_invite_codes_is_used")
 }
