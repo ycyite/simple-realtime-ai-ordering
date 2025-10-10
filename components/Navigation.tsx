@@ -182,7 +182,7 @@ export default function Navigation() {
                       >
                         <button
                           onClick={handleSwitchRestaurant}
-                          className="w-full px-4 py-3 text-left text-sm font-medium transition-all duration-200 cursor-pointer"
+                          className="w-full px-4 py-3 text-center text-sm font-medium transition-all duration-200 cursor-pointer"
                           style={{ color: '#F2E4D6' }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
@@ -303,7 +303,7 @@ export default function Navigation() {
                     {hasActiveRestaurant && (
                       <button
                         onClick={handleSwitchRestaurant}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-all duration-200 cursor-pointer"
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 cursor-pointer"
                         style={{ color: '#F2E4D6' }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';

@@ -313,22 +313,15 @@ function StaffContent() {
       {/* Invite Codes Modal */}
       {showInviteCodesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="glass-card rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-gray-50 rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-bold" style={{ color: '#F2E4D6' }}>Invite Codes</h2>
-                <p className="text-sm mt-1" style={{ color: '#F2E4D6', opacity: 0.8 }}>Manage one-time invite codes for your team</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Invite Codes</h2>
+                <p className="text-sm sm:text-base text-gray-600 mt-2">Manage one-time invite codes for your team</p>
               </div>
               <button
                 onClick={() => setShowInviteCodesModal(false)}
-                className="p-2 rounded-lg transition-colors cursor-pointer"
-                style={{ color: '#F2E4D6' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
+                className="p-2 rounded-lg transition-colors cursor-pointer text-gray-600 hover:text-gray-900 hover:bg-gray-200"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -355,7 +348,7 @@ function StaffContent() {
             </button>
 
             {loadingInvites ? (
-              <div className="text-center py-12" style={{ color: '#F2E4D6' }}>Loading invite codes...</div>
+              <div className="text-center py-12 text-gray-600">Loading invite codes...</div>
             ) : inviteCodes.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center text-gray-500">
                 No active invite codes. Create one to invite team members!
