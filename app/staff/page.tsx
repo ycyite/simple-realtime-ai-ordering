@@ -34,11 +34,19 @@ function StaffContent() {
       return;
     }
 
+    console.log('Fetching staff from /api/staff...');
     apiFetch('/api/staff')
-      .then(res => res.json())
+      .then(res => {
+        console.log('Staff API response status:', res.status);
+        return res.json();
+      })
       .then(data => {
+        console.log('Staff API data:', data);
         if (Array.isArray(data)) {
+          console.log('Setting staff array with', data.length, 'members');
           setStaff(data);
+        } else {
+          console.error('Staff API did not return an array:', data);
         }
         setLoading(false);
       })
@@ -107,6 +115,17 @@ function StaffContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <div className="text-gray-500">Loading staff members...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Staff Management</h1>
@@ -185,5 +204,4 @@ function StaffContent() {
       </div>
     </div>
   );
-}
 }

@@ -23,6 +23,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
+    console.log('📋 Fetching staff for tenant:', access.tenantId);
+
     // Get all users for this tenant via user_tenants
     const staffMembers = await prisma.user_tenants.findMany({
       where: {
@@ -37,6 +39,9 @@ export async function GET(request: Request) {
       ]
     });
 
+    console.log('📊 Found user_tenants records:', staffMembers.length);
+    console.log('📊 Raw data:', JSON.stringify(staffMembers, null, 2));
+
     const formattedStaff = staffMembers
       .filter(member => member.users !== null)
       .map(member => ({
@@ -46,6 +51,8 @@ export async function GET(request: Request) {
         role: member.role || 'staff',
         joinedAt: member.created_at?.toISOString() || new Date().toISOString()
       }));
+
+    console.log('✅ Returning formatted staff:', formattedStaff.length, 'members');
 
     return NextResponse.json(formattedStaff);
   } catch (error) {
