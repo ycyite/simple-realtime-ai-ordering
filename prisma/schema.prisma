@@ -95,23 +95,23 @@ model tenants {
   call_logs           call_logs[]
   menu_items          menu_items[]
   orders              orders[]
-  users               users[]
+  user_tenants        user_tenants[]
+  users_last_active   users[]               @relation("LastActiveTenant")
   wallet_transactions wallet_transactions[]
 }
 
 model users {
-  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  tenant_id     String?   @db.Uuid
-  clerk_user_id String    @unique @db.VarChar(255)
-  email         String    @db.VarChar(255)
-  name          String    @db.VarChar(255)
-  role          String?   @default("owner") @db.VarChar(50)
-  created_at    DateTime? @default(now()) @db.Timestamp(6)
-  last_login    DateTime? @db.Timestamp(6)
-  tenants       tenants?  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                   String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clerk_user_id        String         @unique @db.VarChar(255)
+  email                String         @db.VarChar(255)
+  name                 String         @db.VarChar(255)
+  created_at           DateTime?      @default(now()) @db.Timestamp(6)
+  last_login           DateTime?      @db.Timestamp(6)
+  last_active_tenant_id String?       @db.Uuid
+  user_tenants         user_tenants[]
+  last_active_tenant   tenants?       @relation("LastActiveTenant", fields: [last_active_tenant_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([clerk_user_id], map: "idx_users_clerk_id")
-  @@index([tenant_id], map: "idx_users_tenant_id")
 }
 
 model wallet_transactions {
@@ -127,4 +127,18 @@ model wallet_transactions {
   tenants                  tenants?  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([tenant_id], map: "idx_wallet_transactions_tenant_id")
+}
+
+model user_tenants {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id    String    @db.Uuid
+  tenant_id  String    @db.Uuid
+  role       String?   @default("staff") @db.VarChar(50)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  tenants    tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, tenant_id])
+  @@index([tenant_id], map: "idx_user_tenants_tenant_id")
+  @@index([user_id], map: "idx_user_tenants_user_id")
 }

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { getActiveTenantId } from '@/lib/tenant-access';
 
 export const runtime = 'nodejs';
 
 // Get restaurant settings
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { userId } = await auth();
 
@@ -13,17 +14,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
-      include: { tenants: true }
-    });
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
-    if (!user?.tenants) {
-      return NextResponse.json({ error: 'No tenant found' }, { status: 404 });
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
-    const tenant = user.tenants;
+    // Get tenant data
+    const tenant = await prisma.tenants.findUnique({
+      where: { id: access.tenantId }
+    });
+
+    if (!tenant) {
+      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+    }
 
     return NextResponse.json({
       id: tenant.id,
@@ -52,19 +59,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Restaurant name is required' }, { status: 400 });
     }
 
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
-      select: { tenant_id: true }
-    });
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
-    if (!user?.tenant_id) {
-      return NextResponse.json({ error: 'No tenant found' }, { status: 404 });
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
     // Update tenant information
     await prisma.tenants.update({
-      where: { id: user.tenant_id },
+      where: { id: access.tenantId },
       data: {
         name,
         phone_number: phone || null,
@@ -73,7 +79,7 @@ export async function POST(request: Request) {
       }
     });
 
-    console.log(`✅ Updated settings for tenant ${user.tenant_id}`);
+    console.log(`✅ Updated settings for tenant ${access.tenantId}`);
 
     return NextResponse.json({ success: true, message: 'Settings updated' });
   } catch (error) {
