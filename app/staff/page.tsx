@@ -37,6 +37,43 @@ export default function StaffPage() {
       });
   }, []);
 
+  const loadStaff = () => {
+    apiFetch('/api/staff')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setStaff(data);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load staff:', err);
+      });
+  };
+
+  const deleteStaff = async (staffId: string, staffName: string) => {
+    if (!confirm(`Are you sure you want to remove ${staffName} from the team?`)) {
+      return;
+    }
+
+    try {
+      const res = await apiFetch('/api/staff', {
+        method: 'DELETE',
+        body: JSON.stringify({ staffUserId: staffId })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        loadStaff();
+      } else {
+        alert(data.error || 'Failed to remove staff member');
+      }
+    } catch (err) {
+      console.error('Failed to delete staff:', err);
+      alert('Failed to remove staff member');
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role.toLowerCase()) {
       case 'owner':
@@ -101,6 +138,9 @@ export default function StaffPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Joined
                 </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -121,6 +161,14 @@ export default function StaffPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(member.joinedAt)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => deleteStaff(member.id, member.name)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Remove
+                    </button>
                   </td>
                 </tr>
               ))}
