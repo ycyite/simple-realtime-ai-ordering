@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '@/lib/api-client';
 
 import { useState, useRef, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
@@ -28,7 +29,7 @@ function MenuContent() {
 
   // Load menu data from API on mount
   useEffect(() => {
-    fetch('/api/menu')
+    apiFetch('/api/menu')
       .then(res => res.json())
       .then(data => {
         setRestaurantName(data.restaurant?.name || '');
@@ -100,7 +101,7 @@ function MenuContent() {
       }))
     };
 
-    fetch('/api/menu', {
+    apiFetch('/api/menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(menuData),

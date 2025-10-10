@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '@/lib/api-client';
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
@@ -38,7 +39,7 @@ function SettingsContent() {
 
   // Load restaurant data from settings API on mount
   useEffect(() => {
-    fetch('/api/settings')
+    apiFetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         const restaurantSettings: RestaurantSettings = {
@@ -53,7 +54,7 @@ function SettingsContent() {
       .catch(err => console.error('Failed to load restaurant settings:', err));
 
     // Load restaurant status
-    fetch('/api/restaurant-status')
+    apiFetch('/api/restaurant-status')
       .then(res => res.json())
       .then(data => {
         setIsOpen(data.isOpen);
@@ -65,7 +66,7 @@ function SettingsContent() {
     setIsUpdatingStatus(true);
     try {
       const newStatus = !isOpen;
-      const response = await fetch('/api/restaurant-status', {
+      const response = await apiFetch('/api/restaurant-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isOpen: newStatus }),
@@ -85,7 +86,7 @@ function SettingsContent() {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/settings', {
+      const response = await apiFetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

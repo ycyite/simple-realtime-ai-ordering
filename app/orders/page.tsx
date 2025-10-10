@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '@/lib/api-client';
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
@@ -29,7 +30,7 @@ function OrdersContent() {
 
   // Load orders from API on mount
   useEffect(() => {
-    fetch('/api/orders')
+    apiFetch('/api/orders')
       .then(res => res.json())
       .then(data => {
         // Convert API data to Order type
@@ -57,7 +58,7 @@ function OrdersContent() {
   // Poll for new orders every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch('/api/orders')
+      apiFetch('/api/orders')
         .then(res => res.json())
         .then(data => {
           const formattedOrders: Order[] = (data || []).map((order: any) => ({
@@ -93,7 +94,7 @@ function OrdersContent() {
     setOrders(updatedOrders);
 
     // Save to backend
-    fetch('/api/orders/update', {
+    apiFetch('/api/orders/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedOrders),
