@@ -72,8 +72,16 @@ export default function StaffPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Staff Management</h1>
-          <div className="text-sm text-gray-600">
-            {staff.length} team {staff.length === 1 ? 'member' : 'members'}
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-600">
+              {staff.length} team {staff.length === 1 ? 'member' : 'members'}
+            </div>
+            <button
+              onClick={() => router.push('/staff/invites')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Manage Invite Codes
+            </button>
           </div>
         </div>
 
