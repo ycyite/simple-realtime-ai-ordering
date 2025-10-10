@@ -24,6 +24,7 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "warn",
       "react/no-unescaped-entities": "off",
       "prefer-const": "warn", // Change from error to warning
+      "@next/next/no-img-element": "off", // Allow <img> tags
     },
   },
 ];
