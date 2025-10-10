@@ -40,9 +40,9 @@ export async function POST(request: Request) {
 
       if (diversionHeader) {
         // Extract phone number from format: <sip:+13659063275@twilio.com>;reason=unconditional
-        const phoneMatch = diversionHeader.value.match(/\+1(\d+)/);
+        const phoneMatch = diversionHeader.value.match(/(\+1\d+)/);
         if (phoneMatch) {
-          restaurantPhoneNumber = phoneMatch[1]; // Store without +1
+          restaurantPhoneNumber = phoneMatch[1]; // Store with +1
           console.log("🏪 Restaurant phone number (Diversion):", restaurantPhoneNumber);
         }
       }
