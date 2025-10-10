@@ -24,8 +24,8 @@ export default function Navigation() {
   });
   const [showRestaurantMenu, setShowRestaurantMenu] = useState(false);
 
-  // For sliding indicator animation
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  // For bubble animation
+  const [bubbleStyle, setBubbleStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const navRef = useRef<HTMLDivElement>(null);
   const restaurantMenuRef = useRef<HTMLDivElement>(null);
 
@@ -41,12 +41,12 @@ export default function Navigation() {
     setUserRole(role);
   }, [pathname]); // Re-check on route change
 
-  // Update sliding indicator position when pathname or role changes
+  // Update bubble position when pathname or role changes
   useEffect(() => {
     if (navRef.current) {
       const activeLink = navRef.current.querySelector(`[href="${pathname}"]`) as HTMLElement;
       if (activeLink) {
-        setIndicatorStyle({
+        setBubbleStyle({
           left: activeLink.offsetLeft,
           width: activeLink.offsetWidth,
           opacity: 1, // Make visible after first calculation
@@ -171,45 +171,39 @@ export default function Navigation() {
               </div>
             )}
 
-            {/* Desktop Navigation with Sliding Indicator */}
+            {/* Desktop Navigation with Bubble Background */}
             <div className="hidden md:flex relative" ref={navRef}>
-              {/* Animated sliding indicator */}
+              {/* Animated bubble background */}
               <div
-                className="absolute bottom-0 h-0.5 transition-all duration-300 ease-out"
+                className="absolute inset-y-0 rounded-lg transition-all duration-500 ease-out"
                 style={{
-                  left: `${indicatorStyle.left}px`,
-                  width: `${indicatorStyle.width}px`,
-                  backgroundColor: '#FFB975',
-                  opacity: indicatorStyle.opacity,
+                  left: `${bubbleStyle.left}px`,
+                  width: `${bubbleStyle.width}px`,
+                  backgroundColor: 'rgba(255, 185, 117, 0.2)',
+                  opacity: bubbleStyle.opacity,
+                  zIndex: 0,
                 }}
               />
 
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 relative z-10">
                 {links.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-out cursor-pointer relative ${
-                      pathname === link.href
-                        ? 'transform scale-105'
-                        : 'hover:scale-105'
-                    }`}
+                    className="px-4 py-2 rounded-lg font-semibold transition-all duration-300 ease-out cursor-pointer relative"
                     style={{
                       color: pathname === link.href ? '#FFB975' : '#F2E4D6',
-                      backgroundColor: pathname === link.href
-                        ? 'rgba(255, 185, 117, 0.15)'
-                        : 'transparent',
+                      fontSize: pathname === link.href ? '0.95rem' : '0.875rem',
+                      transform: pathname === link.href ? 'scale(1.05)' : 'scale(1)',
                     }}
                     onMouseEnter={(e) => {
                       if (pathname !== link.href) {
-                        e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                        e.currentTarget.style.transform = 'scale(1.05)';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (pathname !== link.href) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      } else {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.15)';
+                        e.currentTarget.style.transform = 'scale(1)';
                       }
                     }}
                   >
@@ -225,16 +219,13 @@ export default function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all duration-300 ease-out cursor-pointer ${
-                    pathname === link.href
-                      ? 'transform scale-105'
-                      : 'hover:scale-105'
-                  }`}
+                  className="px-2 py-1 rounded-lg text-xs font-semibold transition-all duration-300 ease-out cursor-pointer"
                   style={{
                     color: pathname === link.href ? '#FFB975' : '#F2E4D6',
                     backgroundColor: pathname === link.href
-                      ? 'rgba(255, 185, 117, 0.15)'
+                      ? 'rgba(255, 185, 117, 0.2)'
                       : 'transparent',
+                    transform: pathname === link.href ? 'scale(1.05)' : 'scale(1)',
                   }}
                 >
                   {link.label}
