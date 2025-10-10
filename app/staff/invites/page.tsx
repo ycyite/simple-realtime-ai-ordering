@@ -2,6 +2,8 @@
 import { apiFetch } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Navigation from '@/components/Navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface InviteCode {
   id: string;
