@@ -13,30 +13,27 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // For now, using old schema (will migrate to user_tenants later)
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
+    // Get user's restaurants via user_tenants junction table
+    const userTenants = await prisma.user_tenants.findMany({
+      where: {
+        users: { clerk_user_id: userId }
+      },
       include: {
         tenants: true
       }
     });
 
-    if (!user) {
-      return NextResponse.json([]);
-    }
-
-    // Return array of restaurants (currently just one, but prepared for multi)
-    const restaurants = user.tenants ? [{
-      id: user.tenants.id,
-      name: user.tenants.name,
-      slug: user.tenants.slug,
-      address: user.tenants.address,
-      phone_number: user.tenants.phone_number,
-      is_open: user.tenants.is_open,
-      role: user.role || 'owner',
-      wallet_balance: user.tenants.wallet_balance
-    }] : [];
+    // Map to restaurant array
+    const restaurants = userTenants.map(ut => ({
+      id: ut.tenants.id,
+      name: ut.tenants.name,
+      slug: ut.tenants.slug,
+      address: ut.tenants.address,
+      phone_number: ut.tenants.phone_number,
+      is_open: ut.tenants.is_open,
+      role: ut.role || 'staff',
+      wallet_balance: ut.tenants.wallet_balance
+    }));
 
     return NextResponse.json(restaurants);
   } catch (error) {

@@ -36,46 +36,42 @@ export async function POST(request: Request) {
     const email = user.emailAddresses[0]?.emailAddress || '';
     const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || email.split('@')[0];
 
+    // Get or create user
+    let dbUser = await prisma.users.findUnique({
+      where: { clerk_user_id: userId }
+    });
+
+    if (!dbUser) {
+      // Create user if doesn't exist
+      dbUser = await prisma.users.create({
+        data: {
+          clerk_user_id: userId,
+          email,
+          name,
+        },
+      });
+    }
+
     // Check if user already belongs to this tenant
-    const existingUser = await prisma.users.findFirst({
+    const existingRelation = await prisma.user_tenants.findFirst({
       where: {
-        clerk_user_id: userId,
+        user_id: dbUser.id,
         tenant_id: tenant.id
       }
     });
 
-    if (existingUser) {
+    if (existingRelation) {
       return NextResponse.json({ error: 'You already belong to this restaurant' }, { status: 400 });
     }
 
-    // For old schema: update or create user
-    // TODO: When migrating to user_tenants, create entry in junction table instead
-    const dbUser = await prisma.users.findUnique({
-      where: { clerk_user_id: userId }
+    // Create user_tenant relationship
+    await prisma.user_tenants.create({
+      data: {
+        user_id: dbUser.id,
+        tenant_id: tenant.id,
+        role: 'staff' // Default role when joining
+      }
     });
-
-    if (dbUser) {
-      // User exists but belongs to different tenant
-      // For now, switch them (in new schema, we'd add to user_tenants)
-      await prisma.users.update({
-        where: { id: dbUser.id },
-        data: {
-          tenant_id: tenant.id,
-          role: 'staff' // Default role when joining
-        }
-      });
-    } else {
-      // Create new user
-      await prisma.users.create({
-        data: {
-          tenant_id: tenant.id,
-          clerk_user_id: userId,
-          email,
-          name,
-          role: 'staff',
-        },
-      });
-    }
 
     console.log(`✅ User ${email} joined restaurant "${tenant.name}"`);
 
