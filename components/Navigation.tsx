@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -22,6 +22,10 @@ export default function Navigation() {
     return null;
   });
 
+  // For sliding indicator animation
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const navRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Check if there's an active restaurant in localStorage
     const restaurantId = localStorage.getItem('activeRestaurantId');
@@ -31,6 +35,19 @@ export default function Navigation() {
     const role = localStorage.getItem('activeRestaurantRole');
     setUserRole(role);
   }, [pathname]); // Re-check on route change
+
+  // Update sliding indicator position when pathname or role changes
+  useEffect(() => {
+    if (navRef.current) {
+      const activeLink = navRef.current.querySelector(`[href="${pathname}"]`) as HTMLElement;
+      if (activeLink) {
+        setIndicatorStyle({
+          left: activeLink.offsetLeft,
+          width: activeLink.offsetWidth,
+        });
+      }
+    }
+  }, [pathname, userRole]);
 
   const handleLogout = () => {
     logout();
@@ -72,67 +89,70 @@ export default function Navigation() {
               <span className="hidden sm:inline">Counter Bell</span>
             </h1>
 
-            {/* Back to Restaurants */}
-            {hasActiveRestaurant && (
-              <button
-                onClick={switchRestaurant}
-                className="flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:bg-opacity-20"
-                style={{ backgroundColor: 'rgba(242, 228, 214, 0.1)', color: '#F2E4D6' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
+            {/* Desktop Navigation with Sliding Indicator */}
+            <div className="hidden md:flex relative" ref={navRef}>
+              {/* Animated sliding indicator */}
+              <div
+                className="absolute bottom-0 h-0.5 transition-all duration-300 ease-out"
+                style={{
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`,
+                  backgroundColor: '#FFB975',
                 }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
-                }}
-                title="Back to restaurants"
-              >
-                ←
-              </button>
-            )}
-            <div className="hidden md:flex space-x-2">
-              {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                    pathname === link.href
-                      ? 'shadow-lg'
-                      : 'hover:bg-opacity-20'
-                  }`}
-                  style={pathname === link.href
-                    ? { backgroundColor: '#FFB975', color: '#174D5A' }
-                    : { color: '#F2E4D6' }
-                  }
-                  onMouseEnter={(e) => {
-                    if (pathname !== link.href) {
-                      e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (pathname !== link.href) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              />
+
+              <div className="flex space-x-2">
+                {links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ease-out cursor-pointer relative ${
+                      pathname === link.href
+                        ? 'transform scale-105'
+                        : 'hover:scale-105'
+                    }`}
+                    style={{
+                      color: pathname === link.href ? '#FFB975' : '#F2E4D6',
+                      backgroundColor: pathname === link.href
+                        ? 'rgba(255, 185, 117, 0.15)'
+                        : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (pathname !== link.href) {
+                        e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (pathname !== link.href) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      } else {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.15)';
+                      }
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
+
             {/* Mobile Navigation */}
             <div className="flex md:hidden space-x-1">
               {links.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                  className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all duration-300 ease-out cursor-pointer ${
                     pathname === link.href
-                      ? 'shadow-lg'
-                      : 'hover:bg-opacity-20'
+                      ? 'transform scale-105'
+                      : 'hover:scale-105'
                   }`}
-                  style={pathname === link.href
-                    ? { backgroundColor: '#FFB975', color: '#174D5A' }
-                    : { color: '#F2E4D6' }
-                  }
+                  style={{
+                    color: pathname === link.href ? '#FFB975' : '#F2E4D6',
+                    backgroundColor: pathname === link.href
+                      ? 'rgba(255, 185, 117, 0.15)'
+                      : 'transparent',
+                  }}
                 >
                   {link.label}
                 </Link>
@@ -140,8 +160,33 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* User Info & Logout */}
+          {/* User Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Switch Restaurant Button */}
+            {hasActiveRestaurant && (
+              <button
+                onClick={switchRestaurant}
+                className="px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ease-out hover:scale-105"
+                style={{
+                  backgroundColor: 'rgba(242, 228, 214, 0.1)',
+                  color: '#F2E4D6',
+                  border: '1px solid rgba(242, 228, 214, 0.2)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.2)';
+                }}
+                title="Switch restaurant"
+              >
+                <span className="hidden sm:inline">Switch</span>
+                <span className="inline sm:hidden">⇄</span>
+              </button>
+            )}
+
             {user && (
               <>
                 <div className="text-right hidden sm:block">
@@ -154,13 +199,19 @@ export default function Navigation() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 hover:bg-opacity-20 cursor-pointer"
-                  style={{ backgroundColor: 'rgba(242, 228, 214, 0.1)', color: '#F2E4D6' }}
+                  className="px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 ease-out hover:scale-105 cursor-pointer"
+                  style={{
+                    backgroundColor: 'rgba(242, 228, 214, 0.1)',
+                    color: '#F2E4D6',
+                    border: '1px solid rgba(242, 228, 214, 0.2)'
+                  }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.2)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 185, 117, 0.3)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = 'rgba(242, 228, 214, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(242, 228, 214, 0.2)';
                   }}
                 >
                   Logout
