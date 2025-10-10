@@ -34,15 +34,48 @@ export async function POST(request: Request) {
     }
 
     try {
-      // Get the first tenant (for now, single-tenant mode)
-      // TODO: In multi-tenant mode, extract phone number from SIP headers and query by twilio_phone_number
-      const tenant = await prisma.tenants.findFirst({
-        where: { status: 'active' }
-      });
+      // Extract restaurant phone number from Diversion SIP header
+      let restaurantPhoneNumber = "";
+      const diversionHeader = data.sip_headers?.find((h: any) => h.name === "Diversion");
+
+      if (diversionHeader) {
+        // Extract phone number from format: <sip:+13659063275@twilio.com>;reason=unconditional
+        const phoneMatch = diversionHeader.value.match(/\+1(\d+)/);
+        if (phoneMatch) {
+          restaurantPhoneNumber = phoneMatch[1]; // Store without +1
+          console.log("🏪 Restaurant phone number (Diversion):", restaurantPhoneNumber);
+        }
+      }
+
+      // Query tenant by restaurant phone number
+      let tenant = null;
+
+      if (restaurantPhoneNumber) {
+        tenant = await prisma.tenants.findFirst({
+          where: {
+            phone_number: restaurantPhoneNumber,
+            status: "active"
+          }
+        });
+
+        if (tenant) {
+          console.log("✅ Found tenant by phone number:", tenant.name);
+        } else {
+          console.log("⚠️  No tenant found with phone number:", restaurantPhoneNumber);
+        }
+      }
+
+      // Fallback: if no Diversion header or no matching tenant, use first active tenant
+      if (!tenant) {
+        console.log("🔄 Falling back to first active tenant");
+        tenant = await prisma.tenants.findFirst({
+          where: { status: "active" }
+        });
+      }
 
       if (!tenant) {
-        console.log('❌ No active tenant found');
-        return NextResponse.json({ error: 'No active restaurant' }, { status: 404 });
+        console.log("❌ No active tenant found");
+        return NextResponse.json({ error: "No active restaurant" }, { status: 404 });
       }
 
       const isOpen = tenant.is_open ?? true;
