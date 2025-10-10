@@ -13,19 +13,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
-      include: { tenants: true }
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
+
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ isOpen: true, lastUpdated: new Date().toISOString() });
+    }
+
+    const tenant = await prisma.tenants.findUnique({
+      where: { id: access.tenantId }
     });
 
-    if (!user?.tenants) {
+    if (!tenant) {
       return NextResponse.json({ isOpen: true, lastUpdated: new Date().toISOString() });
     }
 
     return NextResponse.json({
-      isOpen: user.tenants.is_open ?? true,
-      lastUpdated: user.tenants.updated_at?.toISOString() || new Date().toISOString()
+      isOpen: tenant.is_open ?? true,
+      lastUpdated: tenant.updated_at?.toISOString() || new Date().toISOString()
     });
   } catch (error: any) {
     console.error('Error reading restaurant status:', error);
@@ -43,19 +50,18 @@ export async function POST(request: Request) {
 
     const { isOpen } = await request.json();
 
-    // Get user's tenant
-    const user = await prisma.users.findUnique({
-      where: { clerk_user_id: userId },
-      select: { tenant_id: true }
-    });
+    // Get active restaurant ID from header
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
 
-    if (!user?.tenant_id) {
-      return NextResponse.json({ error: 'No tenant found' }, { status: 404 });
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
     // Update tenant status
     const tenant = await prisma.tenants.update({
-      where: { id: user.tenant_id },
+      where: { id: access.tenantId },
       data: {
         is_open: isOpen,
         updated_at: new Date()
