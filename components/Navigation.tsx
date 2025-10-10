@@ -186,7 +186,7 @@ export default function Navigation() {
                         e.currentTarget.style.color = '#F2E4D6';
                       }}
                     >
-                      🔄 Switch Restaurant
+                      Switch Restaurant
                     </button>
                   </div>
                 )}

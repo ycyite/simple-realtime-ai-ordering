@@ -115,9 +115,9 @@ function InviteCodesContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Invite Codes</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-8">Invite Codes</h1>
           <div className="text-center py-12">Loading...</div>
         </div>
       </div>
@@ -125,16 +125,16 @@ function InviteCodesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Invite Codes</h1>
-            <p className="text-gray-600 mt-2">Manage one-time invite codes for your team</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Invite Codes</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage one-time invite codes for your team</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out hover:scale-105 cursor-pointer"
+            className="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out hover:scale-105 cursor-pointer whitespace-nowrap"
             style={{
               backgroundColor: 'rgba(255, 185, 117, 0.9)',
               color: '#174D5A',
@@ -152,27 +152,27 @@ function InviteCodesContent() {
         </div>
 
         {inviteCodes.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
+          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center text-gray-500">
             No active invite codes. Create one to invite team members!
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Code
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created By
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Expires
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -180,12 +180,12 @@ function InviteCodesContent() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {inviteCodes.map((code) => (
                   <tr key={code.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{code.code}</code>
+                    <td className="px-4 sm:px-6 py-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <code className="text-xs sm:text-sm font-mono bg-gray-100 px-2 py-1 rounded break-all">{code.code}</code>
                         <button
                           onClick={() => copyToClipboard(code.code)}
-                          className="px-2 py-1 text-xs font-semibold rounded transition-colors cursor-pointer"
+                          className="px-2 py-1 text-xs font-semibold rounded transition-colors cursor-pointer self-start sm:self-auto"
                           style={{ color: '#174D5A' }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';
@@ -197,20 +197,33 @@ function InviteCodesContent() {
                           Copy
                         </button>
                       </div>
+                      <div className="sm:hidden mt-2 space-y-1">
+                        <div>
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(code.role)}`}>
+                            {code.role}
+                          </span>
+                        </div>
+                        <div className="md:hidden text-xs text-gray-500">
+                          By: {code.created_by.name}
+                        </div>
+                        <div className="lg:hidden text-xs text-gray-500">
+                          Expires: {code.expires_at ? formatDate(code.expires_at) : 'Never'}
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(code.role)}`}>
                         {code.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{code.created_by.name}</div>
                       <div className="text-xs text-gray-500">{code.created_by.email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {code.expires_at ? formatDate(code.expires_at) : 'Never'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => deleteInviteCode(code.id)}
                         className="px-3 py-1.5 text-sm font-semibold rounded transition-colors cursor-pointer"
