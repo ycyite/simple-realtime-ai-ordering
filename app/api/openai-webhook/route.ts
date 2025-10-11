@@ -1,3 +1,4 @@
+// WebSocket handler for OpenAI Realtime API - Updated
 import { NextResponse } from 'next/server';
 import WebSocket from 'ws';
 import { prisma } from '@/lib/prisma';
