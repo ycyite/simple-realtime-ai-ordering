@@ -4,6 +4,7 @@ import { apiFetch } from '@/lib/api-client';
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import WalletSection from '@/components/WalletSection';
 import { RestaurantSettings } from '@/types';
 
 const defaultSettings: RestaurantSettings = {
@@ -28,6 +29,8 @@ function SettingsContent() {
   const [isOpen, setIsOpen] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [isRecharging, setIsRecharging] = useState(false);
 
   // Check if user has selected a restaurant, if not redirect to restaurants page
   useEffect(() => {
@@ -65,6 +68,7 @@ function SettingsContent() {
         setIsOpen(data.isOpen);
       })
       .catch(err => console.error('Failed to load restaurant status:', err));
+    // Load wallet balance    apiFetch('/api/wallet/balance')      .then(res => res.json())      .then(data => {        setWalletBalance(data.walletBalance || 0);      })      .catch(err => console.error('Failed to load wallet balance:', err));
   }, []);
 
   const handleStatusToggle = async () => {

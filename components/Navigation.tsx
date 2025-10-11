@@ -86,6 +86,11 @@ export default function Navigation() {
   }
 
   // Everyone can see Settings (but managers will have limited access)
+  // Only Owners can see Billing
+  if (userRole === 'owner') {
+    links.push({ href: '/billing', label: 'Billing', icon: '💰' });
+  }
+
   links.push({ href: '/settings', label: 'Settings', icon: '⚙️' });
 
   return (
