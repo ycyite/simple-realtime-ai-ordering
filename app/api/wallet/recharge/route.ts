@@ -53,6 +53,7 @@ export async function POST(request: Request) {
             tax_code: 'txcd_10000000', // General digital product
           },
           unit_amount: Math.round(amount * 100), // Convert to cents
+          tax_behavior: 'exclusive', // Tax added on top of amount
         },
         quantity: 1,
       }],
