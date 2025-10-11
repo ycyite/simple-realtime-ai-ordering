@@ -472,7 +472,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
               // Save call log to database
               try {
-                await prisma.call_logs.create({
+                const callLog = await prisma.call_logs.create({
                   data: {
                     tenant_id: tenant.id,
                     call_sid: call_id,
@@ -489,7 +489,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 });
                 console.log('✅ Call log saved to database');
                 // Deduct call cost from wallet
-                await deductCallCost(tenant.id, call_id, totalCost);
+                await deductCallCost(tenant.id, callLog.id, totalCost);
               } catch (error) {
                 console.error('❌ Error saving call log:', error);
               }
