@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import WebSocket from 'ws';
 import { prisma } from '@/lib/prisma';
+import { deductCallCost } from '@/lib/wallet';
 
 // Force Node.js runtime (required for WebSocket)
 export const runtime = 'nodejs';
@@ -487,6 +488,8 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   }
                 });
                 console.log('✅ Call log saved to database');
+                // Deduct call cost from wallet
+                await deductCallCost(tenant.id, call_id, totalCost);
               } catch (error) {
                 console.error('❌ Error saving call log:', error);
               }

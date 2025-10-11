@@ -20,7 +20,8 @@
       "Bash(npx tsx:*)",
       "Bash(npx prisma:*)",
       "Bash(cat:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
