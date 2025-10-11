@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     const { amount } = await request.json();
 
     // Validate amount
-    if (!amount || amount < 10 || amount > 1000) {
-      return NextResponse.json({ error: 'Amount must be between $10 and $1000' }, { status: 400 });
+    if (!amount || amount < 15 || amount > 1000) {
+      return NextResponse.json({ error: 'Amount must be between $15 and $1000' }, { status: 400 });
     }
 
     const stripe = getStripe();
