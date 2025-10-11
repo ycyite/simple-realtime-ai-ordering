@@ -50,16 +50,12 @@ export async function POST(request: Request) {
           product_data: {
             name: 'Wallet Credit',
             description: `Add $${amount.toFixed(2)} to your AI Phone Service wallet`,
-            tax_code: 'txcd_10000000', // General digital product
           },
           unit_amount: Math.round(amount * 100), // Convert to cents
         },
         quantity: 1,
       }],
       mode: 'payment',
-      automatic_tax: {
-        enabled: true,
-      },
       success_url: `${process.env.NEXT_PUBLIC_URL || 'https://counterbell.up.railway.app'}/billing?recharge=success&amount=${amount}`,
       cancel_url: `${process.env.NEXT_PUBLIC_URL || 'https://counterbell.up.railway.app'}/billing?recharge=cancelled`,
       metadata: {
