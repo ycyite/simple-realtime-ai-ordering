@@ -259,10 +259,10 @@ function BillingContent() {
                         className="text-2xl font-bold"
                         style={{ color: tx.amount > 0 ? '#4C7A62' : '#dc2626' }}
                       >
-                        {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
+                        {tx.amount > 0 ? '+' : ''}${Math.abs(Number(tx.amount)).toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Balance: ${tx.balance_after.toFixed(2)}
+                        Balance: ${Number(tx.balance_after).toFixed(2)}
                       </p>
                     </div>
                   </div>
