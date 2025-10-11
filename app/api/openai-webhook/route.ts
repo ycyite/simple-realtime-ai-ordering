@@ -362,13 +362,21 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                         output: JSON.stringify({ success: true, orderId: newOrder.id })
                       }
                     });
-                    ws.send(responseMessage);
+                    if (ws.readyState === WebSocket.OPEN) {
+
+                      ws.send(responseMessage);
+
+                    }
 
                     // Continue the conversation
                     const continueMessage = JSON.stringify({
                       type: 'response.create'
                     });
-                    ws.send(continueMessage);
+                    if (ws.readyState === WebSocket.OPEN) {
+
+                      ws.send(continueMessage);
+
+                    }
                   } catch (sendError: any) {
                     console.error('❌ Error sending WebSocket message:', sendError);
                   }
@@ -386,7 +394,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                         output: JSON.stringify({ success: false, error: error.message })
                       }
                     });
-                    ws.send(errorMessage);
+                    if (ws.readyState === WebSocket.OPEN) {
+
+                      ws.send(errorMessage);
+
+                    }
                   } catch (sendError: any) {
                     console.error('❌ Error sending WebSocket error message:', sendError);
                   }
@@ -408,7 +420,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                         output: JSON.stringify({ success: true })
                       }
                     });
-                    ws.send(endCallMessage);
+                    if (ws.readyState === WebSocket.OPEN) {
+
+                      ws.send(endCallMessage);
+
+                    }
                   } catch (sendError: any) {
                     console.error('❌ Error sending end_call WebSocket message:', sendError);
                   }
