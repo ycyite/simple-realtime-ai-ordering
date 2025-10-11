@@ -248,8 +248,8 @@ function BillingContent() {
                       {/* Cost Breakdown for AI calls */}
                       {tx.type === 'ai_call_cost' && tx.openai_cost && (
                         <div className="mt-2 ml-10 text-xs text-gray-500 space-y-1">
-                          <div>OpenAI: ${tx.openai_cost.toFixed(6)} → Charged: ${tx.openai_charged?.toFixed(6)}</div>
-                          <div>Platform markup: ${tx.platform_markup?.toFixed(6)}</div>
+                          <div>OpenAI: ${Number(tx.openai_cost).toFixed(6)} → Charged: ${Number(tx.openai_charged || 0).toFixed(6)}</div>
+                          <div>Platform markup: ${Number(tx.platform_markup || 0).toFixed(6)}</div>
                         </div>
                       )}
                     </div>
