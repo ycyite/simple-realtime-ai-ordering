@@ -56,8 +56,8 @@ export async function POST(request: Request) {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_URL}/settings?recharge=success&amount=${amount}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/settings?recharge=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_URL || 'https://counterbell.up.railway.app'}/billing?recharge=success&amount=${amount}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL || 'https://counterbell.up.railway.app'}/billing?recharge=cancelled`,
       metadata: {
         tenant_id: access.tenantId,
         recharge_amount: amount.toString(),
