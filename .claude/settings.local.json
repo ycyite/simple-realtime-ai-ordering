@@ -21,7 +21,8 @@
       "Bash(npx prisma:*)",
       "Bash(cat:*)",
       "Bash(npx tsc:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(tasklist)"
     ],
     "deny": [],
     "ask": []
