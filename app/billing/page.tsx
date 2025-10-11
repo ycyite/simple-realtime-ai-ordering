@@ -30,6 +30,7 @@ function BillingContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isRecharging, setIsRecharging] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [customAmount, setCustomAmount] = useState("");
 
   // Check if user has selected a restaurant
   useEffect(() => {
@@ -64,7 +65,15 @@ function BillingContent() {
       });
   }, []);
 
-  const handleRecharge = async (amount: number) => {
+  const handleRecharge = async () => {
+    const amount = parseFloat(customAmount);
+    
+    // Validate minimum amount
+    if (isNaN(amount) || amount < 15) {
+      alert('Please enter an amount of at least $15');
+      return;
+    }
+    
     setIsRecharging(true);
     try {
       const res = await apiFetch('/api/wallet/recharge', {
@@ -170,32 +179,36 @@ function BillingContent() {
               </p>
             </div>
 
-            {/* Recharge Buttons */}
+            {/* Custom Top-Up Input */}
             <div className="flex flex-col gap-3 w-full md:w-auto">
-              <button
-                onClick={() => handleRecharge(25)}
-                disabled={isRecharging}
-                className="px-8 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
-              >
-                Add $25
-              </button>
-              <button
-                onClick={() => handleRecharge(50)}
-                disabled={isRecharging}
-                className="px-8 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
-              >
-                Add $50
-              </button>
-              <button
-                onClick={() => handleRecharge(100)}
-                disabled={isRecharging}
-                className="px-8 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
-              >
-                Add $100
-              </button>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold" style={{ color: '#F2E4D6' }}>
+                  Top-Up Amount (minimum $15)
+                </label>
+                <input
+                  type="number"
+                  min="15"
+                  step="1"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  disabled={isRecharging}
+                  className="px-4 py-2 rounded-lg border-2 font-semibold disabled:opacity-50"
+                  style={{ 
+                    backgroundColor: '#fff',
+                    borderColor: '#4C7A62',
+                    color: '#174D5A'
+                  }}
+                />
+                <button
+                  onClick={handleRecharge}
+                  disabled={isRecharging || !customAmount}
+                  className="px-8 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
+                >
+                  {isRecharging ? 'Processing...' : 'Top Up Wallet'}
+                </button>
+              </div>
             </div>
           </div>
 
