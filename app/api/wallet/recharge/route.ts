@@ -3,9 +3,14 @@ import { auth } from '@clerk/nextjs/server';
 import { getActiveTenantId } from '@/lib/tenant-access';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not set');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-09-30.clover',
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +38,8 @@ export async function POST(request: Request) {
     if (!amount || amount < 10 || amount > 1000) {
       return NextResponse.json({ error: 'Amount must be between $10 and $1000' }, { status: 400 });
     }
+
+    const stripe = getStripe();
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
