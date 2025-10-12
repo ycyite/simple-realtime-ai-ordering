@@ -1,11 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SignIn } from '@clerk/nextjs';
 
 export default function SignInPage() {
-  const router = useRouter();
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #2d6a5f 0%, #4a8b7f 100%)' }}>

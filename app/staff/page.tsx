@@ -1,7 +1,6 @@
 'use client';
 import { apiFetch } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -35,7 +34,6 @@ export default function StaffPage() {
 }
 
 function StaffContent() {
-  const router = useRouter();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
 

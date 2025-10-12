@@ -43,21 +43,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clerkUser, isLoaded]);
 
   // These methods are deprecated with Clerk, but kept for backward compatibility
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (_email: string, _password: string): Promise<boolean> => {
     console.warn('login() is deprecated. Use Clerk SignIn component instead.');
     return false;
   };
 
-  const loginWithPhone = async (phone: string, password: string): Promise<boolean> => {
+  const loginWithPhone = async (_phone: string, _password: string): Promise<boolean> => {
     console.warn('loginWithPhone() is deprecated. Use Clerk SignIn component instead.');
     return false;
   };
 
   const register = async (
-    email: string,
-    phone: string,
-    password: string,
-    name: string
+        _email: string,
+        _phone: string,
+        _password: string,
+        _name: string
   ): Promise<boolean> => {
     console.warn('register() is deprecated. Use Clerk SignUp component instead.');
     return false;

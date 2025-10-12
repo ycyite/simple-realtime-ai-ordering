@@ -283,7 +283,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 // Input token breakdown
                 const inputTextTokens = inputDetails.text_tokens || 0;
                 const inputAudioTokens = inputDetails.audio_tokens || 0;
-                const inputCachedTokens = inputDetails.cached_tokens || 0;
+                const _inputCachedTokens = inputDetails.cached_tokens || 0;
 
                 // Cached breakdown
                 const cachedDetails = inputDetails.cached_tokens_details || {};
@@ -293,7 +293,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 // Uncached calculation
                 const uncachedTextTokens = inputTextTokens - cachedTextTokens;
                 const uncachedAudioTokens = inputAudioTokens - cachedAudioTokens;
-                const totalUncachedInput = uncachedTextTokens + uncachedAudioTokens;
+                const _totalUncachedInput = uncachedTextTokens + uncachedAudioTokens;
 
                 // Output token breakdown
                 const outputTextTokens = outputDetails.text_tokens || 0;

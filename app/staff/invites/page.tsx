@@ -1,7 +1,6 @@
 'use client';
 import { apiFetch } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -27,7 +26,6 @@ export default function InviteCodesPage() {
 }
 
 function InviteCodesContent() {
-  const router = useRouter();
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);

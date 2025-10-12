@@ -49,11 +49,10 @@ function OrdersContent() {
       .catch(err => console.error('Failed to load orders:', err));
   }, []);
 
-  const [filter, setFilter] = useState<'all' | 'undealt' | 'preparing' | 'completed'>('all');
   const [undealtSearch, setUndealtSearch] = useState('');
   const [preparingSearch, setPreparingSearch] = useState('');
   const [completedSearch, setCompletedSearch] = useState('');
-  const { isAlertActive, dismissAlert, playbackError } = useOrderAlert(orders);
+  const { dismissAlert, playbackError } = useOrderAlert(orders);
 
   // Poll for new orders every 5 seconds
   useEffect(() => {
@@ -79,10 +78,6 @@ function OrdersContent() {
     return () => clearInterval(interval);
   }, []);
 
-  const filteredOrders = orders.filter((order) => {
-    if (filter === 'all') return true;
-    return order.status === filter;
-  });
 
   const undealtCount = orders.filter((o) => o.status === 'undealt').length;
 
@@ -116,18 +111,6 @@ function OrdersContent() {
     });
   };
 
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'undealt':
-        return 'bg-red-100 text-red-800';
-      case 'preparing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const todayOrders = orders.filter(o => {
