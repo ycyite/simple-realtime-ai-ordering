@@ -39,24 +39,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Amount must be between $15 and $1000' }, { status: 400 });
     }
 
+    // Calculate Stripe processing fee (2.9% + $0.30)
+    const processingFee = Math.round((amount * 0.029 + 0.30) * 100) / 100; // Round to 2 decimals
+
     const stripe = getStripe();
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Wallet Credit',
-            description: `Add $${amount.toFixed(2)} to your AI Phone Service wallet`,
-            tax_code: 'txcd_10000000', // General digital product
+      line_items: [
+        // Wallet credit (what goes into the wallet)
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Wallet Credit',
+              description: 'Credit added to your wallet',
+              tax_code: 'txcd_10000000', // General digital product
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+            tax_behavior: 'exclusive', // Tax added on top of amount
           },
-          unit_amount: Math.round(amount * 100), // Convert to cents
-          tax_behavior: 'exclusive', // Tax added on top of amount
+          quantity: 1,
         },
-        quantity: 1,
-      }],
+        // Processing fee (covers Stripe fees)
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Processing Fee',
+              description: 'Credit card processing fee',
+            },
+            unit_amount: Math.round(processingFee * 100), // Convert to cents
+            tax_behavior: 'exclusive',
+          },
+          quantity: 1,
+        }
+      ],
       mode: 'payment',
       automatic_tax: {
         enabled: true,
