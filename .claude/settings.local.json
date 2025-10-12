@@ -1,28 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push:*)",
-      "WebSearch",
-      "WebFetch(domain:platform.openai.com)",
-      "Bash(curl -X POST https://api.openai.com/v1/responses )",
       "Bash(git add:*)",
-      "Bash(git stash:*)",
-      "Bash(git checkout:*)",
-      "Bash(npm install:*)",
-      "Bash(git restore:*)",
-      "Bash(npm start)",
-      "Bash(git branch:*)",
       "Bash(git commit:*)",
-      "Read(//d/Chuyuan_Documents/Business/**)",
-      "Bash(npm run dev:*)",
-      "Bash(curl:*)",
-      "Bash(npm run build:*)",
-      "Bash(npx tsx:*)",
-      "Bash(npx prisma:*)",
-      "Bash(cat:*)",
-      "Bash(npx tsc:*)",
-      "Bash(git merge:*)",
-      "Bash(tasklist)"
+      "Bash(git push:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

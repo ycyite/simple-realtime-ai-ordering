@@ -4,7 +4,6 @@ import { apiFetch } from '@/lib/api-client';
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import WalletSection from '@/components/WalletSection';
 import { RestaurantSettings } from '@/types';
 
 const defaultSettings: RestaurantSettings = {
