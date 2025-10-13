@@ -21,25 +21,16 @@ DATABASE_URL=postgresql://[same connection string as main app]
 ### Relevant Tables
 The admin dashboard will primarily interact with these tables:
 
-1. **system_admins** - Admin user accounts
-   - `id` (UUID)
-   - `clerk_user_id` (String) - Links to Clerk authentication
-   - `email` (String)
-   - `name` (String)
-   - `role` (String) - Default: "admin"
-   - `created_at` (Timestamp)
-   - `last_login` (Timestamp)
-
-2. **tenants** - Restaurant accounts
+1. **tenants** - Restaurant accounts
    - `id`, `name`, `slug`, `phone_number`
    - `wallet_balance`, `stripe_customer_id`
    - `status`, `is_open`
    - `subscription_fee`, `low_balance_threshold`
 
-3. **wallet_transactions** - All billing transactions
-4. **call_logs** - AI call records
-5. **orders** - Customer orders
-6. **users** - Restaurant staff/owners
+2. **wallet_transactions** - All billing transactions
+3. **call_logs** - AI call records
+4. **orders** - Customer orders
+5. **users** - Restaurant staff/owners
 
 ### Prisma Schema
 Copy the entire `schema.prisma` file from the main project to maintain consistency.
@@ -48,7 +39,7 @@ Copy the entire `schema.prisma` file from the main project to maintain consisten
 
 ### Clerk Configuration
 
-**IMPORTANT**: Only ONE admin account, no self-registration
+**IMPORTANT**: Only ONE admin account (you), no self-registration, **no system_admins table needed**
 
 1. **Create separate Clerk application** for admin dashboard
    - Name: "Counter Bell Admin"
@@ -57,27 +48,19 @@ Copy the entire `schema.prisma` file from the main project to maintain consisten
 2. **Disable public sign-up**:
    - Clerk Dashboard → Settings → Restrictions
    - Turn OFF "Allow public sign-ups"
-   - Only admins can be invited via Clerk Dashboard
 
 3. **Admin account creation**:
    - Go to Clerk Dashboard → Users → Create User
-   - Enter admin email and password
-   - Copy the `clerk_user_id` after creation
-
-4. **Sync admin to database**:
-   ```sql
-   INSERT INTO system_admins (clerk_user_id, email, name, role)
-   VALUES ('user_xxxxxxxxxxxxx', 'admin@counterbell.com', 'Admin Name', 'admin');
-   ```
+   - Enter your admin email and password
+   - This is the only account that will exist
 
 ### Authentication Flow
 
 - **No registration page** - Only sign-in page at `/signin`
 - Sign-in uses Clerk's `<SignIn />` component
 - After successful login, redirect to `/dashboard`
-- Protected routes check:
-  1. User is authenticated via Clerk
-  2. User's `clerk_user_id` exists in `system_admins` table
+- Protected routes only check: User is authenticated via Clerk
+- **Simpler architecture**: No database table lookup needed, Clerk authentication is sufficient
 
 ## Tech Stack (Match Main App)
 
@@ -204,9 +187,9 @@ Platform-wide call records:
 **Date range selector**: Last 7 days, 30 days, 3 months, 1 year, custom
 
 ### 8. `/settings` - Admin Settings
-- View admin account info (email, name, last login)
-- Change password (via Clerk)
-- Platform settings:
+- View admin account info from Clerk (email, name)
+- Change password (via Clerk User Button)
+- Platform settings (could be stored in a config file or database):
   - Global markup percentage (default: 20%)
   - Low balance alert threshold
   - Default subscription fee
@@ -246,8 +229,7 @@ POST /api/admin/wallet/adjust
 Body: {
   tenantId: string,
   amount: number, // positive = add, negative = deduct
-  reason: string,
-  adminId: string
+  reason: string
 }
 ```
 
@@ -279,30 +261,15 @@ Returns: {
 Create `lib/adminAuth.ts`:
 ```typescript
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
 
-export async function getAdminUser() {
+export async function requireAuth() {
   const { userId } = await auth();
 
   if (!userId) {
     throw new Error('Unauthorized');
   }
 
-  const admin = await prisma.system_admins.findUnique({
-    where: { clerk_user_id: userId }
-  });
-
-  if (!admin) {
-    throw new Error('Not an admin user');
-  }
-
-  // Update last login
-  await prisma.system_admins.update({
-    where: { id: admin.id },
-    data: { last_login: new Date() }
-  });
-
-  return admin;
+  return userId;
 }
 ```
 
@@ -310,7 +277,7 @@ Use in all API routes:
 ```typescript
 export async function GET(request: Request) {
   try {
-    const admin = await getAdminUser(); // Throws if not admin
+    await requireAuth(); // Throws if not authenticated
 
     // ... your API logic
   } catch (error) {
@@ -325,38 +292,24 @@ Create `components/AdminRoute.tsx`:
 ```typescript
 'use client';
 import { useUser } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      // Check if user is admin
-      fetch('/api/admin/verify')
-        .then(res => res.json())
-        .then(data => {
-          if (data.isAdmin) {
-            setIsAdmin(true);
-          } else {
-            router.push('/signin');
-          }
-          setLoading(false);
-        });
-    } else if (isLoaded && !isSignedIn) {
+    if (isLoaded && !isSignedIn) {
       router.push('/signin');
     }
   }, [isLoaded, isSignedIn, router]);
 
-  if (loading) {
+  if (!isLoaded) {
     return <div>Loading...</div>;
   }
 
-  return isAdmin ? <>{children}</> : null;
+  return isSignedIn ? <>{children}</> : null;
 }
 ```
 
@@ -406,8 +359,7 @@ counter-bell-admin/
 │           ├── transactions/route.ts
 │           ├── calls/route.ts
 │           ├── analytics/route.ts
-│           ├── wallet/adjust/route.ts
-│           └── verify/route.ts
+│           └── wallet/adjust/route.ts
 ├── components/
 │   ├── AdminRoute.tsx
 │   ├── Navigation.tsx
@@ -460,11 +412,12 @@ Dashboard stat cards should show:
 ## Security Considerations
 
 1. **No public routes** except `/signin`
-2. **All API routes** must verify admin via `getAdminUser()`
+2. **All API routes** must verify authentication via `requireAuth()`
 3. **Read-only Stripe access** - No payment modifications from admin
-4. **Audit trail** - Log all manual wallet adjustments with admin ID
+4. **Audit trail** - Log all manual wallet adjustments in transaction metadata
 5. **No tenant data modification** - Only view and wallet adjustments
-6. **Rate limiting** - Implement on API routes (100 req/min per admin)
+6. **Rate limiting** - Implement on API routes (100 req/min)
+7. **Single admin only** - Clerk app has public sign-ups disabled
 
 ## Development Steps
 
@@ -488,13 +441,11 @@ Dashboard stat cards should show:
 
 5. **Set up Clerk** (new application)
 
-6. **Create admin account** in Clerk Dashboard
+6. **Create your admin account** in Clerk Dashboard
 
-7. **Seed admin to database**:
-   ```bash
-   npx prisma db push
-   # Then manually insert into system_admins table
-   ```
+7. **Test authentication**:
+   - Sign in with your Clerk admin account
+   - Verify redirect to dashboard works
 
 8. **Build pages** in this order:
    - `/signin` (authentication first)
@@ -510,7 +461,7 @@ Dashboard stat cards should show:
 
 ## Testing Checklist
 
-- [ ] Only admin can sign in (non-admins redirected)
+- [ ] Only your Clerk account can sign in (public sign-up disabled)
 - [ ] Cannot access any page without authentication
 - [ ] Dashboard shows correct statistics
 - [ ] Can search/filter restaurants
@@ -520,11 +471,10 @@ Dashboard stat cards should show:
 - [ ] Call logs display with proper cost calculations
 - [ ] Analytics charts render with real data
 - [ ] Export to CSV works
-- [ ] All API routes verify admin authorization
+- [ ] All API routes verify authentication
 
 ## Future Enhancements (Phase 2)
 
-- Multiple admin accounts with different permission levels
 - Email notifications for low restaurant balances
 - Automated reports (weekly/monthly summaries)
 - Restaurant suspension reasons and notes
@@ -540,4 +490,5 @@ Dashboard stat cards should show:
 - **Shares the database** but has independent authentication
 - **Deploy separately** to Railway (different service)
 - **Use environment variables** to point to same database
-- **Only ONE admin account** initially (can expand later)
+- **Only ONE admin account** (you) - no system_admins table needed
+- **Authentication via Clerk only** - simpler architecture, no database checks
