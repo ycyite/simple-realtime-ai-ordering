@@ -147,9 +147,7 @@ IMPORTANT INSTRUCTIONS:
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
 - After getting pickup time, REPEAT THE ENTIRE ORDER back clearly WITHOUT mentioning prices: "Your order: [list items]. Pickup at [time]. Is that correct?"
 - After customer confirms, say: "Perfect, see you at [time]. Drive safe, bye!"
-- Then IMMEDIATELY CALL THE save_order function with all order details
-- Then IMMEDIATELY CALL THE end_call function to hang up the phone
-- IMPORTANT: You MUST call end_call after save_order to terminate the call
+- Then IMMEDIATELY CALL THE save_order function with all order details (the call will end automatically after saving)
 
 RESPONSE STYLE:
 - Use short, direct sentences
@@ -215,16 +213,6 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   }
                 },
                 required: ['customerName', 'items', 'total', 'pickupTime']
-              }
-            },
-            {
-              type: 'function',
-              name: 'end_call',
-              description: 'End the phone call after saying bye to the customer',
-              parameters: {
-                type: 'object',
-                properties: {},
-                required: []
               }
             }
           ],
@@ -364,23 +352,28 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                       }
                     });
                     if (ws.readyState === WebSocket.OPEN) {
-
                       ws.send(responseMessage);
-
-                    }
-
-                    // Continue the conversation
-                    const continueMessage = JSON.stringify({
-                      type: 'response.create'
-                    });
-                    if (ws.readyState === WebSocket.OPEN) {
-
-                      ws.send(continueMessage);
-
                     }
                   } catch (sendError: any) {
                     console.error('❌ Error sending WebSocket message:', sendError);
                   }
+
+                  // Automatically end the call after saving order
+                  console.log('📞 Auto-ending call after order save');
+                  setTimeout(async () => {
+                    try {
+                      await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                          'Content-Type': 'application/json'
+                        }
+                      });
+                      console.log('✅ Call ended automatically after order save (1s delay)');
+                    } catch (error) {
+                      console.error('❌ Error hanging up call:', error);
+                    }
+                  }, 1000);
 
                 } catch (error: any) {
                   console.error('❌ Error saving phone order:', error);
@@ -403,50 +396,6 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   } catch (sendError: any) {
                     console.error('❌ Error sending WebSocket error message:', sendError);
                   }
-                }
-              }
-
-              if (functionName === 'end_call') {
-                // End the call after a delay to allow goodbye message to play
-                try {
-                  console.log('📞 AI requested to end call');
-
-                  // Send function result back to OpenAI
-                  try {
-                    const endCallMessage = JSON.stringify({
-                      type: 'conversation.item.create',
-                      item: {
-                        type: 'function_call_output',
-                        call_id: event.call_id,
-                        output: JSON.stringify({ success: true })
-                      }
-                    });
-                    if (ws.readyState === WebSocket.OPEN) {
-
-                      ws.send(endCallMessage);
-
-                    }
-                  } catch (sendError: any) {
-                    console.error('❌ Error sending end_call WebSocket message:', sendError);
-                  }
-
-                  // Wait 1 second for goodbye message to finish playing, then hang up
-                  setTimeout(async () => {
-                    try {
-                      await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
-                        method: 'POST',
-                        headers: {
-                          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                          'Content-Type': 'application/json'
-                        }
-                      });
-                      console.log('✅ Call ended via /hangup endpoint (after 1s delay)');
-                    } catch (error) {
-                      console.error('❌ Error hanging up call:', error);
-                    }
-                  }, 1000);
-                } catch (error) {
-                  console.error('❌ Error ending call:', error);
                 }
               }
             }
