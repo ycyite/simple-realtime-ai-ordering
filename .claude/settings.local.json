@@ -5,7 +5,12 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(grep:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npx prisma:*)",
+      "Read(//c/Users/ycyite/Desktop/**)",
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
