@@ -178,7 +178,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
         },
         body: JSON.stringify({
           type: 'realtime',
-          model: 'gpt-realtime',
+          model: 'gpt-realtime-mini',
           instructions: menuContext,
           tools: [
             {
