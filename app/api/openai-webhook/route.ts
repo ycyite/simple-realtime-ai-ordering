@@ -177,7 +177,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
         },
         body: JSON.stringify({
           type: 'realtime',
-          model: 'gpt-realtime-mini',
+          model: 'gpt-realtime',
           instructions: menuContext,
           tools: [
             {
@@ -411,11 +411,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
             // Print final accumulated call statistics and save to database
             if (callStats.responseCount > 0) {
-              // Calculate costs for gpt-realtime-mini pricing
-              const inputTextCost = (callStats.uncachedTextTokens * 0.60 / 1000000) + (callStats.cachedTextTokens * 0.06 / 1000000);
-              const inputAudioCost = (callStats.uncachedAudioTokens * 10.00 / 1000000) + (callStats.cachedAudioTokens * 0.30 / 1000000);
-              const outputTextCost = callStats.outputTextTokens * 2.40 / 1000000;
-              const outputAudioCost = callStats.outputAudioTokens * 20.00 / 1000000;
+              // Calculate costs for gpt-realtime pricing
+              const inputTextCost = (callStats.uncachedTextTokens * 4.00 / 1000000) + (callStats.cachedTextTokens * 0.40 / 1000000);
+              const inputAudioCost = (callStats.uncachedAudioTokens * 32.00 / 1000000) + (callStats.cachedAudioTokens * 0.40 / 1000000);
+              const outputTextCost = callStats.outputTextTokens * 16.00 / 1000000;
+              const outputAudioCost = callStats.outputAudioTokens * 64.00 / 1000000;
               const totalCost = inputTextCost + inputAudioCost + outputTextCost + outputAudioCost;
 
               console.log('\n' + '='.repeat(60));
@@ -424,14 +424,14 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               console.log('   Total AI Responses:', callStats.responseCount);
               console.log('');
               console.log('   📥 TOTAL INPUT TOKENS:', callStats.totalInputTokens);
-              console.log('      ├─ Cached Text:', callStats.cachedTextTokens, `($${(callStats.cachedTextTokens * 0.06 / 1000000).toFixed(6)})`);
-              console.log('      ├─ Cached Audio:', callStats.cachedAudioTokens, `($${(callStats.cachedAudioTokens * 0.30 / 1000000).toFixed(6)})`);
-              console.log('      ├─ Uncached Text:', callStats.uncachedTextTokens, `($${(callStats.uncachedTextTokens * 0.60 / 1000000).toFixed(6)})`);
-              console.log('      └─ Uncached Audio:', callStats.uncachedAudioTokens, `($${(callStats.uncachedAudioTokens * 10.00 / 1000000).toFixed(6)})`);
+              console.log('      ├─ Cached Text:', callStats.cachedTextTokens, `($${(callStats.cachedTextTokens * 0.40 / 1000000).toFixed(6)})`);
+              console.log('      ├─ Cached Audio:', callStats.cachedAudioTokens, `($${(callStats.cachedAudioTokens * 0.40 / 1000000).toFixed(6)})`);
+              console.log('      ├─ Uncached Text:', callStats.uncachedTextTokens, `($${(callStats.uncachedTextTokens * 4.00 / 1000000).toFixed(6)})`);
+              console.log('      └─ Uncached Audio:', callStats.uncachedAudioTokens, `($${(callStats.uncachedAudioTokens * 32.00 / 1000000).toFixed(6)})`);
               console.log('');
               console.log('   📤 TOTAL OUTPUT TOKENS:', callStats.totalOutputTokens);
-              console.log('      ├─ Text:', callStats.outputTextTokens, `($${(callStats.outputTextTokens * 2.40 / 1000000).toFixed(6)})`);
-              console.log('      └─ Audio:', callStats.outputAudioTokens, `($${(callStats.outputAudioTokens * 20.00 / 1000000).toFixed(6)})`);
+              console.log('      ├─ Text:', callStats.outputTextTokens, `($${(callStats.outputTextTokens * 16.00 / 1000000).toFixed(6)})`);
+              console.log('      └─ Audio:', callStats.outputAudioTokens, `($${(callStats.outputAudioTokens * 64.00 / 1000000).toFixed(6)})`);
               console.log('');
               console.log('   💰 GRAND TOTAL TOKENS:', callStats.totalTokens);
               console.log('   💵 TOTAL COST: $' + totalCost.toFixed(6), `(≈ $${totalCost.toFixed(4)})`);
