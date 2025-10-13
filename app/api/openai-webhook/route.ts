@@ -219,7 +219,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             {
               type: 'function',
               name: 'end_call',
-              description: 'End the phone call after saying goodbye to the customer',
+              description: 'End the phone call after saying bye to the customer',
               parameters: {
                 type: 'object',
                 properties: {},
@@ -429,7 +429,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                     console.error('❌ Error sending end_call WebSocket message:', sendError);
                   }
 
-                  // Wait 5 seconds for goodbye message to finish playing, then hang up
+                  // Wait 1 second for goodbye message to finish playing, then hang up
                   setTimeout(async () => {
                     try {
                       await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/hangup`, {
@@ -439,11 +439,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                           'Content-Type': 'application/json'
                         }
                       });
-                      console.log('✅ Call ended via /hangup endpoint (after 5s delay)');
+                      console.log('✅ Call ended via /hangup endpoint (after 1s delay)');
                     } catch (error) {
                       console.error('❌ Error hanging up call:', error);
                     }
-                  }, 5000);
+                  }, 1000);
                 } catch (error) {
                   console.error('❌ Error ending call:', error);
                 }
