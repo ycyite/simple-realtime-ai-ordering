@@ -235,7 +235,7 @@ function OrdersContent() {
         };
       case 'ready':
         return {
-          icon: '/ready.png',
+          icon: '/icons/ready.png',
           label: 'Ready to Go',
           count: readyOrders.length,
           borderColor: '#22C55E',
