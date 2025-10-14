@@ -144,7 +144,8 @@ IMPORTANT INSTRUCTIONS:
 - Continue this pattern until customer says no, that's it, or that's all
 - When customer says no/that's it/that's all, ASK FOR THEIR NAME: "Can I get a name for the order?"
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
-- After getting pickup time, CONFIRM THE COMPLETE ORDER ONCE: "Let me confirm: [list all items with quantities], pickup at [time] for [name]. Is that correct?"
+- After getting pickup time, ASK IF THEY HAVE ANY SPECIAL REQUESTS: "Any special requests or notes for your order?"
+- After getting notes (or if they say no), CONFIRM THE COMPLETE ORDER ONCE: "Let me confirm: [list all items with quantities], pickup at [time] for [name]. Is that correct?"
 - When customer says YES/CORRECT/YEAH to your confirmation question, IMMEDIATELY say: "Perfect! See you at [time]. Drive safe, bye!" and CALL save_order
 - DO NOT ask "Is that correct?" again after customer already confirmed
 - DO NOT repeat the order again after customer says yes
@@ -210,6 +211,10 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   pickupTime: {
                     type: 'string',
                     description: 'Pickup time'
+                  },
+                  notes: {
+                    type: 'string',
+                    description: 'Special requests or notes from the customer (optional)'
                   }
                 },
                 required: ['customerName', 'items', 'total', 'pickupTime']
@@ -335,7 +340,8 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                       total_amount: args.total,
                       status: 'undealt',
                       source: 'phone',
-                      pickup_time: args.pickupTime
+                      pickup_time: args.pickupTime,
+                      notes: args.notes || null
                     }
                   });
 

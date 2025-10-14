@@ -16,8 +16,12 @@ export default function OrdersPage() {
   );
 }
 
+type TabType = 'undealt' | 'preparing' | 'completed';
+
 function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('undealt');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Helper function to format pickup time
   const formatPickupTime = (pickupTime?: string, createdAt?: string) => {
@@ -108,9 +112,6 @@ function OrdersContent() {
       .catch(err => console.error('Failed to load orders:', err));
   }, []);
 
-  const [undealtSearch, setUndealtSearch] = useState('');
-  const [preparingSearch, setPreparingSearch] = useState('');
-  const [completedSearch, setCompletedSearch] = useState('');
   const { dismissAlert, playbackError } = useOrderAlert(orders);
 
   // Poll for new orders every 5 seconds
@@ -138,6 +139,10 @@ function OrdersContent() {
     return () => clearInterval(interval);
   }, []);
 
+  // Reset search when switching tabs
+  useEffect(() => {
+    setSearchTerm('');
+  }, [activeTab]);
 
   const undealtCount = orders.filter((o) => o.status === 'undealt').length;
 
@@ -171,13 +176,167 @@ function OrdersContent() {
     });
   };
 
-
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const todayOrders = orders.filter(o => {
     const today = new Date().toDateString();
     const orderDate = new Date(o.createdAt).toDateString();
     return today === orderDate;
   }).length;
+
+  const undealtOrders = orders.filter(o => o.status === 'undealt');
+  const preparingOrders = orders.filter(o => o.status === 'preparing');
+  const completedOrders = orders.filter(o => o.status === 'completed');
+
+  const getTabOrders = () => {
+    switch (activeTab) {
+      case 'undealt':
+        return filterOrders(undealtOrders, searchTerm);
+      case 'preparing':
+        return filterOrders(preparingOrders, searchTerm);
+      case 'completed':
+        return filterOrders(completedOrders, searchTerm);
+      default:
+        return [];
+    }
+  };
+
+  const getTabConfig = (tab: TabType) => {
+    switch (tab) {
+      case 'undealt':
+        return {
+          icon: '/icons/undealt.png',
+          label: 'New Orders',
+          count: undealtOrders.length,
+          borderColor: '#FFB975',
+          emptyMessage: 'No pending orders'
+        };
+      case 'preparing':
+        return {
+          icon: '/icons/dealing.png',
+          label: 'In Progress',
+          count: preparingOrders.length,
+          borderColor: '#4C7A62',
+          emptyMessage: 'No orders in progress'
+        };
+      case 'completed':
+        return {
+          icon: '/icons/check-mark.png',
+          label: 'Completed',
+          count: completedOrders.length,
+          borderColor: '#4C7A62',
+          emptyMessage: 'No completed orders'
+        };
+    }
+  };
+
+  const renderOrderCard = (order: Order) => {
+    const isCompleted = order.status === 'completed';
+    const isUndealt = order.status === 'undealt';
+    const isPreparing = order.status === 'preparing';
+
+    const borderColor = isUndealt ? '#FFB975' : '#4C7A62';
+    const pickupTimeColor = isCompleted ? '#4C7A62' : '#FFB975';
+
+    return (
+      <div
+        key={order.id}
+        className={`glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl ${isCompleted ? 'opacity-80' : ''}`}
+        style={{ borderLeftColor: borderColor }}
+      >
+        {/* Customer Name */}
+        <div className="mb-3">
+          <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <img src="/icons/user.png" alt="" className="w-6 h-6" />
+            {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
+          </p>
+        </div>
+
+        {/* Pickup Time */}
+        <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
+          <img src="/icons/clock.png" alt="" className="w-6 h-6" />
+          <span className="font-semibold">Pickup Time:</span>
+          <span className="font-bold" style={{ color: pickupTimeColor }}>
+            {formatPickupTime(order.pickupTime, order.createdAt)}
+          </span>
+        </div>
+
+        {/* Phone Number */}
+        <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
+          <img src="/icons/phone.png" alt="" className="w-6 h-6" />
+          <span className="font-semibold">Phone:</span>
+          <span>{order.customerPhone}</span>
+        </div>
+
+        {/* Notes */}
+        {order.notes && (
+          <div className="mb-4 flex items-start gap-2 text-sm text-gray-700">
+            <img src="/icons/notes.png" alt="" className="w-6 h-6 flex-shrink-0" />
+            <div>
+              <span className="font-semibold">Notes:</span>
+              <p className="mt-1 text-gray-600 italic">{order.notes}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Items Summary */}
+        <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: isCompleted ? '#f9fafb' : '#F2E4D6' }}>
+          <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
+          {order.items.map((item, idx) => (
+            <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
+              <span>{item.quantity}x {item.name}</span>
+              <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Total */}
+        <div className="mb-4 pt-3 border-t border-gray-200">
+          <p className="text-xl font-bold text-center" style={{ color: isCompleted ? '#4C7A62' : '#FFB975' }}>
+            ${order.totalAmount.toFixed(2)}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        {isUndealt && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => updateOrderStatus(order.id, 'preparing')}
+              className="flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
+              style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d6350'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4C7A62'}
+            >
+              Accept
+            </button>
+            <button
+              onClick={() => updateOrderStatus(order.id, 'cancelled')}
+              className="flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
+              style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#123b46'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
+            >
+              Decline
+            </button>
+          </div>
+        )}
+
+        {isPreparing && (
+          <button
+            onClick={() => updateOrderStatus(order.id, 'completed')}
+            className="w-full px-4 py-2 rounded-lg transition-all duration-200 font-bold"
+            style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
+          >
+            Complete Order
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const currentTabConfig = getTabConfig(activeTab);
+  const tabOrders = getTabOrders();
 
   return (
     <div className="min-h-screen">
@@ -216,275 +375,69 @@ function OrdersContent() {
           </div>
         </div>
 
-        {/* Kanban Board - Three Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Column 1: Undealt Orders */}
-          <div className="glass-card p-4">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-                  <img src="/icons/undealt.png" alt="" className="w-7 h-7" />
-                  New Orders
-                  {orders.filter(o => o.status === 'undealt').length > 0 && (
-                    <span className="px-3 py-1 rounded-full text-sm animate-pulse" style={{ backgroundColor: '#FFB975', color: '#174D5A' }}>
-                      {orders.filter(o => o.status === 'undealt').length}
-                    </span>
-                  )}
-                </h2>
-              </div>
-              <input
-                type="text"
-                placeholder="Search by name, phone, or item..."
-                value={undealtSearch}
-                onChange={(e) => setUndealtSearch(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none focus:ring-2 transition-all"
-                style={{
-                  borderColor: '#F2E4D6',
-                  backgroundColor: 'rgba(242, 228, 214, 0.2)',
-                  color: '#F2E4D6'
-                }}
-              />
-            </div>
-            <div className="space-y-3">
-              {filterOrders(orders.filter(o => o.status === 'undealt'), undealtSearch).length === 0 ? (
-                <div className="glass-white p-6 text-center text-gray-500">
-                  {undealtSearch ? 'No matching orders' : 'No pending orders'}
-                </div>
-              ) : (
-                filterOrders(orders.filter(o => o.status === 'undealt'), undealtSearch).map((order) => (
-                  <div key={order.id} className="glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl" style={{ borderLeftColor: '#FFB975' }}>
-                    {/* Customer Name */}
-                    <div className="mb-3">
-                      <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <img src="/icons/user.png" alt="" className="w-6 h-6" />
-                        {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
-                      </p>
-                    </div>
-
-                    {/* Pickup Time */}
-                    <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-                      <img src="/icons/clock.png" alt="" className="w-6 h-6" />
-                      <span className="font-semibold">Pickup Time:</span>
-                      <span className="font-bold" style={{ color: '#FFB975' }}>
-                        {formatPickupTime(order.pickupTime, order.createdAt)}
-                      </span>
-                    </div>
-
-                    {/* Phone Number */}
-                    <div className="mb-4 flex items-center gap-2 text-sm text-gray-700">
-                      <img src="/icons/phone.png" alt="" className="w-6 h-6" />
-                      <span className="font-semibold">Phone:</span>
-                      <span>{order.customerPhone}</span>
-                    </div>
-
-                    {/* Items Summary */}
-                    <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#F2E4D6' }}>
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
-                          <span>{item.quantity}x {item.name}</span>
-                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Total */}
-                    <div className="mb-4 pt-3 border-t border-gray-200">
-                      <p className="text-xl font-bold text-center" style={{ color: '#FFB975' }}>
-                        ${order.totalAmount.toFixed(2)}
-                      </p>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateOrderStatus(order.id, 'preparing')}
-                        className="flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
-                        style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d6350'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4C7A62'}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                        className="flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
-                        style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#123b46'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Column 2: Current Orders (Preparing) */}
-          <div className="glass-card p-4">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-                  <img src="/icons/dealing.png" alt="" className="w-7 h-7" />
-                  In Progress
-                  {orders.filter(o => o.status === 'preparing').length > 0 && (
-                    <span className="px-3 py-1 rounded-full text-sm" style={{ backgroundColor: '#FFB975', color: '#174D5A' }}>
-                      {orders.filter(o => o.status === 'preparing').length}
-                    </span>
-                  )}
-                </h2>
-              </div>
-              <input
-                type="text"
-                placeholder="Search by name, phone, or item..."
-                value={preparingSearch}
-                onChange={(e) => setPreparingSearch(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none focus:ring-2 transition-all"
-                style={{
-                  borderColor: '#F2E4D6',
-                  backgroundColor: 'rgba(242, 228, 214, 0.2)',
-                  color: '#F2E4D6'
-                }}
-              />
-            </div>
-            <div className="space-y-3">
-              {filterOrders(orders.filter(o => o.status === 'preparing'), preparingSearch).length === 0 ? (
-                <div className="glass-white p-6 text-center text-gray-500">
-                  {preparingSearch ? 'No matching orders' : 'No orders in progress'}
-                </div>
-              ) : (
-                filterOrders(orders.filter(o => o.status === 'preparing'), preparingSearch).map((order) => (
-                  <div key={order.id} className="glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl" style={{ borderLeftColor: '#4C7A62' }}>
-                    <div className="mb-3">
-                      <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <img src="/icons/user.png" alt="" className="w-6 h-6" />
-                        {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
-                      </p>
-                    </div>
-
-                    <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-                      <img src="/icons/clock.png" alt="" className="w-6 h-6" />
-                      <span className="font-semibold">Pickup Time:</span>
-                      <span className="font-bold" style={{ color: '#FFB975' }}>
-                        {formatPickupTime(order.pickupTime, order.createdAt)}
-                      </span>
-                    </div>
-
-                    <div className="mb-4 flex items-center gap-2 text-sm text-gray-700">
-                      <img src="/icons/phone.png" alt="" className="w-6 h-6" />
-                      <span className="font-semibold">Phone:</span>
-                      <span>{order.customerPhone}</span>
-                    </div>
-
-                    <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#F2E4D6' }}>
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
-                          <span>{item.quantity}x {item.name}</span>
-                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mb-4 pt-3 border-t border-gray-200">
-                      <p className="text-xl font-bold text-center" style={{ color: '#FFB975' }}>
-                        ${order.totalAmount.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => updateOrderStatus(order.id, 'completed')}
-                      className="w-full px-4 py-2 rounded-lg transition-all duration-200 font-bold"
-                      style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
+        {/* Tabs Navigation */}
+        <div className="glass-card p-2 mb-6">
+          <div className="flex gap-2">
+            {(['undealt', 'preparing', 'completed'] as TabType[]).map((tab) => {
+              const config = getTabConfig(tab);
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className="flex-1 px-6 py-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-3"
+                  style={{
+                    backgroundColor: isActive ? '#FFB975' : 'transparent',
+                    color: isActive ? '#174D5A' : '#F2E4D6'
+                  }}
+                >
+                  <img src={config.icon} alt="" className="w-6 h-6" />
+                  <span className="font-bold text-lg">{config.label}</span>
+                  {config.count > 0 && (
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-bold ${isActive ? '' : 'animate-pulse'}`}
+                      style={{
+                        backgroundColor: isActive ? '#174D5A' : '#FFB975',
+                        color: isActive ? '#F2E4D6' : '#174D5A'
+                      }}
                     >
-                      Complete Order
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Column 3: Order History (Completed) */}
-          <div className="glass-card p-4">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-                  <img src="/icons/check-mark.png" alt="" className="w-7 h-7" />
-                  Completed
-                  {orders.filter(o => o.status === 'completed').length > 0 && (
-                    <span className="px-3 py-1 rounded-full text-sm" style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}>
-                      {orders.filter(o => o.status === 'completed').length}
+                      {config.count}
                     </span>
                   )}
-                </h2>
-              </div>
-              <input
-                type="text"
-                placeholder="Search by name, phone, or item..."
-                value={completedSearch}
-                onChange={(e) => setCompletedSearch(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none focus:ring-2 transition-all"
-                style={{
-                  borderColor: '#F2E4D6',
-                  backgroundColor: 'rgba(242, 228, 214, 0.2)',
-                  color: '#F2E4D6'
-                }}
-              />
-            </div>
-            <div className="space-y-3">
-              {filterOrders(orders.filter(o => o.status === 'completed'), completedSearch).length === 0 ? (
-                <div className="glass-white p-6 text-center text-gray-500">
-                  {completedSearch ? 'No matching orders' : 'No completed orders'}
-                </div>
-              ) : (
-                filterOrders(orders.filter(o => o.status === 'completed'), completedSearch).map((order) => (
-                  <div key={order.id} className="glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl opacity-80" style={{ borderLeftColor: '#4C7A62' }}>
-                    <div className="mb-3">
-                      <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <img src="/icons/user.png" alt="" className="w-6 h-6" />
-                        {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
-                      </p>
-                    </div>
-
-                    <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-                      <img src="/icons/clock.png" alt="" className="w-6 h-6" />
-                      <span className="font-semibold">Pickup Time:</span>
-                      <span className="font-bold" style={{ color: '#4C7A62' }}>
-                        {formatPickupTime(order.pickupTime, order.createdAt)}
-                      </span>
-                    </div>
-
-                    <div className="mb-4 flex items-center gap-2 text-sm text-gray-700">
-                      <img src="/icons/phone.png" alt="" className="w-6 h-6" />
-                      <span className="font-semibold">Phone:</span>
-                      <span>{order.customerPhone}</span>
-                    </div>
-
-                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
-                          <span>{item.quantity}x {item.name}</span>
-                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-200">
-                      <p className="text-xl font-bold text-center" style={{ color: '#4C7A62' }}>
-                        ${order.totalAmount.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                </button>
+              );
+            })}
           </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="glass-card p-6">
+          {/* Search Bar */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search by name, phone, or item..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border-2 text-sm focus:outline-none focus:ring-2 transition-all"
+              style={{
+                borderColor: '#F2E4D6',
+                backgroundColor: 'rgba(242, 228, 214, 0.2)',
+                color: '#F2E4D6'
+              }}
+            />
+          </div>
+
+          {/* Orders Grid */}
+          {tabOrders.length === 0 ? (
+            <div className="glass-white p-12 text-center text-gray-500">
+              {searchTerm ? 'No matching orders' : currentTabConfig.emptyMessage}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tabOrders.map(renderOrderCard)}
+            </div>
+          )}
         </div>
       </div>
     </div>
