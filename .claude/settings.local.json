@@ -11,9 +11,9 @@
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
       "Bash(rm:*)",
-      "Bash(npm run dev)",
-      "Bash(tasklist)",
-      "Bash(git log:*)"
+      "Bash([ -n \"$DATABASE_URL\" ])",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
