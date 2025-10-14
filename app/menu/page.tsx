@@ -251,7 +251,7 @@ function MenuContent() {
         {/* Mobile Menu Toggle Button */}
         <button
           onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          className="md:hidden fixed bottom-6 right-6 z-30 p-4 rounded-full shadow-2xl transition-all duration-200 cursor-pointer"
+          className="cursor-pointer md:hidden fixed bottom-6 right-6 z-30 p-4 rounded-full shadow-2xl transition-all duration-200"
           style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0f3640'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
@@ -264,7 +264,7 @@ function MenuContent() {
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
           <div
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
+            className="cursor-pointer md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
         )}
@@ -285,7 +285,7 @@ function MenuContent() {
                 <li key={category}>
                   <button
                     onClick={() => scrollToCategory(category)}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 shadow-md`}
+                    className="cursor-pointer w-full text-left px-4 py-3 rounded-lg transition-all duration-200 shadow-md"
                     style={activeCategory === category
                       ? { backgroundColor: '#FFB975', color: '#174D5A' }
                       : { color: '#174D5A' }
@@ -316,7 +316,7 @@ function MenuContent() {
             <div className="p-4 border-t" style={{ borderColor: '#174D5A' }}>
               <button
                 onClick={() => setIsAddingItem(true)}
-                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center gap-2"
+                className="cursor-pointer w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
@@ -343,11 +343,15 @@ function MenuContent() {
                   onFocus={() => {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
-                  className="w-full px-4 py-3 pl-12 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-gray-800"
-                  style={{ borderColor: '#174D5A' }}
+                  className="w-full px-4 py-3 pl-12 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                  style={{
+                    borderColor: '#F2E4D6',
+                    backgroundColor: 'rgba(242, 228, 214, 0.2)',
+                    color: '#F2E4D6'
+                  }}
                   onFocusCapture={(e) => e.currentTarget.style.borderColor = '#FFB975'}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#174D5A';
+                    e.currentTarget.style.borderColor = '#F2E4D6';
                     setTimeout(() => setShowSearchDropdown(false), 200);
                   }}
                 />
@@ -356,7 +360,7 @@ function MenuContent() {
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: '#174D5A' }}
+                  style={{ color: '#F2E4D6' }}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -369,7 +373,7 @@ function MenuContent() {
                     <button
                       key={item.id}
                       onClick={() => selectSearchResult(item)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition-all duration-200"
+                      className="cursor-pointer w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition-all duration-200"
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -514,7 +518,7 @@ function MenuContent() {
                   <button
                     type="button"
                     onClick={cancelForm}
-                    className="px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold cursor-pointer"
+                    className="cursor-pointer px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-semibold"
                     style={{ backgroundColor: '#F2E4D6', color: '#174D5A' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e8d8c7'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F2E4D6'}
@@ -523,7 +527,7 @@ function MenuContent() {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95 font-bold shadow-lg hover:shadow-xl cursor-pointer"
+                    className="cursor-pointer px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95 font-bold shadow-lg hover:shadow-xl"
                     style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
@@ -575,7 +579,7 @@ function MenuContent() {
                       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         <button
                           onClick={() => toggleAvailability(item.id)}
-                          className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                          className={`cursor-pointer px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                             item.available
                               ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 focus:ring-yellow-500'
                               : 'bg-green-100 text-green-800 hover:bg-green-200 focus:ring-green-500'
@@ -585,7 +589,7 @@ function MenuContent() {
                         </button>
                         <button
                           onClick={() => handleEdit(item)}
-                          className="px-3 py-1 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 text-sm font-medium cursor-pointer"
+                          className="cursor-pointer px-3 py-1 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 text-sm font-medium"
                           style={{ backgroundColor: 'rgba(76, 122, 98, 0.2)', color: '#174D5A' }}
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(76, 122, 98, 0.3)'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(76, 122, 98, 0.2)'}
@@ -594,7 +598,7 @@ function MenuContent() {
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 text-sm font-medium cursor-pointer"
+                          className="cursor-pointer px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 text-sm font-medium"
                         >
                           Delete
                         </button>

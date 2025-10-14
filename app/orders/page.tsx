@@ -301,7 +301,7 @@ function OrdersContent() {
           <div className="flex gap-2">
             <button
               onClick={() => updateOrderStatus(order.id, 'preparing')}
-              className="flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
+              className="cursor-pointer flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
               style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d6350'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4C7A62'}
@@ -310,7 +310,7 @@ function OrdersContent() {
             </button>
             <button
               onClick={() => updateOrderStatus(order.id, 'cancelled')}
-              className="flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
+              className="cursor-pointer flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
               style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#123b46'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
@@ -323,7 +323,7 @@ function OrdersContent() {
         {isPreparing && (
           <button
             onClick={() => updateOrderStatus(order.id, 'completed')}
-            className="w-full px-4 py-2 rounded-lg transition-all duration-200 font-bold"
+            className="cursor-pointer w-full px-4 py-2 rounded-lg transition-all duration-200 font-bold"
             style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
@@ -377,7 +377,7 @@ function OrdersContent() {
 
         {/* Tabs Navigation */}
         <div className="glass-card p-2 mb-6">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {(['undealt', 'preparing', 'completed'] as TabType[]).map((tab) => {
               const config = getTabConfig(tab);
               const isActive = activeTab === tab;
@@ -385,17 +385,17 @@ function OrdersContent() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className="flex-1 px-6 py-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-3"
+                  className="cursor-pointer flex-1 px-3 py-2 md:px-6 md:py-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 md:gap-3 min-w-[120px]"
                   style={{
                     backgroundColor: isActive ? '#FFB975' : 'transparent',
                     color: isActive ? '#174D5A' : '#F2E4D6'
                   }}
                 >
-                  <img src={config.icon} alt="" className="w-6 h-6" />
-                  <span className="font-bold text-lg">{config.label}</span>
+                  <img src={config.icon} alt="" className="w-5 h-5 md:w-6 md:h-6" />
+                  <span className="font-bold text-sm md:text-lg">{config.label}</span>
                   {config.count > 0 && (
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-bold ${isActive ? '' : 'animate-pulse'}`}
+                      className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-bold ${isActive ? '' : 'animate-pulse'}`}
                       style={{
                         backgroundColor: isActive ? '#174D5A' : '#FFB975',
                         color: isActive ? '#F2E4D6' : '#174D5A'

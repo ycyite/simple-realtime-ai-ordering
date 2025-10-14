@@ -6,6 +6,7 @@ export function useOrderAlert(orders: Order[]) {
   const [playbackError, setPlaybackError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const userInteracted = useRef(false);
+  const isDismissed = useRef(false);
 
   // Track user interaction for autoplay policy
   useEffect(() => {
@@ -26,14 +27,28 @@ export function useOrderAlert(orders: Order[]) {
     const undealtOrders = orders.filter(order => order.status === 'undealt');
     const hasUndealtOrders = undealtOrders.length > 0;
 
-    if (hasUndealtOrders && !isAlertActive) {
+    if (hasUndealtOrders && !isAlertActive && !isDismissed.current) {
       setIsAlertActive(true);
       playAlert();
-    } else if (!hasUndealtOrders && isAlertActive) {
-      setIsAlertActive(false);
+    } else if (!hasUndealtOrders) {
+      // Always stop alert when no undealt orders
+      isDismissed.current = false; // Reset dismiss flag
+      if (isAlertActive) {
+        setIsAlertActive(false);
+      }
       stopAlert();
     }
   }, [orders, isAlertActive]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const playAlert = () => {
     if (!audioRef.current) {
@@ -70,6 +85,7 @@ export function useOrderAlert(orders: Order[]) {
   };
 
   const dismissAlert = () => {
+    isDismissed.current = true;
     setIsAlertActive(false);
     stopAlert();
   };
