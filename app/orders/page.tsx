@@ -281,9 +281,10 @@ function OrdersContent() {
                     <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#F2E4D6' }}>
                       <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
                       {order.items.map((item, idx) => (
-                        <p key={idx} className="text-sm text-gray-800">
-                          {item.quantity}x {item.name}
-                        </p>
+                        <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
+                          <span>{item.quantity}x {item.name}</span>
+                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
                       ))}
                     </div>
 
@@ -380,9 +381,10 @@ function OrdersContent() {
                     <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#F2E4D6' }}>
                       <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
                       {order.items.map((item, idx) => (
-                        <p key={idx} className="text-sm text-gray-800">
-                          {item.quantity}x {item.name}
-                        </p>
+                        <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
+                          <span>{item.quantity}x {item.name}</span>
+                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
                       ))}
                     </div>
 
@@ -466,9 +468,10 @@ function OrdersContent() {
                     <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                       <p className="text-xs font-semibold text-gray-600 mb-2">Order Items:</p>
                       {order.items.map((item, idx) => (
-                        <p key={idx} className="text-sm text-gray-800">
-                          {item.quantity}x {item.name}
-                        </p>
+                        <div key={idx} className="flex justify-between items-center text-sm text-gray-800">
+                          <span>{item.quantity}x {item.name}</span>
+                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
                       ))}
                     </div>
 

@@ -57,6 +57,9 @@ function MenuContent() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<MenuItem[]>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [formData, setFormData] = useState<Partial<MenuItem>>({
     name: '',
     description: '',
@@ -76,6 +79,57 @@ function MenuContent() {
       block: 'start',
       inline: 'nearest'
     });
+  };
+
+  // Fuzzy search function
+  const fuzzySearch = (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const results = menuItems.filter(item => {
+      const itemName = item.name.toLowerCase();
+      const itemDescription = item.description.toLowerCase();
+
+      // Simple fuzzy matching: check if characters appear in order
+      let queryIndex = 0;
+      for (let i = 0; i < itemName.length && queryIndex < lowerQuery.length; i++) {
+        if (itemName[i] === lowerQuery[queryIndex]) {
+          queryIndex++;
+        }
+      }
+
+      // Also check if query is substring of name or description
+      const isSubstring = itemName.includes(lowerQuery) || itemDescription.includes(lowerQuery);
+      const isFuzzyMatch = queryIndex === lowerQuery.length;
+
+      return isSubstring || isFuzzyMatch;
+    });
+
+    setSearchResults(results);
+    setShowSearchDropdown(results.length > 0);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    fuzzySearch(query);
+  };
+
+  const selectSearchResult = (item: MenuItem) => {
+    setSearchQuery('');
+    setShowSearchDropdown(false);
+    setSearchResults([]);
+    setActiveCategory(item.category);
+    setTimeout(() => {
+      categoryRefs.current[item.category]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
   };
 
   // Save menu changes to backend
@@ -124,7 +178,7 @@ function MenuContent() {
       const newItem: MenuItem = {
         id: Date.now().toString(),
         name: formData.name!,
-        description: formData.description!,
+        description: formData.description || '',
         price: formData.price!,
         category: formData.category!,
         available: formData.available!,
@@ -278,6 +332,59 @@ function MenuContent() {
         <div className="flex-1 overflow-y-auto w-full">
           <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
 
+            {/* Search Bar */}
+            <div className="mb-6 relative">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search for dishes..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onFocus={() => {
+                    if (searchResults.length > 0) setShowSearchDropdown(true);
+                  }}
+                  className="w-full px-4 py-3 pl-12 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-gray-800"
+                  style={{ borderColor: '#174D5A' }}
+                  onFocusCapture={(e) => e.currentTarget.style.borderColor = '#FFB975'}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#174D5A';
+                    setTimeout(() => setShowSearchDropdown(false), 200);
+                  }}
+                />
+                <svg
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: '#174D5A' }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              {/* Search Dropdown */}
+              {showSearchDropdown && searchResults.length > 0 && (
+                <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-xl border-2 max-h-96 overflow-y-auto z-50" style={{ borderColor: '#174D5A' }}>
+                  {searchResults.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => selectSearchResult(item)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition-all duration-200"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{item.name}</p>
+                          <p className="text-sm text-gray-600 truncate">{item.description}</p>
+                          <p className="text-xs text-gray-500 mt-1">Category: {item.category}</p>
+                        </div>
+                        <p className="font-bold ml-4" style={{ color: '#FFB975' }}>${item.price.toFixed(2)}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
         {/* Success Notification */}
         {showSuccessMessage && (
           <div className="fixed top-20 left-4 right-4 md:left-auto md:right-6 z-50 animate-slide-in">
@@ -346,16 +453,15 @@ function MenuContent() {
 
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
-                    Description *
+                    Description
                   </label>
                   <textarea
-                    required
                     value={formData.description}
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
                     rows={4}
-                    placeholder="Describe this delicious item..."
+                    placeholder="Describe this delicious item... (optional)"
                     className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 resize-none text-gray-800"
                     style={{ borderColor: '#174D5A' }}
                     onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
