@@ -324,7 +324,21 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             // Handle function calls
             if (event.type === 'response.function_call_arguments.done') {
               const functionName = event.name;
-              const args = JSON.parse(event.arguments);
+
+              // Validate that arguments exist and are not empty
+              if (!event.arguments || event.arguments.trim() === '') {
+                console.error('❌ Function call arguments are empty or undefined');
+                return;
+              }
+
+              let args;
+              try {
+                args = JSON.parse(event.arguments);
+              } catch (parseError: any) {
+                console.error('❌ Error parsing function arguments:', parseError.message);
+                console.error('   Raw arguments:', event.arguments);
+                return;
+              }
 
               console.log(`🔧 Function call: ${functionName}`, args);
 
