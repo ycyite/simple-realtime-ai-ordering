@@ -302,7 +302,7 @@ function OrdersContent() {
         {/* Notes */}
         {order.notes && (
           <div className="mb-4 flex items-start gap-2 text-sm text-gray-700">
-            <img src="/icons/notes.png" alt="" className="w-6 h-6 flex-shrink-0" />
+            <img src="/icons/tips.png" alt="" className="w-6 h-6 flex-shrink-0" />
             <div>
               <span className="font-semibold">Notes:</span>
               <p className="mt-1 text-gray-600 italic">{order.notes}</p>

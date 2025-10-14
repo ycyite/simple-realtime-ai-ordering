@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 3000",
-    "build": "prisma generate && (rm -rf .next || true) && next build",
-    "start": "next start -p ${PORT:-3000}",
+    "dev": "node api.js && next dev --turbopack -p 3000",
+    "build": "node api.js && prisma generate && (rm -rf .next || true) && next build",
+    "start": "node api.js && next start -p ${PORT:-3000}",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
