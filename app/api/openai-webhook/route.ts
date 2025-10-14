@@ -363,16 +363,23 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
                   // Send function result back to OpenAI
                   try {
-                    const responseMessage = JSON.stringify({
-                      type: 'conversation.item.create',
-                      item: {
-                        type: 'function_call_output',
-                        call_id: event.call_id,
-                        output: JSON.stringify({ success: true, orderId: newOrder.id })
-                      }
-                    });
                     if (ws.readyState === WebSocket.OPEN) {
-                      ws.send(responseMessage);
+                      // Send function call output
+                      ws.send(JSON.stringify({
+                        type: 'conversation.item.create',
+                        item: {
+                          type: 'function_call_output',
+                          call_id: event.call_id,
+                          output: JSON.stringify({ success: true, orderId: newOrder.id })
+                        }
+                      }));
+
+                      // Trigger response generation - THIS IS REQUIRED
+                      ws.send(JSON.stringify({
+                        type: 'response.create'
+                      }));
+
+                      console.log('✅ Function result sent to OpenAI');
                     }
                   } catch (sendError: any) {
                     console.error('❌ Error sending WebSocket message:', sendError);
@@ -400,18 +407,23 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
                   // Send error back to OpenAI
                   try {
-                    const errorMessage = JSON.stringify({
-                      type: 'conversation.item.create',
-                      item: {
-                        type: 'function_call_output',
-                        call_id: event.call_id,
-                        output: JSON.stringify({ success: false, error: error.message })
-                      }
-                    });
                     if (ws.readyState === WebSocket.OPEN) {
+                      // Send function call output with error
+                      ws.send(JSON.stringify({
+                        type: 'conversation.item.create',
+                        item: {
+                          type: 'function_call_output',
+                          call_id: event.call_id,
+                          output: JSON.stringify({ success: false, error: error.message })
+                        }
+                      }));
 
-                      ws.send(errorMessage);
+                      // Trigger response generation - THIS IS REQUIRED
+                      ws.send(JSON.stringify({
+                        type: 'response.create'
+                      }));
 
+                      console.log('✅ Error result sent to OpenAI');
                     }
                   } catch (sendError: any) {
                     console.error('❌ Error sending WebSocket error message:', sendError);
