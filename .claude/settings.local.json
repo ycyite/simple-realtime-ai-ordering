@@ -10,7 +10,10 @@
       "Read(//c/Users/ycyite/Desktop/**)",
       "Bash(npm install:*)",
       "Bash(npm uninstall:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm run dev)",
+      "Bash(tasklist)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
