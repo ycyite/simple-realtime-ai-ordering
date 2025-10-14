@@ -21,7 +21,7 @@ export interface Order {
   customerPhone: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'undealt' | 'preparing' | 'completed' | 'cancelled';
+  status: 'undealt' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   createdAt: string;
   pickupTime?: string;
   notes?: string;
