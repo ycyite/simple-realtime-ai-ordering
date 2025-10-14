@@ -252,6 +252,12 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
           ws.on('open', () => {
             console.log('🔌 WebSocket connected for call:', call_id);
+
+            // Trigger AI to speak first with greeting
+            ws.send(JSON.stringify({
+              type: 'response.create'
+            }));
+            console.log('🎙️ Triggered initial AI greeting');
           });
 
           ws.on('message', async (data: any) => {
