@@ -188,16 +188,25 @@ function OrdersContent() {
   const completedOrders = orders.filter(o => o.status === 'completed');
 
   const getTabOrders = () => {
+    let tabOrders: Order[];
     switch (activeTab) {
       case 'undealt':
-        return filterOrders(undealtOrders, searchTerm);
+        tabOrders = filterOrders(undealtOrders, searchTerm);
+        break;
       case 'preparing':
-        return filterOrders(preparingOrders, searchTerm);
+        tabOrders = filterOrders(preparingOrders, searchTerm);
+        // Sort preparing orders as FIFO queue (oldest first)
+        tabOrders.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
       case 'completed':
-        return filterOrders(completedOrders, searchTerm);
+        tabOrders = filterOrders(completedOrders, searchTerm);
+        // Sort completed orders by most recent first
+        tabOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
       default:
-        return [];
+        tabOrders = [];
     }
+    return tabOrders;
   };
 
   const getTabConfig = (tab: TabType) => {
