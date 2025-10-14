@@ -235,7 +235,7 @@ function OrdersContent() {
         };
       case 'ready':
         return {
-          icon: '/icons/check-mark.png',
+          icon: '/ready.png',
           label: 'Ready to Go',
           count: readyOrders.length,
           borderColor: '#22C55E',
