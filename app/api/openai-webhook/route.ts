@@ -146,7 +146,9 @@ IMPORTANT INSTRUCTIONS:
 - After getting name, ASK FOR PICKUP TIME: "What time would you like to pick it up?"
 - After getting pickup time, ASK IF THEY HAVE ANY SPECIAL REQUESTS: "Any special requests or notes for your order?"
 - After getting notes (or if they say no), CONFIRM THE COMPLETE ORDER ONCE: "Let me confirm: [list all items with quantities], pickup at [time] for [name]. Is that correct?"
+- CRITICAL: You MUST ask for notes BEFORE confirming. Never skip the notes question.
 - When customer says YES/CORRECT/YEAH to your confirmation question, IMMEDIATELY say: "Perfect! See you at [time]. Drive safe, bye!" and CALL save_order
+- CRITICAL: After calling save_order and saying goodbye, DO NOT SPEAK AGAIN. Stay completely silent. Ignore any customer speech after this point.
 - DO NOT ask "Is that correct?" again after customer already confirmed
 - DO NOT repeat the order again after customer says yes
 
@@ -437,7 +439,10 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                       console.log('✅ Function result sent to OpenAI');
                     }
                   } catch (sendError: any) {
-                    console.error('❌ Error sending WebSocket message:', sendError);
+                    // Suppress mask errors (expected during hangup race condition)
+                    if (!sendError.message?.includes('mask')) {
+                      console.error('❌ Error sending WebSocket message:', sendError);
+                    }
                   }
 
                   // Automatically end the call after saving order
@@ -451,11 +456,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                           'Content-Type': 'application/json'
                         }
                       });
-                      console.log('✅ Call ended automatically after order save (1s delay)');
+                      console.log('✅ Call ended automatically after order save (5s delay)');
                     } catch (error) {
                       console.error('❌ Error hanging up call:', error);
                     }
-                  }, 1000);
+                  }, 5000);
 
                 } catch (error: any) {
                   console.error('❌ Error saving phone order:', error);
@@ -481,7 +486,10 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                       console.log('✅ Error result sent to OpenAI');
                     }
                   } catch (sendError: any) {
-                    console.error('❌ Error sending WebSocket error message:', sendError);
+                    // Suppress mask errors (expected during hangup race condition)
+                    if (!sendError.message?.includes('mask')) {
+                      console.error('❌ Error sending WebSocket error message:', sendError);
+                    }
                   }
                 }
               }
