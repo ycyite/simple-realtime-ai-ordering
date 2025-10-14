@@ -243,20 +243,36 @@ function OrdersContent() {
     const isUndealt = order.status === 'undealt';
     const isPreparing = order.status === 'preparing';
 
-    const borderColor = isUndealt ? '#FFB975' : '#4C7A62';
+    // Check if this is an error/callback order
+    const isErrorOrder = order.customerName?.includes('PARSING ERROR');
+
+    const borderColor = isErrorOrder ? '#DC2626' : (isUndealt ? '#FFB975' : '#4C7A62');
     const pickupTimeColor = isCompleted ? '#4C7A62' : '#FFB975';
 
     return (
       <div
         key={order.id}
-        className={`glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl ${isCompleted ? 'opacity-80' : ''}`}
+        className={`glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl ${isCompleted ? 'opacity-80' : ''} ${isErrorOrder ? 'animate-pulse' : ''}`}
         style={{ borderLeftColor: borderColor }}
       >
+        {/* Error Alert Banner for callback orders */}
+        {isErrorOrder && (
+          <div className="mb-4 p-3 rounded-lg border-2 border-red-600 bg-red-50 animate-pulse">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🚨</span>
+              <p className="text-lg font-bold text-red-700">URGENT: CALL CUSTOMER BACK!</p>
+            </div>
+            <p className="text-sm text-red-600 font-semibold">
+              System error occurred during order. Please call the customer immediately to take their order.
+            </p>
+          </div>
+        )}
+
         {/* Customer Name */}
         <div className="mb-3">
-          <p className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <p className={`text-lg font-bold flex items-center gap-2 ${isErrorOrder ? 'text-red-700' : 'text-gray-900'}`}>
             <img src="/icons/user.png" alt="" className="w-6 h-6" />
-            {order.customerName || `Customer ${order.customerPhone.slice(-4)}`}
+            {isErrorOrder ? '⚠️ SYSTEM ERROR - CALLBACK NEEDED' : (order.customerName || `Customer ${order.customerPhone.slice(-4)}`)}
           </p>
         </div>
 
@@ -269,11 +285,18 @@ function OrdersContent() {
           </span>
         </div>
 
-        {/* Phone Number */}
-        <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
+        {/* Phone Number - Emphasized for error orders */}
+        <div className={`mb-3 flex items-center gap-2 text-sm ${isErrorOrder ? 'bg-yellow-100 p-3 rounded-lg border-2 border-yellow-400' : ''}`}>
           <img src="/icons/phone.png" alt="" className="w-6 h-6" />
-          <span className="font-semibold">Phone:</span>
-          <span>{order.customerPhone}</span>
+          <span className={`font-semibold ${isErrorOrder ? 'text-red-700' : 'text-gray-700'}`}>
+            {isErrorOrder ? '📞 CALL NOW:' : 'Phone:'}
+          </span>
+          <a
+            href={`tel:${order.customerPhone}`}
+            className={`font-bold ${isErrorOrder ? 'text-xl text-red-700 underline' : 'text-gray-700'}`}
+          >
+            {order.customerPhone}
+          </a>
         </div>
 
         {/* Notes */}
@@ -308,24 +331,49 @@ function OrdersContent() {
         {/* Action Buttons */}
         {isUndealt && (
           <div className="flex gap-2">
-            <button
-              onClick={() => updateOrderStatus(order.id, 'preparing')}
-              className="cursor-pointer flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
-              style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d6350'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4C7A62'}
-            >
-              Accept
-            </button>
-            <button
-              onClick={() => updateOrderStatus(order.id, 'cancelled')}
-              className="cursor-pointer flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
-              style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#123b46'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
-            >
-              Decline
-            </button>
+            {isErrorOrder ? (
+              <>
+                <a
+                  href={`tel:${order.customerPhone}`}
+                  className="cursor-pointer flex-1 px-4 py-3 rounded-lg transition-all duration-200 font-bold text-center"
+                  style={{ backgroundColor: '#DC2626', color: '#FFFFFF' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#B91C1C'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#DC2626'}
+                >
+                  📞 Call Customer Now
+                </a>
+                <button
+                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                  className="cursor-pointer px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm"
+                  style={{ backgroundColor: '#6B7280', color: '#F2E4D6' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4B5563'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6B7280'}
+                >
+                  Dismiss
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => updateOrderStatus(order.id, 'preparing')}
+                  className="cursor-pointer flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
+                  style={{ backgroundColor: '#4C7A62', color: '#F2E4D6' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d6350'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4C7A62'}
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                  className="cursor-pointer flex-1 px-4 py-2 rounded-lg transition-all duration-200 font-bold text-sm"
+                  style={{ backgroundColor: '#174D5A', color: '#F2E4D6' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#123b46'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#174D5A'}
+                >
+                  Decline
+                </button>
+              </>
+            )}
           </div>
         )}
 

@@ -255,7 +255,58 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
           });
 
           ws.on('message', async (data: any) => {
-            const event = JSON.parse(data.toString());
+            let event;
+            let messageStr: string;
+
+            try {
+              // Handle both Buffer and string types
+              messageStr = typeof data === 'string' ? data : data.toString('utf8');
+
+              // Skip empty or whitespace-only messages
+              if (!messageStr || messageStr.trim() === '') {
+                console.log('⚠️  Received empty WebSocket message, skipping');
+                return;
+              }
+
+              // Check if message looks like JSON before parsing
+              const trimmed = messageStr.trim();
+              if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+                console.warn('⚠️  Received non-JSON WebSocket message:', trimmed.substring(0, 100));
+                return;
+              }
+
+              event = JSON.parse(messageStr);
+            } catch (parseError: any) {
+              console.error('❌ CRITICAL: Error parsing WebSocket message:', parseError.message);
+              console.error('   Data type:', typeof data);
+              console.error('   Is Buffer:', Buffer.isBuffer(data));
+              console.error('   Raw data length:', messageStr?.length || 'unknown');
+              console.error('   Raw data (full):', messageStr || data?.toString());
+              console.error('   Call ID:', call_id);
+
+              // Create an alert/log for the restaurant to prevent silent failures
+              try {
+                await prisma.orders.create({
+                  data: {
+                    tenant_id: tenant.id,
+                    customer_name: 'PARSING ERROR - CHECK LOGS',
+                    customer_phone: phoneNumber || 'unknown',
+                    items: [{ name: 'Error occurred during order', quantity: 1, price: 0 }],
+                    total_amount: 0,
+                    status: 'undealt',
+                    source: 'phone',
+                    pickup_time: 'ASAP',
+                    notes: `WebSocket parsing error at ${new Date().toISOString()}. Call ID: ${call_id}. Customer may need callback. Phone: ${phoneNumber || 'unknown'}`
+                  }
+                });
+                console.log('⚠️  Created error order entry for restaurant notification');
+              } catch (dbError: any) {
+                console.error('❌ Failed to create error order:', dbError.message);
+              }
+
+              return; // Skip this malformed message
+            }
+
             console.log('📨 WebSocket event:', event.type);
 
             // Print AI's speech transcript
