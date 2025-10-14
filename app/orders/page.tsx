@@ -19,6 +19,64 @@ export default function OrdersPage() {
 function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
 
+  // Helper function to format pickup time
+  const formatPickupTime = (pickupTime?: string, createdAt?: string) => {
+    if (!pickupTime) {
+      // Fallback to createdAt if pickupTime is not available
+      if (!createdAt) return 'N/A';
+      const date = new Date(createdAt);
+      return date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        month: '2-digit',
+        day: '2-digit',
+        year: '2-digit'
+      });
+    }
+
+    // Check if pickupTime is a relative time like "20 minutes", "1 hour", etc.
+    const relativeTimeMatch = pickupTime.match(/(\d+)\s*(minute|hour|min|hr)/i);
+    if (relativeTimeMatch) {
+      const amount = parseInt(relativeTimeMatch[1]);
+      const unit = relativeTimeMatch[2].toLowerCase();
+      const minutes = unit.startsWith('hour') || unit === 'hr' ? amount * 60 : amount;
+
+      // Calculate pickup time from createdAt
+      const orderDate = createdAt ? new Date(createdAt) : new Date();
+      const pickupDate = new Date(orderDate.getTime() + minutes * 60 * 1000);
+
+      return pickupDate.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        month: '2-digit',
+        day: '2-digit',
+        year: '2-digit'
+      });
+    }
+
+    // Try to parse as a date/time string
+    try {
+      const date = new Date(pickupTime);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+          month: '2-digit',
+          day: '2-digit',
+          year: '2-digit'
+        });
+      }
+    } catch (e) {
+      // If parsing fails, return the original string
+    }
+
+    // Return as-is if it's already a formatted string
+    return pickupTime;
+  };
+
   // Check if user has selected a restaurant, if not redirect to restaurants page
   useEffect(() => {
     const restaurantId = localStorage.getItem('activeRestaurantId');
@@ -42,6 +100,7 @@ function OrdersContent() {
           totalAmount: order.total || order.totalAmount || 0,
           status: order.status || 'undealt',
           createdAt: order.timestamp || order.createdAt || new Date().toISOString(),
+          pickupTime: order.pickupTime,
           notes: order.notes || '',
         }));
         setOrders(formattedOrders);
@@ -68,6 +127,7 @@ function OrdersContent() {
             totalAmount: order.total || order.totalAmount || 0,
             status: order.status || 'undealt',
             createdAt: order.timestamp || order.createdAt || new Date().toISOString(),
+            pickupTime: order.pickupTime,
             notes: order.notes || '',
           }));
           setOrders(formattedOrders);
@@ -206,7 +266,7 @@ function OrdersContent() {
                       <img src="/icons/clock.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Pickup Time:</span>
                       <span className="font-bold" style={{ color: '#FFB975' }}>
-                        {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {formatPickupTime(order.pickupTime, order.createdAt)}
                       </span>
                     </div>
 
@@ -307,7 +367,7 @@ function OrdersContent() {
                       <img src="/icons/clock.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Pickup Time:</span>
                       <span className="font-bold" style={{ color: '#FFB975' }}>
-                        {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {formatPickupTime(order.pickupTime, order.createdAt)}
                       </span>
                     </div>
 
@@ -393,7 +453,7 @@ function OrdersContent() {
                       <img src="/icons/clock.png" alt="" className="w-6 h-6" />
                       <span className="font-semibold">Pickup Time:</span>
                       <span className="font-bold" style={{ color: '#4C7A62' }}>
-                        {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {formatPickupTime(order.pickupTime, order.createdAt)}
                       </span>
                     </div>
 

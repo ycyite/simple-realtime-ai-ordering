@@ -144,10 +144,10 @@ export default function Navigation() {
                   {user.name}
                 </p>
                 {hasActiveRestaurant && restaurantName && (
-                  <div className="relative" ref={restaurantMenuRef}>
+                  <div className="relative flex justify-center" ref={restaurantMenuRef}>
                     <button
                       onClick={() => setShowRestaurantMenu(!showRestaurantMenu)}
-                      className="flex items-center gap-1 px-2 py-1 rounded transition-all duration-200 ease-out cursor-pointer hover:scale-105"
+                      className="flex items-center justify-center gap-1 px-2 py-1 rounded transition-all duration-200 ease-out cursor-pointer hover:scale-105"
                       style={{
                         backgroundColor: 'rgba(255, 185, 117, 0.2)',
                         border: '1px solid rgba(255, 185, 117, 0.3)'
@@ -308,7 +308,7 @@ export default function Navigation() {
                     {hasActiveRestaurant && (
                       <button
                         onClick={handleSwitchRestaurant}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 cursor-pointer"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 cursor-pointer"
                         style={{ color: '#F2E4D6' }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = 'rgba(255, 185, 117, 0.2)';

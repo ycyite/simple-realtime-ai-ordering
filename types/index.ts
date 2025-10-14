@@ -23,6 +23,7 @@ export interface Order {
   totalAmount: number;
   status: 'undealt' | 'preparing' | 'completed' | 'cancelled';
   createdAt: string;
+  pickupTime?: string;
   notes?: string;
 }
 
