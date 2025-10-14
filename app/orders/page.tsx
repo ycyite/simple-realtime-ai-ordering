@@ -73,7 +73,7 @@ function OrdersContent() {
           year: '2-digit'
         });
       }
-    } catch (e) {
+    } catch {
       // If parsing fails, return the original string
     }
 

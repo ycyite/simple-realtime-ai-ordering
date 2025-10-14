@@ -256,7 +256,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
           ws.on('message', async (data: any) => {
             let event;
-            let messageStr: string;
+            let messageStr: string = '';
 
             try {
               // Handle both Buffer and string types
@@ -280,8 +280,8 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               console.error('❌ CRITICAL: Error parsing WebSocket message:', parseError.message);
               console.error('   Data type:', typeof data);
               console.error('   Is Buffer:', Buffer.isBuffer(data));
-              console.error('   Raw data length:', messageStr?.length || 'unknown');
-              console.error('   Raw data (full):', messageStr || data?.toString());
+              console.error('   Raw data length:', messageStr?.length || 0);
+              console.error('   Raw data (full):', messageStr || data?.toString() || 'unable to convert');
               console.error('   Call ID:', call_id);
 
               // Create an alert/log for the restaurant to prevent silent failures
@@ -328,7 +328,6 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 // Input token breakdown
                 const inputTextTokens = inputDetails.text_tokens || 0;
                 const inputAudioTokens = inputDetails.audio_tokens || 0;
-                const _inputCachedTokens = inputDetails.cached_tokens || 0;
 
                 // Cached breakdown
                 const cachedDetails = inputDetails.cached_tokens_details || {};
@@ -338,7 +337,6 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                 // Uncached calculation
                 const uncachedTextTokens = inputTextTokens - cachedTextTokens;
                 const uncachedAudioTokens = inputAudioTokens - cachedAudioTokens;
-                const _totalUncachedInput = uncachedTextTokens + uncachedAudioTokens;
 
                 // Output token breakdown
                 const outputTextTokens = outputDetails.text_tokens || 0;
