@@ -16,7 +16,7 @@ export default function OrdersPage() {
   );
 }
 
-type TabType = 'undealt' | 'preparing' | 'completed';
+type TabType = 'undealt' | 'preparing' | 'ready' | 'completed';
 
 function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -185,6 +185,7 @@ function OrdersContent() {
 
   const undealtOrders = orders.filter(o => o.status === 'undealt');
   const preparingOrders = orders.filter(o => o.status === 'preparing');
+  const readyOrders = orders.filter(o => o.status === 'ready');
   const completedOrders = orders.filter(o => o.status === 'completed');
 
   const getTabOrders = () => {
@@ -196,6 +197,11 @@ function OrdersContent() {
       case 'preparing':
         tabOrders = filterOrders(preparingOrders, searchTerm);
         // Sort preparing orders as FIFO queue (oldest first)
+        tabOrders.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case 'ready':
+        tabOrders = filterOrders(readyOrders, searchTerm);
+        // Sort ready orders by pickup time (earliest first)
         tabOrders.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         break;
       case 'completed':
@@ -227,12 +233,20 @@ function OrdersContent() {
           borderColor: '#4C7A62',
           emptyMessage: 'No orders in progress'
         };
+      case 'ready':
+        return {
+          icon: '/icons/check-mark.png',
+          label: 'Ready to Go',
+          count: readyOrders.length,
+          borderColor: '#22C55E',
+          emptyMessage: 'No orders ready for pickup'
+        };
       case 'completed':
         return {
           icon: '/icons/check-mark.png',
           label: 'Completed',
           count: completedOrders.length,
-          borderColor: '#4C7A62',
+          borderColor: '#6B7280',
           emptyMessage: 'No completed orders'
         };
     }
@@ -242,18 +256,19 @@ function OrdersContent() {
     const isCompleted = order.status === 'completed';
     const isUndealt = order.status === 'undealt';
     const isPreparing = order.status === 'preparing';
+    const isReady = order.status === 'ready';
 
     // Check if this is an error/callback order
     const isErrorOrder = order.customerName?.includes('PARSING ERROR');
 
-    const borderColor = isErrorOrder ? '#DC2626' : (isUndealt ? '#FFB975' : '#4C7A62');
-    const pickupTimeColor = isCompleted ? '#4C7A62' : '#FFB975';
+    const borderColor = isErrorOrder ? '#DC2626' : (isUndealt ? '#FFB975' : isReady ? '#22C55E' : '#4C7A62');
+    const pickupTimeColor = isCompleted ? '#4C7A62' : isReady ? '#22C55E' : '#FFB975';
 
     return (
       <div
         key={order.id}
-        className={`glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl ${isCompleted ? 'opacity-80' : ''} ${isErrorOrder ? 'animate-pulse' : ''}`}
-        style={{ borderLeftColor: borderColor }}
+        className={`glass-white p-4 hover:shadow-xl transition-all duration-300 border-l-4 rounded-xl flex flex-col ${isCompleted ? 'opacity-80' : ''} ${isErrorOrder ? 'animate-pulse' : ''}`}
+        style={{ borderLeftColor: borderColor, maxHeight: '600px' }}
       >
         {/* Error Alert Banner for callback orders */}
         {isErrorOrder && (
@@ -268,6 +283,8 @@ function OrdersContent() {
           </div>
         )}
 
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto pr-2">
         {/* Customer Name */}
         <div className="mb-3">
           <p className={`text-lg font-bold flex items-center gap-2 ${isErrorOrder ? 'text-red-700' : 'text-gray-900'}`}>
@@ -327,8 +344,10 @@ function OrdersContent() {
             ${order.totalAmount.toFixed(2)}
           </p>
         </div>
+        </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="pt-4 border-t border-gray-200 mt-auto">{/* Action Buttons */}
         {isUndealt && (
           <div className="flex gap-2">
             {isErrorOrder ? (
@@ -379,15 +398,28 @@ function OrdersContent() {
 
         {isPreparing && (
           <button
-            onClick={() => updateOrderStatus(order.id, 'completed')}
+            onClick={() => updateOrderStatus(order.id, 'ready')}
             className="cursor-pointer w-full px-4 py-2 rounded-lg transition-all duration-200 font-bold"
             style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
           >
-            Complete Order
+            Mark as Ready
           </button>
         )}
+
+        {isReady && (
+          <button
+            onClick={() => updateOrderStatus(order.id, 'completed')}
+            className="cursor-pointer w-full px-4 py-2 rounded-lg transition-all duration-200 font-bold"
+            style={{ backgroundColor: '#22C55E', color: '#FFFFFF' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#16A34A'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#22C55E'}
+          >
+            Complete & Mark Paid
+          </button>
+        )}
+        </div>
       </div>
     );
   };
@@ -435,7 +467,7 @@ function OrdersContent() {
         {/* Tabs Navigation */}
         <div className="glass-card p-2 mb-6">
           <div className="flex flex-wrap gap-2">
-            {(['undealt', 'preparing', 'completed'] as TabType[]).map((tab) => {
+            {(['undealt', 'preparing', 'ready', 'completed'] as TabType[]).map((tab) => {
               const config = getTabConfig(tab);
               const isActive = activeTab === tab;
               return (
