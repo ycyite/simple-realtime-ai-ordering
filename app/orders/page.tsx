@@ -4,7 +4,6 @@ import { apiFetch } from '@/lib/api-client';
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import AlertBanner from '@/components/AlertBanner';
 import { Order } from '@/types';
 import { useOrderAlert } from '@/hooks/useOrderAlert';
 
@@ -430,7 +429,6 @@ function OrdersContent() {
   return (
     <div className="min-h-screen">
       <Navigation />
-      <AlertBanner undealtCount={undealtCount} onDismiss={dismissAlert} />
 
       {playbackError && (
         <div className="glass-card border-l-4 border-yellow-400 text-white p-4 mx-4 mt-4" role="alert">
