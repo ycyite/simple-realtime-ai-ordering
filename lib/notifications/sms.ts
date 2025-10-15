@@ -45,7 +45,8 @@ export async function sendOrderStatusSMS(order: OrderLike, newStatus: string, fr
   if (!from) return;
   const body = buildMessage(order, newStatus);
   try {
-    await client.messages.create({ to, from, body });
+    const message = await client.messages.create({ body, from, to });
+    console.log(`SMS sent for order ${order.id} (status ${newStatus}) -> ${to}: ${message.sid}`);
   } catch (err) {
     console.error('Failed to send SMS:', err);
   }
