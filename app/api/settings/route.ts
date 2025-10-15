@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { getActiveTenantId } from '@/lib/tenant-access';
+import { getTimezoneFromPostalCode } from '@/lib/time-utils';
 
 export const runtime = 'nodejs';
 
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
       name: tenant.name,
       phone: tenant.phone_number || '',
       address: tenant.address || '',
+      postalCode: tenant.postal_code || '',
       aiPhone: tenant.twilio_phone_number || '',
     });
   } catch (error) {
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, phone, address } = await request.json();
+    const { name, phone, address, postalCode } = await request.json();
 
     if (!name) {
       return NextResponse.json({ error: 'Restaurant name is required' }, { status: 400 });
@@ -69,6 +71,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
+    // Determine timezone from postal code
+    const timezone = postalCode ? getTimezoneFromPostalCode(postalCode) : null;
+
     // Update tenant information
     await prisma.tenants.update({
       where: { id: access.tenantId },
@@ -76,6 +81,8 @@ export async function POST(request: Request) {
         name,
         phone_number: phone || null,
         address: address || null,
+        postal_code: postalCode || null,
+        timezone: timezone,
         updated_at: new Date()
       }
     });

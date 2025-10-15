@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { getActiveTenantId } from '@/lib/tenant-access';
 import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
 import { generateOrderNumber } from '@/lib/order-utils';
+import { formatPickupTime, getTimezoneFromPostalCode } from '@/lib/time-utils';
 
 export const runtime = 'nodejs';
 
@@ -74,12 +75,23 @@ export async function POST(request: Request) {
 
     const tenant = await prisma.tenants.findUnique({
       where: { id: access.tenantId },
-      select: { twilio_phone_number: true }
+      select: {
+        twilio_phone_number: true,
+        postal_code: true,
+        timezone: true
+      }
     });
     const tenantFromNumber = tenant?.twilio_phone_number ?? undefined;
 
     // Generate custom order number
     const orderNumber = generateOrderNumber(newOrder.customerPhone || '000');
+
+    // Determine timezone from postal code or stored timezone
+    const tenantTimezone = tenant?.timezone ||
+      (tenant?.postal_code ? getTimezoneFromPostalCode(tenant.postal_code) : 'America/Toronto');
+
+    // Format pickup time to standard format
+    const formattedPickupTime = formatPickupTime(newOrder.pickupTime || '', tenantTimezone);
 
     // Create order in database
     const order = await prisma.orders.create({
@@ -92,7 +104,7 @@ export async function POST(request: Request) {
         total_amount: newOrder.totalAmount,
         status: newOrder.status || 'undealt',
         source: 'web',
-        pickup_time: newOrder.pickupTime,
+        pickup_time: formattedPickupTime || newOrder.pickupTime,
         notes: newOrder.notes
       }
     });

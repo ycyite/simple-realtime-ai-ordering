@@ -32,5 +32,6 @@ export interface RestaurantSettings {
   name: string;
   phone: string;
   address: string;
+  postalCode?: string;
   aiPhone?: string;
 }

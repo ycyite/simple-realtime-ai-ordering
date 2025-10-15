@@ -11,6 +11,7 @@ const defaultSettings: RestaurantSettings = {
   name: '',
   phone: '',
   address: '',
+  postalCode: '',
   aiPhone: '',
 };
 
@@ -53,6 +54,7 @@ function SettingsContent() {
           name: data.name || '',
           phone: data.phone || '',
           address: data.address || '',
+          postalCode: data.postalCode || '',
           aiPhone: data.aiPhone || '',
         };
         setSettings(restaurantSettings);
@@ -100,6 +102,7 @@ function SettingsContent() {
           name: formData.name,
           phone: formData.phone,
           address: formData.address,
+          postalCode: formData.postalCode,
         }),
       });
 
@@ -270,6 +273,28 @@ function SettingsContent() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
+                  Postal Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., M5V 3A8"
+                  value={formData.postalCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, postalCode: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 text-gray-800"
+                  style={{ borderColor: '#174D5A' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#FFB975'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = '#174D5A'}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Used to determine timezone for accurate pickup time calculations
+                </p>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t" style={{ borderColor: '#174D5A' }}>
                 <button
                   type="submit"
@@ -317,6 +342,10 @@ function SettingsContent() {
                 <div>
                   <dt className="text-sm font-semibold mb-1" style={{ color: '#4C7A62' }}>Address</dt>
                   <dd className="mt-1 text-lg font-medium text-gray-900">{settings.address || 'Not set'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-semibold mb-1" style={{ color: '#4C7A62' }}>Postal Code</dt>
+                  <dd className="mt-1 text-lg font-medium text-gray-900">{settings.postalCode || 'Not set'}</dd>
                 </div>
               </dl>
             </div>

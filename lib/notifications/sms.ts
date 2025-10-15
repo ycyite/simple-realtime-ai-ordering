@@ -39,6 +39,31 @@ function buildMessage(o: OrderLike, newStatus: string) {
   }
 }
 
+export async function sendOrderErrorSMS(phoneNumber: string, fromOverride?: string) {
+  if (!client) return;
+
+  const normalizedTo = normalizeE164(phoneNumber);
+  if (!normalizedTo) {
+    console.warn(`Error SMS skipped: unable to normalize phone (${phoneNumber})`);
+    return;
+  }
+
+  const from = fromOverride || defaultFromNumber;
+  if (!from) {
+    console.warn(`Error SMS skipped: no Twilio from number configured`);
+    return;
+  }
+
+  const body = `We sincerely apologize, but we encountered an issue processing your order. Please call us back at your convenience to place your order. We're sorry for the inconvenience.`;
+
+  try {
+    const message = await client.messages.create({ body, from, to: normalizedTo });
+    console.log(`Error SMS sent to ${normalizedTo}: ${message.sid}`);
+  } catch (err) {
+    console.error('Failed to send error SMS:', err);
+  }
+}
+
 export async function sendOrderStatusSMS(order: OrderLike, newStatus: string, fromOverride?: string) {
   if (!client) return;
 

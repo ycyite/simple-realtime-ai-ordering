@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 import WebSocket from 'ws';
 import { prisma } from '@/lib/prisma';
 import { deductCallCost } from '@/lib/wallet';
-import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
+import { sendOrderStatusSMS, sendOrderErrorSMS, smsEnabled } from '@/lib/notifications/sms';
 import { generateOrderNumber } from '@/lib/order-utils';
+import { formatPickupTime, getTimezoneFromPostalCode } from '@/lib/time-utils';
 
 // Force Node.js runtime (required for WebSocket)
 export const runtime = 'nodejs';
@@ -61,6 +62,14 @@ export async function POST(request: Request) {
           where: {
             twilio_phone_number: restaurantPhoneNumber,
             status: "active"
+          },
+          select: {
+            id: true,
+            name: true,
+            twilio_phone_number: true,
+            is_open: true,
+            postal_code: true,
+            timezone: true
           }
         });
 
@@ -75,7 +84,15 @@ export async function POST(request: Request) {
       if (!tenant) {
         console.log("🔄 Falling back to first active tenant");
         tenant = await prisma.tenants.findFirst({
-          where: { status: "active" }
+          where: { status: "active" },
+          select: {
+            id: true,
+            name: true,
+            twilio_phone_number: true,
+            is_open: true,
+            postal_code: true,
+            timezone: true
+          }
         });
       }
 
@@ -407,6 +424,13 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   // Generate custom order number
                   const orderNumber = generateOrderNumber(phoneNumber || '000');
 
+                  // Determine timezone from postal code or stored timezone
+                  const tenantTimezone = tenant.timezone ||
+                    (tenant.postal_code ? getTimezoneFromPostalCode(tenant.postal_code) : 'America/Toronto');
+
+                  // Format pickup time to standard format
+                  const formattedPickupTime = formatPickupTime(args.pickupTime, tenantTimezone);
+
                   const newOrder = await prisma.orders.create({
                     data: {
                       tenant_id: tenant.id,
@@ -417,7 +441,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                       total_amount: args.total,
                       status: 'undealt',
                       source: 'phone',
-                      pickup_time: args.pickupTime,
+                      pickup_time: formattedPickupTime,
                       notes: args.notes || null
                     }
                   });
@@ -491,6 +515,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
 
                 } catch (error: any) {
                   console.error('❌ Error saving phone order:', error);
+
+                  // Send apology SMS to customer
+                  if (phoneNumber && tenant.twilio_phone_number) {
+                    void sendOrderErrorSMS(phoneNumber, tenant.twilio_phone_number);
+                  }
 
                   // Send error back to OpenAI
                   try {
