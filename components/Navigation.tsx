@@ -94,7 +94,17 @@ export default function Navigation() {
   links.push({ href: '/settings', label: 'Settings', icon: '⚙️' });
 
   return (
-    <nav className="glass border-b border-opacity-20 shadow-lg relative" style={{ borderColor: '#F2E4D6', zIndex: 100 }}>
+    <nav
+      className="relative"
+      style={{
+        zIndex: 100,
+        background: 'linear-gradient(180deg, rgba(23, 77, 90, 0.95) 0%, rgba(23, 77, 90, 0.9) 100%)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+        borderBottom: '1px solid rgba(242, 228, 214, 0.15)'
+      }}
+    >
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
         <div className="flex justify-between items-center h-16">
           {/* Left: Logo + Desktop Navigation */}
@@ -177,11 +187,13 @@ export default function Navigation() {
 
                     {showRestaurantMenu && (
                       <div
-                        className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg shadow-xl overflow-hidden animate-fadeIn"
+                        className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg overflow-hidden animate-fadeIn"
                         style={{
-                          backgroundColor: 'rgba(23, 77, 90, 0.98)',
-                          border: '1px solid rgba(242, 228, 214, 0.2)',
-                          backdropFilter: 'blur(10px)',
+                          background: 'linear-gradient(135deg, rgba(23, 77, 90, 0.98) 0%, rgba(35, 95, 110, 0.95) 100%)',
+                          border: '1px solid rgba(242, 228, 214, 0.25)',
+                          backdropFilter: 'blur(16px) saturate(180%)',
+                          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
                           zIndex: 9999
                         }}
                       >
@@ -248,12 +260,16 @@ export default function Navigation() {
               {/* Mobile Dropdown Menu */}
               {showMobileMenu && (
                 <div
-                  className="absolute top-full mt-2 right-0 w-64 rounded-lg shadow-xl overflow-hidden animate-fadeIn"
+                  className="absolute top-full mt-2 right-0 w-72 sm:w-80 rounded-xl overflow-hidden animate-fadeIn"
                   style={{
-                    backgroundColor: 'rgba(23, 77, 90, 0.98)',
-                    border: '1px solid rgba(242, 228, 214, 0.2)',
-                    backdropFilter: 'blur(10px)',
-                    zIndex: 9999
+                    background: 'linear-gradient(135deg, rgba(23, 77, 90, 0.98) 0%, rgba(35, 95, 110, 0.95) 100%)',
+                    border: '1px solid rgba(242, 228, 214, 0.25)',
+                    backdropFilter: 'blur(16px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                    boxShadow: '0 12px 48px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
+                    zIndex: 9999,
+                    maxHeight: 'calc(100vh - 80px)',
+                    overflowY: 'auto'
                   }}
                 >
                   {/* Restaurant Name */}
