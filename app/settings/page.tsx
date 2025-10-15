@@ -11,6 +11,7 @@ const defaultSettings: RestaurantSettings = {
   name: '',
   phone: '',
   address: '',
+  aiPhone: '',
 };
 
 export default function SettingsPage() {
@@ -52,6 +53,7 @@ function SettingsContent() {
           name: data.name || '',
           phone: data.phone || '',
           address: data.address || '',
+          aiPhone: data.aiPhone || '',
         };
         setSettings(restaurantSettings);
         setFormData(restaurantSettings);
@@ -236,6 +238,22 @@ function SettingsContent() {
 
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
+                  AI Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={formData.aiPhone || 'Not provisioned'}
+                  disabled
+                  className="w-full px-4 py-3 border-2 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                  style={{ borderColor: '#174D5A' }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Managed automatically. Contact support to change your Twilio number.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#174D5A' }}>
                   Address
                 </label>
                 <input
@@ -291,6 +309,10 @@ function SettingsContent() {
                 <div>
                   <dt className="text-sm font-semibold mb-1" style={{ color: '#4C7A62' }}>Phone Number</dt>
                   <dd className="mt-1 text-lg font-medium text-gray-900">{settings.phone || 'Not set'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-semibold mb-1" style={{ color: '#4C7A62' }}>AI Phone Number</dt>
+                  <dd className="mt-1 text-lg font-medium text-gray-900">{settings.aiPhone || 'Not provisioned'}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-semibold mb-1" style={{ color: '#4C7A62' }}>Address</dt>

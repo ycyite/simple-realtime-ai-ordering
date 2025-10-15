@@ -32,4 +32,5 @@ export interface RestaurantSettings {
   name: string;
   phone: string;
   address: string;
+  aiPhone?: string;
 }

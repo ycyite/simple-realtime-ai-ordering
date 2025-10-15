@@ -57,15 +57,15 @@ export async function POST(request: Request) {
       if (restaurantPhoneNumber) {
         tenant = await prisma.tenants.findFirst({
           where: {
-            phone_number: restaurantPhoneNumber,
+            twilio_phone_number: restaurantPhoneNumber,
             status: "active"
           }
         });
 
         if (tenant) {
-          console.log("✅ Found tenant by phone number:", tenant.name);
+          console.log("✅ Found tenant by Twilio phone number:", tenant.name);
         } else {
-          console.log("⚠️  No tenant found with phone number:", restaurantPhoneNumber);
+          console.log("⚠️  No tenant found with Twilio phone number:", restaurantPhoneNumber);
         }
       }
 

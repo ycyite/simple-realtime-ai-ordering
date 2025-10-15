@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       name: tenant.name,
       phone: tenant.phone_number || '',
       address: tenant.address || '',
+      aiPhone: tenant.twilio_phone_number || '',
     });
   } catch (error) {
     console.error('Settings fetch error:', error);

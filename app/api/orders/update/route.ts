@@ -32,12 +32,12 @@ export async function POST(request: Request) {
             where: { id: tenantId },
             select: { twilio_phone_number: true }
           });
-          tenantNumberCache.set(tenantId, tenant?.twilio_phone_number || null);
+          tenantNumberCache.set(tenantId, tenant?.twilio_phone_number ?? null);
         }
         tenantFromNumber = tenantNumberCache.get(tenantId) || undefined;
       }
 
-      if (order.status && before?.status !== order.status && smsEnabled(tenantFromNumber)) {
+      if (order.status && before?.status !== order.status && tenantFromNumber && smsEnabled(tenantFromNumber)) {
         void sendOrderStatusSMS(
           {
             id: updated.id,
@@ -50,10 +50,15 @@ export async function POST(request: Request) {
           tenantFromNumber
         );
       } else if (order.status && before?.status !== order.status) {
+        const hasTenantTwilio =
+          tenantId && tenantNumberCache.has(tenantId)
+            ? !!tenantNumberCache.get(tenantId)
+            : undefined;
         console.warn('SMS not sent (update): Twilio disabled or missing number', {
           orderId: updated.id,
           tenantId,
           tenantFromNumber,
+          hasTenantTwilio,
           hasTwilioCreds: !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN,
         });
       }

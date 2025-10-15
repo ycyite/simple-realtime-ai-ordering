@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       where: { id: access.tenantId },
       select: { twilio_phone_number: true }
     });
-    const tenantFromNumber = tenant?.twilio_phone_number || undefined;
+    const tenantFromNumber = tenant?.twilio_phone_number ?? undefined;
 
     // Create order in database
     const order = await prisma.orders.create({
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     console.log('✅ Order added successfully:', order.id);
 
     const status = order.status || 'undealt';
-    if (smsEnabled(tenantFromNumber)) {
+    if (tenantFromNumber && smsEnabled(tenantFromNumber)) {
       void sendOrderStatusSMS(
         {
           id: order.id,
@@ -111,6 +111,7 @@ export async function POST(request: Request) {
       console.warn('SMS not sent (create): Twilio disabled or missing number', {
         tenantId: access.tenantId,
         tenantFromNumber,
+        hasTenantTwilio: !!tenant?.twilio_phone_number,
         hasTwilioCreds: !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN,
       });
     }
