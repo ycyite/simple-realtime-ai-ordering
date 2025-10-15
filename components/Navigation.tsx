@@ -95,17 +95,49 @@ export default function Navigation() {
 
   return (
     <nav
-      className="relative"
+      className="relative overflow-hidden"
       style={{
         zIndex: 100,
-        background: 'linear-gradient(180deg, rgba(23, 77, 90, 0.95) 0%, rgba(23, 77, 90, 0.9) 100%)',
+        background: 'linear-gradient(180deg, rgba(23, 77, 90, 0.95) 0%, rgba(23, 77, 90, 0.92) 60%, rgba(18, 62, 72, 0.95) 100%)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
         borderBottom: '1px solid rgba(242, 228, 214, 0.15)'
       }}
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-4">
+      {/* Animated Glass Dome Reflection Layer */}
+      <div
+        className="glass-reflection"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '100%',
+          pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.15) 30%, transparent 70%)',
+          opacity: 0.6,
+          mixBlendMode: 'overlay'
+        }}
+      />
+
+      {/* Animated Shimmer Effect */}
+      <div
+        className="shimmer-effect"
+        style={{
+          position: 'absolute',
+          top: '-50%',
+          left: '-10%',
+          right: '-10%',
+          height: '200%',
+          pointerEvents: 'none',
+          background: 'linear-gradient(115deg, transparent 0%, transparent 40%, rgba(255, 255, 255, 0.15) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.15) 55%, transparent 60%, transparent 100%)',
+          opacity: 0.7,
+          mixBlendMode: 'overlay'
+        }}
+      />
+
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 relative" style={{ zIndex: 1 }}>
         <div className="flex justify-between items-center h-16">
           {/* Left: Logo + Desktop Navigation */}
           <div className="flex items-center space-x-4 sm:space-x-6">
@@ -376,6 +408,42 @@ export default function Navigation() {
         }
         .animate-fadeIn {
           animation: fadeIn 0.15s ease-out;
+        }
+
+        /* Glass Dome Reflection Animation */
+        @keyframes glassShimmer {
+          0% {
+            transform: translateX(-30%) translateY(0%) rotate(-2deg);
+            opacity: 0.5;
+          }
+          50% {
+            transform: translateX(30%) translateY(-5%) rotate(2deg);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateX(-30%) translateY(0%) rotate(-2deg);
+            opacity: 0.5;
+          }
+        }
+
+        .shimmer-effect {
+          animation: glassShimmer 10s ease-in-out infinite alternate;
+        }
+
+        /* Subtle pulse for glass reflection */
+        @keyframes reflectionPulse {
+          0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.75;
+            transform: scale(1.02);
+          }
+        }
+
+        .glass-reflection {
+          animation: reflectionPulse 8s ease-in-out infinite;
         }
       `}</style>
     </nav>
