@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import WebSocket from 'ws';
 import { prisma } from '@/lib/prisma';
 import { deductCallCost } from '@/lib/wallet';
+import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
 
 // Force Node.js runtime (required for WebSocket)
 export const runtime = 'nodejs';
@@ -417,6 +418,26 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   });
 
                   console.log('✅ Phone order saved:', newOrder.id);
+
+                  if (tenant.twilio_phone_number && smsEnabled(tenant.twilio_phone_number)) {
+                    void sendOrderStatusSMS(
+                      {
+                        id: newOrder.id,
+                        customer_name: newOrder.customer_name,
+                        customer_phone: newOrder.customer_phone,
+                        pickup_time: newOrder.pickup_time,
+                        status: newOrder.status,
+                      },
+                      newOrder.status || 'undealt',
+                      tenant.twilio_phone_number
+                    );
+                  } else {
+                    console.warn('SMS not sent (webhook): Twilio disabled or missing number', {
+                      tenantId: tenant.id,
+                      tenantTwilioPhone: tenant.twilio_phone_number,
+                      hasTwilioCreds: !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN,
+                    });
+                  }
 
                   // Send function result back to OpenAI
                   try {
