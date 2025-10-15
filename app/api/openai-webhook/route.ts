@@ -4,6 +4,7 @@ import WebSocket from 'ws';
 import { prisma } from '@/lib/prisma';
 import { deductCallCost } from '@/lib/wallet';
 import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
+import { generateOrderNumber } from '@/lib/order-utils';
 
 // Force Node.js runtime (required for WebSocket)
 export const runtime = 'nodejs';
@@ -403,9 +404,13 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
               if (functionName === 'save_order') {
                 // Save order to database
                 try {
+                  // Generate custom order number
+                  const orderNumber = generateOrderNumber(phoneNumber || '000');
+
                   const newOrder = await prisma.orders.create({
                     data: {
                       tenant_id: tenant.id,
+                      order_number: orderNumber,
                       customer_name: args.customerName,
                       customer_phone: phoneNumber,
                       items: args.items, // JSONB field
@@ -423,6 +428,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                     void sendOrderStatusSMS(
                       {
                         id: newOrder.id,
+                        order_number: newOrder.order_number,
                         customer_name: newOrder.customer_name,
                         customer_phone: newOrder.customer_phone,
                         pickup_time: newOrder.pickup_time,

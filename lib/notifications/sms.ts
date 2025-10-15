@@ -2,6 +2,7 @@ import twilio from 'twilio';
 
 type OrderLike = {
   id: string;
+  order_number?: string | null;
   customer_name?: string | null;
   customer_phone?: string | null;
   pickup_time?: string | null;
@@ -21,24 +22,32 @@ export function smsEnabled(customFrom?: string) {
 
 function buildMessage(o: OrderLike, newStatus: string) {
   const name = o.customer_name ? `Hi ${o.customer_name}` : 'Hi';
+  const orderRef = o.order_number || o.id;
   switch (newStatus) {
     case 'undealt':
-      return `${name}, we received your order (${o.id}). We will confirm shortly.`;
+      return `${name}, we received your order (${orderRef}). We will confirm shortly.`;
     case 'preparing':
-      return `${name}, your order (${o.id}) is confirmed and being prepared.`;
+      return `${name}, your order (${orderRef}) is confirmed and being prepared.`;
     case 'ready':
-      return `${name}, your order (${o.id}) is ready for pickup${o.pickup_time ? ` around ${o.pickup_time}` : ''}.`;
+      return `${name}, your order (${orderRef}) is ready for pickup${o.pickup_time ? ` around ${o.pickup_time}` : ''}.`;
     case 'completed':
-      return `${name}, your order (${o.id}) is completed. Thank you!`;
+      return `${name}, your order (${orderRef}) is completed. Thank you!`;
     case 'cancelled':
-      return `${name}, your order (${o.id}) has been cancelled. If this is unexpected, please contact us.`;
+      return `${name}, your order (${orderRef}) has been cancelled. If this is unexpected, please contact us.`;
     default:
-      return `${name}, your order (${o.id}) status updated: ${newStatus}.`;
+      return `${name}, your order (${orderRef}) status updated: ${newStatus}.`;
   }
 }
 
 export async function sendOrderStatusSMS(order: OrderLike, newStatus: string, fromOverride?: string) {
   if (!client) return;
+
+  // Don't send SMS for completed orders
+  if (newStatus === 'completed') {
+    console.log(`SMS skipped for order ${order.id}: status is completed`);
+    return;
+  }
+
   const to = order.customer_phone;
   if (!to) {
     console.warn(`SMS skipped for order ${order.id}: missing customer phone`);

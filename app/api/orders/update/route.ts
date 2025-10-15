@@ -41,6 +41,7 @@ export async function POST(request: Request) {
         void sendOrderStatusSMS(
           {
             id: updated.id,
+            order_number: updated.order_number,
             customer_name: updated.customer_name,
             customer_phone: updated.customer_phone,
             pickup_time: updated.pickup_time,

@@ -51,6 +51,7 @@ model menu_items {
 model orders {
   id             String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   tenant_id      String?     @db.Uuid
+  order_number   String?     @db.VarChar(50)
   customer_name  String?     @db.VarChar(255)
   customer_phone String?     @db.VarChar(20)
   items          Json

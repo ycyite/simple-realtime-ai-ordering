@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 import { getActiveTenantId } from '@/lib/tenant-access';
 import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
+import { generateOrderNumber } from '@/lib/order-utils';
 
 export const runtime = 'nodejs';
 
@@ -77,10 +78,14 @@ export async function POST(request: Request) {
     });
     const tenantFromNumber = tenant?.twilio_phone_number ?? undefined;
 
+    // Generate custom order number
+    const orderNumber = generateOrderNumber(newOrder.customerPhone || '000');
+
     // Create order in database
     const order = await prisma.orders.create({
       data: {
         tenant_id: access.tenantId,
+        order_number: orderNumber,
         customer_name: newOrder.customerName,
         customer_phone: newOrder.customerPhone || '',
         items: newOrder.items,
@@ -99,6 +104,7 @@ export async function POST(request: Request) {
       void sendOrderStatusSMS(
         {
           id: order.id,
+          order_number: order.order_number,
           customer_name: order.customer_name,
           customer_phone: order.customer_phone,
           pickup_time: order.pickup_time,
