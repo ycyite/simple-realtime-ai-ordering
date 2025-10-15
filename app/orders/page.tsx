@@ -482,7 +482,8 @@ function OrdersContent() {
                 >
                   <img src={config.icon} alt="" className="w-5 h-5 md:w-6 md:h-6" />
                   <span className="font-bold text-sm md:text-lg">{config.label}</span>
-                  {config.count > 0 && (
+                  {/* Show count for completed tab only when active, show for other tabs when count > 0 */}
+                  {((tab === 'completed' && isActive && config.count > 0) || (tab !== 'completed' && config.count > 0)) && (
                     <span
                       className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-bold ${isActive ? '' : 'animate-pulse'}`}
                       style={{
