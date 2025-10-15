@@ -127,22 +127,6 @@ export default function Navigation() {
         }}
       />
 
-      {/* Animated Shimmer Effect */}
-      <div
-        className="shimmer-effect"
-        style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '-10%',
-          right: '-10%',
-          height: '200%',
-          pointerEvents: 'none',
-          background: 'linear-gradient(115deg, transparent 0%, transparent 40%, rgba(255, 255, 255, 0.15) 45%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0.15) 55%, transparent 60%, transparent 100%)',
-          opacity: 0.7,
-          mixBlendMode: 'overlay'
-        }}
-      />
-
       <div className="max-w-7xl mx-auto px-3 sm:px-4 relative" style={{ zIndex: 1 }}>
         <div className="flex justify-between items-center h-16">
           {/* Left: Logo + Desktop Navigation */}
@@ -414,26 +398,6 @@ export default function Navigation() {
         }
         .animate-fadeIn {
           animation: fadeIn 0.15s ease-out;
-        }
-
-        /* Glass Dome Reflection Animation */
-        @keyframes glassShimmer {
-          0% {
-            transform: translateX(-30%) translateY(0%) rotate(-2deg);
-            opacity: 0.5;
-          }
-          50% {
-            transform: translateX(30%) translateY(-5%) rotate(2deg);
-            opacity: 0.8;
-          }
-          100% {
-            transform: translateX(-30%) translateY(0%) rotate(-2deg);
-            opacity: 0.5;
-          }
-        }
-
-        .shimmer-effect {
-          animation: glassShimmer 10s ease-in-out infinite alternate;
         }
       `}</style>
       </nav>
