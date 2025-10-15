@@ -107,6 +107,12 @@ export async function POST(request: Request) {
         status,
         tenantFromNumber
       );
+    } else {
+      console.warn('SMS not sent (create): Twilio disabled or missing number', {
+        tenantId: access.tenantId,
+        tenantFromNumber,
+        hasTwilioCreds: !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN,
+      });
     }
     return NextResponse.json({ success: true, order });
   } catch (error) {

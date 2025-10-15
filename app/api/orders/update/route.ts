@@ -49,6 +49,13 @@ export async function POST(request: Request) {
           order.status,
           tenantFromNumber
         );
+      } else if (order.status && before?.status !== order.status) {
+        console.warn('SMS not sent (update): Twilio disabled or missing number', {
+          orderId: updated.id,
+          tenantId,
+          tenantFromNumber,
+          hasTwilioCreds: !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN,
+        });
       }
     }
 

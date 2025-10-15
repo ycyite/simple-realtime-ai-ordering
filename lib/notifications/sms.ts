@@ -40,14 +40,51 @@ function buildMessage(o: OrderLike, newStatus: string) {
 export async function sendOrderStatusSMS(order: OrderLike, newStatus: string, fromOverride?: string) {
   if (!client) return;
   const to = order.customer_phone;
-  if (!to || !to.startsWith('+')) return;
+  if (!to) {
+    console.warn(`SMS skipped for order ${order.id}: missing customer phone`);
+    return;
+  }
+  const normalizedTo = normalizeE164(to);
+  if (!normalizedTo) {
+    console.warn(`SMS skipped for order ${order.id}: unable to normalize phone (${to})`);
+    return;
+  }
   const from = fromOverride || defaultFromNumber;
-  if (!from) return;
+  if (!from) {
+    console.warn(`SMS skipped for order ${order.id}: no Twilio from number configured`);
+    return;
+  }
   const body = buildMessage(order, newStatus);
   try {
-    const message = await client.messages.create({ body, from, to });
-    console.log(`SMS sent for order ${order.id} (status ${newStatus}) -> ${to}: ${message.sid}`);
+    const message = await client.messages.create({ body, from, to: normalizedTo });
+    console.log(`SMS sent for order ${order.id} (status ${newStatus}) -> ${normalizedTo}: ${message.sid}`);
   } catch (err) {
     console.error('Failed to send SMS:', err);
   }
+}
+
+function normalizeE164(value: string): string | null {
+  const trimmed = value.trim();
+  if (/^\+\d{10,15}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits) {
+    return null;
+  }
+
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+
+  if (digits.length >= 10 && digits.length <= 15) {
+    return `+${digits}`;
+  }
+
+  return null;
 }
