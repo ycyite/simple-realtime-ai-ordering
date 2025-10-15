@@ -98,7 +98,7 @@ export default function Navigation() {
       className="relative overflow-hidden"
       style={{
         zIndex: 100,
-        background: 'linear-gradient(135deg, #2d6a5f 0%, #4a8b7f 50%, #5fa392 100%)',
+        background: 'linear-gradient(135deg, rgb(24, 73, 83) 0%, rgb(60, 108, 96) 100%)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
@@ -220,7 +220,7 @@ export default function Navigation() {
                       <div
                         className="absolute top-full mt-2 right-0 min-w-[200px] rounded-lg overflow-hidden animate-fadeIn"
                         style={{
-                          background: 'linear-gradient(135deg, rgba(23, 77, 90, 0.98) 0%, rgba(35, 95, 110, 0.95) 100%)',
+                          background: 'linear-gradient(135deg, rgba(24, 73, 83, 0.98) 0%, rgba(60, 108, 96, 0.95) 100%)',
                           border: '1px solid rgba(242, 228, 214, 0.25)',
                           backdropFilter: 'blur(16px) saturate(180%)',
                           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
@@ -293,7 +293,7 @@ export default function Navigation() {
                 <div
                   className="absolute top-full mt-2 right-0 w-72 sm:w-80 rounded-xl overflow-hidden animate-fadeIn"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(23, 77, 90, 0.98) 0%, rgba(35, 95, 110, 0.95) 100%)',
+                    background: 'linear-gradient(135deg, rgba(24, 73, 83, 0.98) 0%, rgba(60, 108, 96, 0.95) 100%)',
                     border: '1px solid rgba(242, 228, 214, 0.25)',
                     backdropFilter: 'blur(16px) saturate(180%)',
                     WebkitBackdropFilter: 'blur(16px) saturate(180%)',
