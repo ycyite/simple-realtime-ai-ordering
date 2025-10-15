@@ -98,16 +98,15 @@ export default function Navigation() {
       className="relative overflow-hidden"
       style={{
         zIndex: 100,
-        background: 'linear-gradient(180deg, rgba(23, 77, 90, 0.95) 0%, rgba(23, 77, 90, 0.92) 60%, rgba(18, 62, 72, 0.95) 100%)',
+        background: 'linear-gradient(135deg, #2d6a5f 0%, #4a8b7f 50%, #5fa392 100%)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
         borderBottom: '1px solid rgba(242, 228, 214, 0.15)'
       }}
     >
-      {/* Animated Glass Dome Reflection Layer */}
+      {/* Static Glass Dome Reflection Layer */}
       <div
-        className="glass-reflection"
         style={{
           position: 'absolute',
           top: 0,
@@ -428,22 +427,6 @@ export default function Navigation() {
 
         .shimmer-effect {
           animation: glassShimmer 10s ease-in-out infinite alternate;
-        }
-
-        /* Subtle pulse for glass reflection */
-        @keyframes reflectionPulse {
-          0%, 100% {
-            opacity: 0.6;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.75;
-            transform: scale(1.02);
-          }
-        }
-
-        .glass-reflection {
-          animation: reflectionPulse 8s ease-in-out infinite;
         }
       `}</style>
     </nav>
