@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.33.3",
     "@prisma/client": "^6.17.0",
+    "twilio": "^5.3.4",
     "next": "15.5.4",
     "prisma": "^6.17.0",
     "react": "19.1.0",

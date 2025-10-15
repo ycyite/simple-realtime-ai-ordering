@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
 
 export const runtime = 'nodejs';
 
@@ -7,9 +8,11 @@ export async function POST(request: Request) {
   try {
     const updatedOrders = await request.json();
 
-    // Update each order in the database
+    const tenantNumberCache = new Map<string, string | null>();
+
     for (const order of updatedOrders) {
-      await prisma.orders.update({
+      const before = await prisma.orders.findUnique({ where: { id: order.id } });
+      const updated = await prisma.orders.update({
         where: { id: order.id },
         data: {
           status: order.status,
@@ -21,6 +24,32 @@ export async function POST(request: Request) {
           notes: order.notes
         }
       });
+      let tenantFromNumber: string | undefined;
+      const tenantId = updated.tenant_id ?? before?.tenant_id;
+      if (tenantId) {
+        if (!tenantNumberCache.has(tenantId)) {
+          const tenant = await prisma.tenants.findUnique({
+            where: { id: tenantId },
+            select: { twilio_phone_number: true }
+          });
+          tenantNumberCache.set(tenantId, tenant?.twilio_phone_number || null);
+        }
+        tenantFromNumber = tenantNumberCache.get(tenantId) || undefined;
+      }
+
+      if (order.status && before?.status !== order.status && smsEnabled(tenantFromNumber)) {
+        void sendOrderStatusSMS(
+          {
+            id: updated.id,
+            customer_name: updated.customer_name,
+            customer_phone: updated.customer_phone,
+            pickup_time: updated.pickup_time,
+            status: updated.status,
+          },
+          order.status,
+          tenantFromNumber
+        );
+      }
     }
 
     console.log('✅ Orders updated');

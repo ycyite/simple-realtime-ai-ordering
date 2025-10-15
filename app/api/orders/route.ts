@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 import { getActiveTenantId } from '@/lib/tenant-access';
+import { sendOrderStatusSMS, smsEnabled } from '@/lib/notifications/sms';
 
 export const runtime = 'nodejs';
 
@@ -70,6 +71,12 @@ export async function POST(request: Request) {
 
     const newOrder = await request.json();
 
+    const tenant = await prisma.tenants.findUnique({
+      where: { id: access.tenantId },
+      select: { twilio_phone_number: true }
+    });
+    const tenantFromNumber = tenant?.twilio_phone_number || undefined;
+
     // Create order in database
     const order = await prisma.orders.create({
       data: {
@@ -87,6 +94,20 @@ export async function POST(request: Request) {
 
     console.log('✅ Order added successfully:', order.id);
 
+    const status = order.status || 'undealt';
+    if (smsEnabled(tenantFromNumber)) {
+      void sendOrderStatusSMS(
+        {
+          id: order.id,
+          customer_name: order.customer_name,
+          customer_phone: order.customer_phone,
+          pickup_time: order.pickup_time,
+          status,
+        },
+        status,
+        tenantFromNumber
+      );
+    }
     return NextResponse.json({ success: true, order });
   } catch (error) {
     console.error('Error adding order:', error);
