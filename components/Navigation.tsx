@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalOrderAlert } from '@/contexts/GlobalOrderAlertContext';
+import AlertBanner from './AlertBanner';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { undealtCount, dismissAlert } = useGlobalOrderAlert();
   const [hasActiveRestaurant, setHasActiveRestaurant] = useState(() => {
     if (typeof window !== 'undefined') {
       return !!localStorage.getItem('activeRestaurantId');
@@ -94,10 +97,14 @@ export default function Navigation() {
   links.push({ href: '/settings', label: 'Settings', icon: '⚙️' });
 
   return (
-    <nav
-      className="relative overflow-hidden"
+    <>
+      {/* Global Alert Banner */}
+      <AlertBanner undealtCount={undealtCount} onDismiss={dismissAlert} />
+
+      <nav
+      className="relative overflow-visible"
       style={{
-        zIndex: 100,
+        zIndex: 9999,
         background: 'linear-gradient(135deg, rgb(24, 73, 83) 0%, rgb(60, 108, 96) 100%)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -225,7 +232,7 @@ export default function Navigation() {
                           backdropFilter: 'blur(16px) saturate(180%)',
                           WebkitBackdropFilter: 'blur(16px) saturate(180%)',
                           boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
-                          zIndex: 9999
+                          zIndex: 99999
                         }}
                       >
                         <button
@@ -298,7 +305,7 @@ export default function Navigation() {
                     backdropFilter: 'blur(16px) saturate(180%)',
                     WebkitBackdropFilter: 'blur(16px) saturate(180%)',
                     boxShadow: '0 12px 48px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
-                    zIndex: 9999,
+                    zIndex: 99999,
                     maxHeight: 'calc(100vh - 80px)',
                     overflowY: 'auto'
                   }}
@@ -429,6 +436,7 @@ export default function Navigation() {
           animation: glassShimmer 10s ease-in-out infinite alternate;
         }
       `}</style>
-    </nav>
+      </nav>
+    </>
   );
 }

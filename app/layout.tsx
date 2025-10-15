@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { GlobalOrderAlertProvider } from "@/contexts/GlobalOrderAlertContext";
 import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
@@ -32,7 +33,9 @@ export default function RootLayout({
       >
         <ClerkProvider>
           <AuthProvider>
-            {children}
+            <GlobalOrderAlertProvider>
+              {children}
+            </GlobalOrderAlertProvider>
           </AuthProvider>
         </ClerkProvider>
       </body>
