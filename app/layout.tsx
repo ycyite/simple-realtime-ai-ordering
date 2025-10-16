@@ -32,9 +32,12 @@ export const metadata: Metadata = {
   title: "Counter Bell - Restaurant Management",
   description: "AI-powered restaurant ordering management system",
   icons: {
-    icon: '/icons/Counter_Bell_Logo.png',
-    shortcut: '/icons/Counter_Bell_Logo.png',
-    apple: '/icons/Counter_Bell_Logo.png',
+    icon: [
+      { url: '/icons/Counter_Bell_Logo.png', sizes: 'any' },
+      { url: '/favicon.ico', sizes: '16x16 32x32' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: { url: '/icons/Counter_Bell_Logo.png', sizes: '180x180' },
   },
 };
 
