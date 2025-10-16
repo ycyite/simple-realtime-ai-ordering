@@ -24,15 +24,16 @@ export async function deductCallCost(
 
     const currentBalance = Number(tenant.wallet_balance) || 0;
 
-    // Apply 50% markup to OpenAI cost (your profit)
-    const openaiCharged = openaiCost * 1.5;
-    const platformMarkup = openaiCharged - openaiCost;
+    // Round OpenAI cost to 2 decimal places, then apply 50% markup
+    const openaiCostRounded = Math.round(openaiCost * 100) / 100;
+    const openaiCharged = Math.round(openaiCostRounded * 1.5 * 100) / 100;
+    const platformMarkup = openaiCharged - openaiCostRounded;
 
-    // Calculate Twilio cost (if duration provided)
+    // Calculate Twilio cost (if duration provided), rounded to 2 decimal places
     let twilioCharged = 0;
     if (durationSeconds) {
       const minutes = durationSeconds / 60;
-      twilioCharged = minutes * 0.013 * 2; // Inbound + outbound at $0.013/min
+      twilioCharged = Math.round(minutes * 0.013 * 2 * 100) / 100; // Inbound + outbound at $0.013/min
     }
 
     const totalCharge = openaiCharged + twilioCharged;
@@ -61,7 +62,7 @@ export async function deductCallCost(
           type: 'ai_call_cost',
           description: `AI processing cost for call ${callId}`,
           related_call_log_id: callId,
-          openai_cost: openaiCost,
+          openai_cost: openaiCostRounded,
           openai_charged: openaiCharged,
           platform_markup: platformMarkup,
           twilio_cost: 0, // Twilio recorded separately
@@ -89,11 +90,11 @@ export async function deductCallCost(
     ]);
 
     console.log(`💰 Call cost deducted:`);
-    console.log(`   AI: $${openaiCharged.toFixed(6)} (cost: $${openaiCost.toFixed(6)}, markup: $${platformMarkup.toFixed(6)})`);
+    console.log(`   AI: $${openaiCharged.toFixed(2)} (cost: $${openaiCostRounded.toFixed(2)}, markup: $${platformMarkup.toFixed(2)})`);
     if (twilioCharged > 0) {
-      console.log(`   Twilio: $${twilioCharged.toFixed(6)} (pass-through)`);
+      console.log(`   Twilio: $${twilioCharged.toFixed(2)} (pass-through)`);
     }
-    console.log(`   Total: $${totalCharge.toFixed(6)}`);
+    console.log(`   Total: $${totalCharge.toFixed(2)}`);
     console.log(`   New balance: $${newBalance.toFixed(2)}`);
   } catch (error) {
     console.error('❌ Error deducting call cost:', error);
