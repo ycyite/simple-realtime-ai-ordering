@@ -272,6 +272,9 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
             responseCount: 0
           };
 
+          // Track call start time for duration calculation
+          const callStartTime = Date.now();
+
           ws.on('open', () => {
             console.log('🔌 WebSocket connected for call:', call_id);
 
@@ -561,6 +564,11 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
           ws.on('close', async () => {
             console.log('🔌 WebSocket closed for call:', call_id);
 
+            // Calculate call duration in seconds
+            const callEndTime = Date.now();
+            const durationSeconds = Math.round((callEndTime - callStartTime) / 1000);
+            console.log(`⏱️  Call duration: ${durationSeconds} seconds (${(durationSeconds / 60).toFixed(2)} minutes)`);
+
             // Print final accumulated call statistics and save to database
             if (callStats.responseCount > 0) {
               // Calculate costs for gpt-realtime pricing
@@ -596,6 +604,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                     tenant_id: tenant.id,
                     call_sid: call_id,
                     from_number: phoneNumber,
+                    duration: durationSeconds,
                     cached_text_input_tokens: callStats.cachedTextTokens,
                     uncached_text_input_tokens: callStats.uncachedTextTokens,
                     cached_audio_input_tokens: callStats.cachedAudioTokens,
@@ -607,8 +616,8 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   }
                 });
                 console.log('✅ Call log saved to database');
-                // Deduct call cost from wallet
-                await deductCallCost(tenant.id, callLog.id, totalCost);
+                // Deduct call cost from wallet (including Twilio costs)
+                await deductCallCost(tenant.id, callLog.id, totalCost, durationSeconds);
               } catch (error) {
                 console.error('❌ Error saving call log:', error);
               }

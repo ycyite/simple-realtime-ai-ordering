@@ -66,7 +66,7 @@ export async function deductCallCost(
           platform_markup: platformMarkup,
           twilio_cost: 0, // Twilio recorded separately
           balance_before: currentBalance,
-          balance_after: currentBalance - openaiCharged
+          balance_after: twilioCharged > 0 ? currentBalance - openaiCharged : newBalance
         }
       }),
 
