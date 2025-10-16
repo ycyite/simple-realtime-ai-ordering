@@ -51,7 +51,10 @@ export default function RegisterPage() {
                 formResendCodeLink: 'text-[#174D5A] hover:text-[#0f3640]',
               },
             }}
+            routing="path"
+            path="/register"
             signInUrl="/signin"
+            afterSignUpUrl="/restaurants"
             forceRedirectUrl="/restaurants"
           />
         </div>
