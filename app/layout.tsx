@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Kranky } from "next/font/google";
+import { Geist, Geist_Mono, Kranky, Nabla } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlobalOrderAlertProvider } from "@/contexts/GlobalOrderAlertContext";
@@ -21,6 +21,12 @@ const kranky = Kranky({
   subsets: ["latin"],
 });
 
+const nabla = Nabla({
+  weight: "400",
+  variable: "--font-nabla",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Counter Bell - Restaurant Management",
   description: "AI-powered restaurant ordering management system",
@@ -39,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${kranky.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${kranky.variable} ${nabla.variable} antialiased`}
         suppressHydrationWarning
       >
         <ClerkProvider>
