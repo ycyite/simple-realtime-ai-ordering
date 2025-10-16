@@ -33,7 +33,7 @@ export async function deductCallCost(
     let twilioCharged = 0;
     if (durationSeconds) {
       const minutes = durationSeconds / 60;
-      twilioCharged = Math.round(minutes * 0.013 * 2 * 100) / 100; // Inbound + outbound at $0.013/min
+      twilioCharged = Math.round(minutes * 0.0045 * 100) / 100; // SIP trunking at $0.0045/min
     }
 
     const totalCharge = openaiCharged + twilioCharged;

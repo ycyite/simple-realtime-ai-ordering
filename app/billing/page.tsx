@@ -217,7 +217,7 @@ function BillingContent() {
             <h3 className="font-semibold mb-3" style={{ color: '#F2E4D6' }}>How Billing Works:</h3>
             <ul className="text-sm space-y-2" style={{ color: '#F2E4D6', opacity: 0.9 }}>
               <li>• <strong>AI Processing:</strong> OpenAI cost + 50% markup (typically $0.05-0.20 per call)</li>
-              <li>• <strong>Phone Service:</strong> Twilio voice at $0.013/min (pass-through, no markup)</li>
+              <li>• <strong>Phone Service:</strong> Twilio SIP trunking at $0.0045/min (pass-through, no markup)</li>
               <li>• <strong>Automatic Billing:</strong> Costs deducted immediately after each call ends</li>
               <li>• <strong>Low Balance Alert:</strong> Notification when balance drops below $10</li>
             </ul>
