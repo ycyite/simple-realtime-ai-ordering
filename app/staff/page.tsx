@@ -36,6 +36,8 @@ export default function StaffPage() {
 function StaffContent() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
 
   // Invite Codes Modal State
   const [showInviteCodesModal, setShowInviteCodesModal] = useState(false);
@@ -52,6 +54,7 @@ function StaffContent() {
       window.location.href = '/restaurants';
       return;
     }
+    setUserRole(localStorage.getItem('activeRestaurantRole'));
 
     console.log('Fetching staff from /api/staff...');
     apiFetch('/api/staff')
@@ -109,6 +112,37 @@ function StaffContent() {
     } catch (err) {
       console.error('Failed to delete staff:', err);
       alert('Failed to remove staff member');
+    }
+  };
+
+  const handleRoleChange = async (staffId: string, newRole: 'staff' | 'manager') => {
+    setUpdatingRoleId(staffId);
+    try {
+      const res = await apiFetch('/api/staff', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffUserId: staffId, newRole })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alert(data?.error || 'Failed to update role');
+        return;
+      }
+
+      setStaff(prev =>
+        prev.map(member =>
+          member.id === staffId
+            ? { ...member, role: newRole }
+            : member
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update staff role:', err);
+      alert('Failed to update role. Please try again.');
+    } finally {
+      setUpdatingRoleId(null);
     }
   };
 
@@ -273,9 +307,26 @@ function StaffContent() {
                     <div className="text-sm text-gray-500">{member.email}</div>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(member.role)}`}>
-                      {member.role}
-                    </span>
+                    {userRole === 'owner' && member.role !== 'owner' ? (
+                      <div className="flex items-center gap-3">
+                        <select
+                          value={member.role}
+                          onChange={(e) => handleRoleChange(member.id, e.target.value as 'staff' | 'manager')}
+                          disabled={updatingRoleId === member.id}
+                          className={`px-3 py-1.5 text-sm font-semibold rounded-md border focus:outline-none focus:ring-2 focus:ring-offset-1 transition ${getRoleBadgeColor(member.role)}`}
+                        >
+                          <option value="staff">Staff</option>
+                          <option value="manager">Manager</option>
+                        </select>
+                        {updatingRoleId === member.id && (
+                          <span className="text-xs text-gray-500">Saving...</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(member.role)}`}>
+                        {member.role}
+                      </span>
+                    )}
                   </td>
                   <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(member.joinedAt)}

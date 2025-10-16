@@ -143,3 +143,74 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to remove staff' }, { status: 500 });
   }
 }
+
+// Update a staff member's role (owners only)
+export async function PATCH(request: Request) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const activeRestaurantId = request.headers.get('x-active-restaurant-id');
+    const access = await getActiveTenantId(userId, activeRestaurantId);
+
+    if (!access) {
+      return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
+    }
+
+    // Only owners can change roles
+    if (access.role !== 'owner') {
+      return NextResponse.json({ error: 'Only owners can change staff roles' }, { status: 403 });
+    }
+
+    const { staffUserId, newRole } = await request.json();
+
+    if (!staffUserId || !newRole) {
+      return NextResponse.json({ error: 'staffUserId and newRole are required' }, { status: 400 });
+    }
+
+    const allowedRoles = ['staff', 'manager'];
+    if (!allowedRoles.includes(newRole)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    const targetRelation = await prisma.user_tenants.findFirst({
+      where: {
+        tenant_id: access.tenantId,
+        user_id: staffUserId
+      }
+    });
+
+    if (!targetRelation) {
+      return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
+    }
+
+    // Prevent changes to owners or the acting owner themselves
+    if (targetRelation.role === 'owner') {
+      return NextResponse.json({ error: 'Cannot change role of an owner' }, { status: 403 });
+    }
+
+    const currentUser = await prisma.users.findUnique({
+      where: { clerk_user_id: userId },
+      select: { id: true }
+    });
+
+    if (currentUser?.id === staffUserId) {
+      return NextResponse.json({ error: 'You cannot change your own role' }, { status: 400 });
+    }
+
+    await prisma.user_tenants.update({
+      where: { id: targetRelation.id },
+      data: { role: newRole }
+    });
+
+    console.log(`Role updated for staff member ${staffUserId} to ${newRole}`);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating staff role:', error);
+    return NextResponse.json({ error: 'Failed to update staff role' }, { status: 500 });
+  }
+}
