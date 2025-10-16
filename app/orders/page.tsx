@@ -140,8 +140,6 @@ function OrdersContent() {
     setSearchTerm('');
   }, [activeTab]);
 
-  const undealtCount = orders.filter((o) => o.status === 'undealt').length;
-
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
     // Update local state
     const updatedOrders = orders.map((order) =>

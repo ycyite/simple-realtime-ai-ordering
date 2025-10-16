@@ -139,14 +139,15 @@ export function GlobalOrderAlertProvider({ children }: { children: ReactNode }) 
     }
 
     try {
-      const notification = new Notification('New Order Alert! 🔔', {
+      const notificationOptions: NotificationOptions = {
         body: `You have ${newOrdersCount} new order${newOrdersCount > 1 ? 's' : ''} waiting!`,
         icon: '/icons/bell-light.png',
         badge: '/icons/bell-light.png',
         tag: 'new-orders', // Replaces previous notification with same tag
         requireInteraction: true, // Keeps notification visible until user interacts
-        vibrate: [200, 100, 200], // Vibration pattern for mobile devices
-      });
+      };
+
+      const notification = new Notification('New Order Alert! 🔔', notificationOptions);
 
       // Focus the window when notification is clicked
       notification.onclick = () => {
@@ -157,6 +158,11 @@ export function GlobalOrderAlertProvider({ children }: { children: ReactNode }) 
           window.location.href = '/orders';
         }
       };
+
+      // Try to vibrate if supported (mobile devices)
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
     } catch (error) {
       console.error('Error showing notification:', error);
     }
