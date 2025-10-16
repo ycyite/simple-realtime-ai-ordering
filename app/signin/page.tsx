@@ -14,7 +14,7 @@ export default function SignInPage() {
             <img src="/icons/bell-dark.png" alt="" className="w-12 h-12" />
             <h1 className="text-3xl font-bold text-[#174D5A]" style={{ fontFamily: 'var(--font-kranky)' }}>Counter Bell</h1>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mt-4" style={{ fontFamily: 'var(--font-nabla)' }}>Welcome!</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mt-4 italic" style={{ fontFamily: 'var(--font-dm-serif-text)' }}>Welcome!</h2>
         </div>
 
         {/* Tabs */}
