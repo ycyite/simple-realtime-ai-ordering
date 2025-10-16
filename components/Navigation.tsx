@@ -28,6 +28,12 @@ export default function Navigation() {
   });
   const [showRestaurantMenu, setShowRestaurantMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [notificationBannerIgnored, setNotificationBannerIgnored] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('notificationBannerIgnored') === 'true';
+    }
+    return false;
+  });
 
   const restaurantMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -71,6 +77,11 @@ export default function Navigation() {
     setShowRestaurantMenu(false);
     setShowMobileMenu(false);
     router.push('/restaurants');
+  };
+
+  const handleIgnoreNotificationBanner = () => {
+    localStorage.setItem('notificationBannerIgnored', 'true');
+    setNotificationBannerIgnored(true);
   };
 
   // Define links based on user role
@@ -401,8 +412,11 @@ export default function Navigation() {
       </nav>
 
       {/* Notification Permission Banner */}
-      {notificationPermission === 'default' && hasActiveRestaurant && (
-        <NotificationPermissionBanner onRequestPermission={requestNotificationPermission} />
+      {notificationPermission === 'default' && hasActiveRestaurant && !notificationBannerIgnored && (
+        <NotificationPermissionBanner
+          onRequestPermission={requestNotificationPermission}
+          onIgnore={handleIgnoreNotificationBanner}
+        />
       )}
 
       {/* Global Alert Banner */}
