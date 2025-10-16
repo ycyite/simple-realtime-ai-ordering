@@ -29,14 +29,14 @@ export async function deductCallCost(
     const openaiCharged = Math.round(openaiCostRounded * 1.5 * 100) / 100;
     const platformMarkup = openaiCharged - openaiCostRounded;
 
-    // Calculate Twilio telecommunication costs (if duration provided)
+    // Calculate Twilio telecommunication costs (if duration provided), rounded UP to 2 decimals
     let twilioCharged = 0;
     if (durationSeconds) {
       const minutes = Math.ceil(durationSeconds / 60); // Round up: 1min 10sec = 2min, 45sec = 1min
       const voiceCost = minutes * 0.0045; // SIP trunking at $0.0045/min
       const smsCost = 3 * 0.0083; // 3 SMS messages at $0.0083/SMS
       const smsCarrierFee = 3 * 0.0087; // 3 SMS carrier fees at $0.0087/SMS
-      twilioCharged = Math.round((voiceCost + smsCost + smsCarrierFee) * 100) / 100;
+      twilioCharged = Math.ceil((voiceCost + smsCost + smsCarrierFee) * 100) / 100; // Round UP to 2 decimals
     }
 
     const totalCharge = openaiCharged + twilioCharged;
