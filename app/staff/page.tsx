@@ -38,6 +38,8 @@ function StaffContent() {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [roleDraft, setRoleDraft] = useState<'staff' | 'manager'>('staff');
 
   // Invite Codes Modal State
   const [showInviteCodesModal, setShowInviteCodesModal] = useState(false);
@@ -115,7 +117,11 @@ function StaffContent() {
     }
   };
 
-  const handleRoleChange = async (staffId: string, newRole: 'staff' | 'manager') => {
+  const handleRoleChange = async (
+    staffId: string,
+    newRole: 'staff' | 'manager',
+    onSuccess?: () => void
+  ) => {
     setUpdatingRoleId(staffId);
     try {
       const res = await apiFetch('/api/staff', {
@@ -138,6 +144,10 @@ function StaffContent() {
             : member
         )
       );
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       console.error('Failed to update staff role:', err);
       alert('Failed to update role. Please try again.');
@@ -308,20 +318,56 @@ function StaffContent() {
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     {userRole === 'owner' && member.role !== 'owner' ? (
-                      <div className="flex items-center gap-3">
-                        <select
-                          value={member.role}
-                          onChange={(e) => handleRoleChange(member.id, e.target.value as 'staff' | 'manager')}
-                          disabled={updatingRoleId === member.id}
-                          className={`px-3 py-1.5 text-sm font-semibold rounded-md border focus:outline-none focus:ring-2 focus:ring-offset-1 transition ${getRoleBadgeColor(member.role)}`}
-                        >
-                          <option value="staff">Staff</option>
-                          <option value="manager">Manager</option>
-                        </select>
-                        {updatingRoleId === member.id && (
-                          <span className="text-xs text-gray-500">Saving...</span>
-                        )}
-                      </div>
+                      editingRoleId === member.id ? (
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <select
+                            value={roleDraft}
+                            onChange={(e) => setRoleDraft(e.target.value as 'staff' | 'manager')}
+                            disabled={updatingRoleId === member.id}
+                            className="px-3 py-1.5 text-sm font-semibold rounded-md border focus:outline-none focus:ring-2 focus:ring-offset-1 transition text-gray-700"
+                          >
+                            <option value="staff">Staff</option>
+                            <option value="manager">Manager</option>
+                          </select>
+                          <button
+                            onClick={() =>
+                              handleRoleChange(member.id, roleDraft, () => {
+                                setEditingRoleId(null);
+                                setRoleDraft('staff');
+                              })
+                            }
+                            disabled={updatingRoleId === member.id || roleDraft === member.role}
+                            className="px-3 py-1.5 text-sm font-semibold rounded bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {updatingRoleId === member.id ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingRoleId(null);
+                              setRoleDraft('staff');
+                            }}
+                            disabled={updatingRoleId === member.id}
+                            className="px-3 py-1.5 text-sm font-semibold rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(member.role)}`}>
+                            {member.role}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setEditingRoleId(member.id);
+                              setRoleDraft(member.role as 'staff' | 'manager');
+                            }}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )
                     ) : (
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(member.role)}`}>
                         {member.role}
