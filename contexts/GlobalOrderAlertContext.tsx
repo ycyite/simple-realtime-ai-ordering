@@ -24,11 +24,25 @@ export function GlobalOrderAlertProvider({ children }: { children: ReactNode }) 
   const userInteracted = useRef(false);
   const isDismissed = useRef(false);
   const previousUndealtCount = useRef(0);
+  const swRegistration = useRef<ServiceWorkerRegistration | null>(null);
 
-  // Check notification permission on mount
+  // Register Service Worker and check notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
+    }
+
+    // Register Service Worker for background notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          console.log('Service Worker registered successfully:', registration);
+          swRegistration.current = registration;
+        })
+        .catch((error) => {
+          console.error('Service Worker registration failed:', error);
+        });
     }
   }, []);
 
@@ -132,7 +146,7 @@ export function GlobalOrderAlertProvider({ children }: { children: ReactNode }) 
     };
   }, []);
 
-  const showNotification = (newOrdersCount: number) => {
+  const showNotification = async (newOrdersCount: number) => {
     // Only show notification if permission is granted and browser supports it
     if (!('Notification' in window) || Notification.permission !== 'granted') {
       return;
@@ -145,21 +159,31 @@ export function GlobalOrderAlertProvider({ children }: { children: ReactNode }) 
         badge: '/icons/bell-light.png',
         tag: 'new-orders', // Replaces previous notification with same tag
         requireInteraction: true, // Keeps notification visible until user interacts
+        vibrate: [200, 100, 200], // Vibration pattern for mobile devices
       };
 
-      const notification = new Notification('New Order Alert! 🔔', notificationOptions);
+      // Use Service Worker for background notifications if available
+      if (swRegistration.current) {
+        await swRegistration.current.showNotification('New Order Alert! 🔔', notificationOptions);
+        console.log('Background notification shown via Service Worker');
+      } else {
+        // Fallback to regular notification if Service Worker is not ready
+        const notification = new Notification('New Order Alert! 🔔', notificationOptions);
 
-      // Focus the window when notification is clicked
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-        // Navigate to orders page if not already there
-        if (window.location.pathname !== '/orders') {
-          window.location.href = '/orders';
-        }
-      };
+        // Focus the window when notification is clicked
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+          // Navigate to orders page if not already there
+          if (window.location.pathname !== '/orders') {
+            window.location.href = '/orders';
+          }
+        };
 
-      // Try to vibrate if supported (mobile devices)
+        console.log('Notification shown via Web Notification API (fallback)');
+      }
+
+      // Try to vibrate if supported (mobile devices) - for immediate feedback
       if ('vibrate' in navigator) {
         navigator.vibrate([200, 100, 200]);
       }

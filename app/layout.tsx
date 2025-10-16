@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Rubik_Glitch } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlobalOrderAlertProvider } from "@/contexts/GlobalOrderAlertContext";
@@ -15,9 +15,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const rubikGlitch = Rubik_Glitch({
+  weight: "400",
+  variable: "--font-rubik-glitch",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Counter Bell - Restaurant Management",
   description: "AI-powered restaurant ordering management system",
+  icons: {
+    icon: '/icons/logo.svg',
+    shortcut: '/icons/logo.svg',
+    apple: '/icons/bell-light.png',
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${rubikGlitch.variable} antialiased`}
         suppressHydrationWarning
       >
         <ClerkProvider>

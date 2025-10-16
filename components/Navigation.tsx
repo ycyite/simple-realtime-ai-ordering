@@ -129,8 +129,8 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           {/* Left: Logo + Desktop Navigation */}
           <div className="flex items-center space-x-4 sm:space-x-6">
-            <h1 className="text-base sm:text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6' }}>
-              <img src="/icons/bell-light.png" alt="" className="w-6 h-6 sm:w-8 sm:h-8" />
+            <h1 className="text-base sm:text-xl font-bold flex items-center gap-2" style={{ color: '#F2E4D6', fontFamily: 'var(--font-rubik-glitch)' }}>
+              <img src="/icons/logo.svg" alt="" className="w-6 h-6 sm:w-8 sm:h-8" />
               <span>Counter Bell</span>
             </h1>
 
