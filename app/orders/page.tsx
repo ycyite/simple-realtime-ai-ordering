@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Order } from '@/types';
-import { useOrderAlert } from '@/hooks/useOrderAlert';
 
 export default function OrdersPage() {
   return (
@@ -110,8 +109,6 @@ function OrdersContent() {
       })
       .catch(err => console.error('Failed to load orders:', err));
   }, []);
-
-  const { dismissAlert, playbackError } = useOrderAlert(orders);
 
   // Poll for new orders every 5 seconds
   useEffect(() => {
@@ -429,13 +426,6 @@ function OrdersContent() {
   return (
     <div className="min-h-screen">
       <Navigation />
-
-      {playbackError && (
-        <div className="glass-card border-l-4 border-yellow-400 text-white p-4 mx-4 mt-4" role="alert">
-          <p className="font-bold">Audio Alert Issue</p>
-          <p>{playbackError}</p>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}

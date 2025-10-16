@@ -5,13 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGlobalOrderAlert } from '@/contexts/GlobalOrderAlertContext';
 import AlertBanner from './AlertBanner';
+import NotificationPermissionBanner from './NotificationPermissionBanner';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { undealtCount, dismissAlert } = useGlobalOrderAlert();
+  const { undealtCount, dismissAlert, notificationPermission, requestNotificationPermission } = useGlobalOrderAlert();
   const [hasActiveRestaurant, setHasActiveRestaurant] = useState(() => {
     if (typeof window !== 'undefined') {
       return !!localStorage.getItem('activeRestaurantId');
@@ -98,9 +99,6 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Global Alert Banner */}
-      <AlertBanner undealtCount={undealtCount} onDismiss={dismissAlert} />
-
       <nav
       className="relative overflow-visible"
       style={{
@@ -401,6 +399,14 @@ export default function Navigation() {
         }
       `}</style>
       </nav>
+
+      {/* Notification Permission Banner */}
+      {notificationPermission === 'default' && hasActiveRestaurant && (
+        <NotificationPermissionBanner onRequestPermission={requestNotificationPermission} />
+      )}
+
+      {/* Global Alert Banner */}
+      <AlertBanner undealtCount={undealtCount} onDismiss={dismissAlert} />
     </>
   );
 }
