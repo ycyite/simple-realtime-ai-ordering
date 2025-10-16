@@ -29,10 +29,10 @@ export async function deductCallCost(
     const openaiCharged = Math.round(openaiCostRounded * 1.5 * 100) / 100;
     const platformMarkup = openaiCharged - openaiCostRounded;
 
-    // Calculate Twilio cost (if duration provided), rounded to 2 decimal places
+    // Calculate Twilio cost (if duration provided), rounded up to next minute
     let twilioCharged = 0;
     if (durationSeconds) {
-      const minutes = durationSeconds / 60;
+      const minutes = Math.ceil(durationSeconds / 60); // Round up: 1min 10sec = 2min, 45sec = 1min
       twilioCharged = Math.round(minutes * 0.0045 * 100) / 100; // SIP trunking at $0.0045/min
     }
 
@@ -78,7 +78,7 @@ export async function deductCallCost(
             tenant_id: tenantId,
             amount: -twilioCharged,
             type: 'twilio_call_cost',
-            description: `Twilio voice cost for call ${callId} (${(durationSeconds! / 60).toFixed(2)} min)`,
+            description: `Twilio voice cost for call ${callId} (${Math.ceil(durationSeconds! / 60)} min)`,
             related_call_log_id: callId,
             twilio_cost: twilioCharged,
             platform_markup: 0, // No markup on Twilio
