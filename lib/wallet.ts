@@ -29,11 +29,14 @@ export async function deductCallCost(
     const openaiCharged = Math.round(openaiCostRounded * 1.5 * 100) / 100;
     const platformMarkup = openaiCharged - openaiCostRounded;
 
-    // Calculate Twilio cost (if duration provided), rounded up to next minute
+    // Calculate Twilio telecommunication costs (if duration provided)
     let twilioCharged = 0;
     if (durationSeconds) {
       const minutes = Math.ceil(durationSeconds / 60); // Round up: 1min 10sec = 2min, 45sec = 1min
-      twilioCharged = Math.round(minutes * 0.0045 * 100) / 100; // SIP trunking at $0.0045/min
+      const voiceCost = minutes * 0.0045; // SIP trunking at $0.0045/min
+      const smsCost = 3 * 0.0083; // 3 SMS messages at $0.0083/SMS
+      const smsCarrierFee = 3 * 0.0087; // 3 SMS carrier fees at $0.0087/SMS
+      twilioCharged = Math.round((voiceCost + smsCost + smsCarrierFee) * 100) / 100;
     }
 
     const totalCharge = openaiCharged + twilioCharged;
@@ -71,17 +74,17 @@ export async function deductCallCost(
         }
       }),
 
-      // Record Twilio cost transaction (if applicable)
+      // Record Twilio telecommunication cost transaction (if applicable)
       ...(twilioCharged > 0 ? [
         prisma.wallet_transactions.create({
           data: {
             tenant_id: tenantId,
             amount: -twilioCharged,
-            type: 'twilio_call_cost',
-            description: `Twilio voice cost for call ${callId} (${Math.ceil(durationSeconds! / 60)} min)`,
+            type: 'telecom_cost',
+            description: `Telecommunication cost for call ${callId} (${Math.ceil(durationSeconds! / 60)} min voice + 3 SMS)`,
             related_call_log_id: callId,
             twilio_cost: twilioCharged,
-            platform_markup: 0, // No markup on Twilio
+            platform_markup: 0, // No markup on telecom
             balance_before: currentBalance - openaiCharged,
             balance_after: newBalance
           }
@@ -92,7 +95,7 @@ export async function deductCallCost(
     console.log(`💰 Call cost deducted:`);
     console.log(`   AI: $${openaiCharged.toFixed(2)} (cost: $${openaiCostRounded.toFixed(2)}, markup: $${platformMarkup.toFixed(2)})`);
     if (twilioCharged > 0) {
-      console.log(`   Twilio: $${twilioCharged.toFixed(2)} (pass-through)`);
+      console.log(`   Telecommunication: $${twilioCharged.toFixed(2)} (voice + 3 SMS, pass-through)`);
     }
     console.log(`   Total: $${totalCharge.toFixed(2)}`);
     console.log(`   New balance: $${newBalance.toFixed(2)}`);

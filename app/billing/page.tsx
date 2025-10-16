@@ -103,9 +103,10 @@ function BillingContent() {
       case 'recharge':
         return '💳';
       case 'ai_call_cost':
-        return '📞';
+        return '🤖';
       case 'twilio_call_cost':
-        return '☎️';
+      case 'telecom_cost':
+        return '📞';
       case 'subscription_fee':
         return '📅';
       default:
@@ -118,9 +119,10 @@ function BillingContent() {
       case 'recharge':
         return 'Wallet Recharge';
       case 'ai_call_cost':
-        return 'AI Call Cost';
+        return 'AI Cost';
       case 'twilio_call_cost':
-        return 'Twilio Call Cost';
+      case 'telecom_cost':
+        return 'Telecommunication Cost';
       case 'subscription_fee':
         return 'Monthly Subscription';
       default:
@@ -217,7 +219,7 @@ function BillingContent() {
             <h3 className="font-semibold mb-3" style={{ color: '#F2E4D6' }}>How Billing Works:</h3>
             <ul className="text-sm space-y-2" style={{ color: '#F2E4D6', opacity: 0.9 }}>
               <li>• <strong>AI Processing:</strong> OpenAI cost + 50% markup (typically $0.05-0.20 per call)</li>
-              <li>• <strong>Phone Service:</strong> Twilio SIP trunking at $0.0045/min (pass-through, no markup)</li>
+              <li>• <strong>Telecommunication:</strong> Voice ($0.0045/min) + 3 SMS messages ($0.0083 each + $0.0087 carrier fee each) - pass-through, no markup</li>
               <li>• <strong>Automatic Billing:</strong> Costs deducted immediately after each call ends</li>
               <li>• <strong>Low Balance Alert:</strong> Notification when balance drops below $10</li>
             </ul>
