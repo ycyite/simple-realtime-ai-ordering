@@ -159,7 +159,6 @@ export function GlobalOrderAlertProvider({ children }: { children: ReactNode }) 
         badge: '/icons/bell-light.png',
         tag: 'new-orders', // Replaces previous notification with same tag
         requireInteraction: true, // Keeps notification visible until user interacts
-        vibrate: [200, 100, 200], // Vibration pattern for mobile devices
       };
 
       // Use Service Worker for background notifications if available
