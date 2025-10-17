@@ -30,6 +30,8 @@ function SettingsContent() {
   const [isOpen, setIsOpen] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showLowFundsModal, setShowLowFundsModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Check if user has selected a restaurant, if not redirect to restaurants page
   useEffect(() => {
@@ -83,9 +85,21 @@ function SettingsContent() {
 
       if (response.ok) {
         setIsOpen(newStatus);
+      } else {
+        const errorData = await response.json();
+
+        // Check if the error is due to insufficient funds
+        if (errorData.error === 'Insufficient funds') {
+          setWalletBalance(errorData.walletBalance);
+          setShowLowFundsModal(true);
+        } else {
+          console.error('Failed to update status:', errorData);
+          alert('Failed to update restaurant status. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Failed to update status:', error);
+      alert('Failed to update restaurant status. Please try again.');
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -369,6 +383,58 @@ function SettingsContent() {
           </>
         )}
       </div>
+
+      {/* Low Funds Modal */}
+      {showLowFundsModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]"
+          onClick={() => setShowLowFundsModal(false)}
+        >
+          <div
+            className="glass-white rounded-2xl shadow-2xl p-8 max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#174D5A' }}>
+                Insufficient Funds
+              </h2>
+              <p className="text-gray-700 mb-2">
+                Cannot open restaurant. Your wallet balance is insufficient.
+              </p>
+              <p className="text-xl font-bold mb-6" style={{ color: '#dc2626' }}>
+                Current Balance: ${walletBalance?.toFixed(2) || '0.00'}
+              </p>
+              <p className="text-sm text-gray-600 mb-6">
+                Please add funds to your wallet to continue accepting AI phone calls.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowLowFundsModal(false);
+                    window.location.href = '/billing';
+                  }}
+                  className="px-6 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl cursor-pointer"
+                  style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
+                >
+                  Add Funds
+                </button>
+                <button
+                  onClick={() => setShowLowFundsModal(false)}
+                  className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 cursor-pointer"
+                  style={{ backgroundColor: '#F2E4D6', color: '#174D5A' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e8d8c7'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F2E4D6'}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

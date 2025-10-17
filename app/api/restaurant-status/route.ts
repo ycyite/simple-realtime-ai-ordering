@@ -59,6 +59,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tenant access' }, { status: 403 });
     }
 
+    // Check wallet balance before allowing to open
+    if (isOpen) {
+      const tenant = await prisma.tenants.findUnique({
+        where: { id: access.tenantId },
+        select: { wallet_balance: true }
+      });
+
+      if (!tenant) {
+        return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+      }
+
+      const walletBalance = Number(tenant.wallet_balance) || 0;
+
+      if (walletBalance <= 0) {
+        return NextResponse.json({
+          error: 'Insufficient funds',
+          message: 'Cannot open restaurant. Your wallet balance is insufficient. Please add funds to continue.',
+          walletBalance
+        }, { status: 400 });
+      }
+    }
+
     // Update tenant status
     const tenant = await prisma.tenants.update({
       where: { id: access.tenantId },

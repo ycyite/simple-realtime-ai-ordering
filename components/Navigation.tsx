@@ -7,6 +7,7 @@ import { useGlobalOrderAlert } from '@/contexts/GlobalOrderAlertContext';
 import AlertBanner from './AlertBanner';
 import NotificationPermissionBanner from './NotificationPermissionBanner';
 import { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '@/lib/api-client';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export default function Navigation() {
     }
     return false;
   });
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   const restaurantMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -48,6 +50,16 @@ export default function Navigation() {
     // Get user role from localStorage (set when selecting restaurant)
     const role = localStorage.getItem('activeRestaurantRole');
     setUserRole(role);
+
+    // Fetch wallet balance if user is owner
+    if (role === 'owner' && restaurantId) {
+      apiFetch('/api/wallet/balance')
+        .then(res => res.json())
+        .then(data => {
+          setWalletBalance(data.walletBalance ?? 0);
+        })
+        .catch(err => console.error('Failed to load wallet balance:', err));
+    }
   }, [pathname]); // Re-check on route change
 
   // Close dropdown when clicking outside
@@ -103,7 +115,12 @@ export default function Navigation() {
   // Everyone can see Settings (but managers will have limited access)
   // Only Owners can see Billing
   if (userRole === 'owner') {
-    links.push({ href: '/billing', label: 'Billing', icon: '💰' });
+    const showWarning = walletBalance !== null && walletBalance <= 0;
+    links.push({
+      href: '/billing',
+      label: showWarning ? 'Billing ⚠️' : 'Billing',
+      icon: '💰'
+    });
   }
 
   links.push({ href: '/settings', label: 'Settings', icon: '⚙️' });
