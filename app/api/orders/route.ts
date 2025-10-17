@@ -25,6 +25,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No access to restaurant' }, { status: 403 });
     }
 
+    // Get tenant timezone for proper time display
+    const tenant = await prisma.tenants.findUnique({
+      where: { id: access.tenantId },
+      select: {
+        timezone: true,
+        postal_code: true
+      }
+    });
+
+    const tenantTimezone = tenant?.timezone ||
+      (tenant?.postal_code ? getTimezoneFromPostalCode(tenant.postal_code) : 'America/Toronto');
+
     // Fetch all orders for this tenant, ordered by newest first
     const orders = await prisma.orders.findMany({
       where: { tenant_id: access.tenantId },
@@ -44,7 +56,8 @@ export async function GET(request: Request) {
       timestamp: order.created_at?.toISOString(),
       createdAt: order.created_at?.toISOString(),
       pickupTime: order.pickup_time,
-      notes: order.notes
+      notes: order.notes,
+      timezone: tenantTimezone
     }));
 
     return NextResponse.json(formattedOrders);

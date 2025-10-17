@@ -25,6 +25,7 @@ export interface Order {
   createdAt: string;
   pickupTime?: string;
   notes?: string;
+  timezone?: string;
 }
 
 export interface RestaurantSettings {

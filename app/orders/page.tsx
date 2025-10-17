@@ -21,6 +21,26 @@ function OrdersContent() {
   const [activeTab, setActiveTab] = useState<TabType>('undealt');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Helper function to format order creation time in restaurant timezone
+  const formatOrderTime = (createdAt: string, timezone?: string) => {
+    if (!createdAt) return 'N/A';
+
+    try {
+      const date = new Date(createdAt);
+      return date.toLocaleString('en-US', {
+        timeZone: timezone || 'America/Toronto',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return new Date(createdAt).toLocaleString();
+    }
+  };
+
   // Helper function to format pickup time
   const formatPickupTime = (pickupTime?: string, createdAt?: string) => {
     if (!pickupTime) {
@@ -104,6 +124,7 @@ function OrdersContent() {
           createdAt: order.timestamp || order.createdAt || new Date().toISOString(),
           pickupTime: order.pickupTime,
           notes: order.notes || '',
+          timezone: order.timezone,
         }));
         setOrders(formattedOrders);
       })
@@ -126,6 +147,7 @@ function OrdersContent() {
             createdAt: order.timestamp || order.createdAt || new Date().toISOString(),
             pickupTime: order.pickupTime,
             notes: order.notes || '',
+            timezone: order.timezone,
           }));
           setOrders(formattedOrders);
         })
@@ -293,6 +315,15 @@ function OrdersContent() {
           <span className="font-semibold">Pickup Time:</span>
           <span className="font-bold break-all" style={{ color: pickupTimeColor }}>
             {formatPickupTime(order.pickupTime, order.createdAt)}
+          </span>
+        </div>
+
+        {/* Order Created Time */}
+        <div className="mb-3 flex items-start sm:items-center gap-2 text-xs sm:text-sm text-gray-600 flex-wrap">
+          <img src="/icons/calendar.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 sm:mt-0" />
+          <span className="font-semibold">Order Time:</span>
+          <span className="break-all">
+            {formatOrderTime(order.createdAt, order.timezone)}
           </span>
         </div>
 
