@@ -80,8 +80,6 @@ export async function POST(request: Request) {
         }
       }
 
-  
-      }
 
       if (!tenant) {
         console.log("❌ No active tenant found");
