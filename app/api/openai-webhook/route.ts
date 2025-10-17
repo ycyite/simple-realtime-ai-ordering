@@ -154,7 +154,27 @@ export async function POST(request: Request) {
         return acc;
       }, {});
 
+      // Determine timezone for AI context
+      const tenantTimezone = tenant.timezone ||
+        (tenant.postal_code ? getTimezoneFromPostalCode(tenant.postal_code) : 'America/Toronto');
+
+      // Get current time in restaurant timezone for AI context
+      const now = new Date();
+      const timeFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tenantTimezone,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        weekday: 'long'
+      });
+      const currentRestaurantTime = timeFormatter.format(now);
+
       const menuContext = `You are a professional phone order-taking agent for ${tenant.name}.
+
+RESTAURANT CONTEXT:
+- Current restaurant time: ${currentRestaurantTime}
+- Restaurant timezone: ${tenantTimezone}
+- When customer says "30 minutes" or similar, calculate from current time above
 
 IMPORTANT INSTRUCTIONS:
 - Start the conversation immediately by greeting the customer: "Thank you for calling ${tenant.name}! How can I help you today?"
@@ -234,7 +254,7 @@ Remember: BE BRIEF, CLEAR, and EFFICIENT. You must greet first before the custom
                   },
                   pickupTime: {
                     type: 'string',
-                    description: 'Pickup time'
+                    description: 'Pickup time in 24-hour format HH:MM (e.g., "20:00" for 8pm, "14:30" for 2:30pm). Calculate relative times like "30 minutes" or "2 hours" from the current restaurant time provided in context.'
                   },
                   notes: {
                     type: 'string',

@@ -55,6 +55,7 @@ export function getTimezoneFromPostalCode(postalCode: string): string {
 /**
  * Formats a pickup time string to standard format: "hh:mm a.m./p.m. - dd/MM/YY"
  * Handles various input formats:
+ * - "20:00" (24-hour format HH:MM) -> preferred format from AI
  * - "30 minutes" or "30 mins" -> calculates from current time
  * - "1 hour" or "2 hours" -> calculates from current time
  * - "8pm" or "8:30 PM" -> today at that time
@@ -67,10 +68,63 @@ export function getTimezoneFromPostalCode(postalCode: string): string {
 export function formatPickupTime(rawTime: string, timezone: string = 'America/Toronto'): string {
   if (!rawTime) return '';
 
-  const input = rawTime.toLowerCase().trim();
+  const input = rawTime.trim();
   let targetDate: Date;
 
   try {
+    // Fast path: Check for 24-hour format HH:MM (e.g., "20:00", "14:30")
+    const time24Match = input.match(/^(\d{1,2}):(\d{2})$/);
+    if (time24Match) {
+      const hours = parseInt(time24Match[1]);
+      const minutes = parseInt(time24Match[2]);
+
+      // Validate time
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        // Get current time in restaurant timezone
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+
+        const parts = formatter.formatToParts(now);
+        const tzYear = parseInt(parts.find(p => p.type === 'year')?.value || '2025');
+        const tzMonth = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
+        const tzDay = parseInt(parts.find(p => p.type === 'day')?.value || '1');
+
+        targetDate = new Date(tzYear, tzMonth, tzDay, hours, minutes, 0, 0);
+
+        // If time has passed today, assume tomorrow
+        const currentTime = new Date(tzYear, tzMonth, tzDay,
+          parseInt(parts.find(p => p.type === 'hour')?.value || '0'),
+          parseInt(parts.find(p => p.type === 'minute')?.value || '0'));
+
+        if (targetDate < currentTime) {
+          targetDate.setDate(targetDate.getDate() + 1);
+        }
+
+        // Format and return immediately
+        const day = String(targetDate.getDate()).padStart(2, '0');
+        const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const year = String(targetDate.getFullYear()).slice(-2);
+        let displayHour = hours % 12;
+        if (displayHour === 0) displayHour = 12;
+        const displayMinute = String(minutes).padStart(2, '0');
+        const meridiem = hours >= 12 ? 'p.m.' : 'a.m.';
+
+        return `${displayHour}:${displayMinute} ${meridiem} - ${day}/${month}/${year}`;
+      }
+    }
+
+    // Fallback: Handle legacy formats (natural language)
+    const inputLower = input.toLowerCase();
+
     // Get current time in the tenant's timezone
     const now = new Date();
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -95,23 +149,23 @@ export function formatPickupTime(rawTime: string, timezone: string = 'America/To
     targetDate = new Date(tzYear, tzMonth, tzDay, tzHour, tzMinute);
 
     // Pattern: "X minutes" or "X mins"
-    const minutesMatch = input.match(/(\d+)\s*(minute|min)/);
+    const minutesMatch = inputLower.match(/(\d+)\s*(minute|min)/);
     if (minutesMatch) {
       const minutes = parseInt(minutesMatch[1]);
       targetDate.setMinutes(targetDate.getMinutes() + minutes);
     }
     // Pattern: "X hour(s)"
-    else if (input.match(/(\d+)\s*hour/)) {
-      const hoursMatch = input.match(/(\d+)\s*hour/);
+    else if (inputLower.match(/(\d+)\s*hour/)) {
+      const hoursMatch = inputLower.match(/(\d+)\s*hour/);
       const hours = parseInt(hoursMatch![1]);
       targetDate.setHours(targetDate.getHours() + hours);
     }
     // Pattern: "tomorrow" - add 1 day
-    else if (input.includes('tomorrow')) {
+    else if (inputLower.includes('tomorrow')) {
       targetDate.setDate(targetDate.getDate() + 1);
 
       // Try to extract time from "tomorrow at 2pm"
-      const timeMatch = input.match(/(\d+)(?::(\d+))?\s*(am|pm|a\.m\.|p\.m\.)?/);
+      const timeMatch = inputLower.match(/(\d+)(?::(\d+))?\s*(am|pm|a\.m\.|p\.m\.)?/);
       if (timeMatch) {
         let hour = parseInt(timeMatch[1]);
         const minute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
@@ -125,7 +179,7 @@ export function formatPickupTime(rawTime: string, timezone: string = 'America/To
     }
     // Pattern: time like "8pm", "2:30pm", "14:00"
     else {
-      const timeMatch = input.match(/(\d+)(?::(\d+))?\s*(am|pm|a\.m\.|p\.m\.)?/);
+      const timeMatch = inputLower.match(/(\d+)(?::(\d+))?\s*(am|pm|a\.m\.|p\.m\.)?/);
       if (timeMatch) {
         let hour = parseInt(timeMatch[1]);
         const minute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
