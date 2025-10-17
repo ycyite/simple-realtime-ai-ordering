@@ -321,8 +321,8 @@ function MenuContent() {
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
               >
-                <img src="/icons/add_item.png" alt="" className="w-6 h-6" />
-                Add Item
+                <img src="/icons/add_item.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                <span>Add Item</span>
               </button>
             </div>
           )}
@@ -405,12 +405,12 @@ function MenuContent() {
         {isAddingItem && (
           <div className="fixed inset-0 bg-black bg-opacity-60 z-40 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 px-8 py-6 rounded-t-2xl" style={{ background: 'linear-gradient(135deg, #174D5A 0%, #4C7A62 100%)', color: '#F2E4D6' }}>
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <img src="/icons/add_item.png" alt="" className="w-8 h-8" />
-                  {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+              <div className="sticky top-0 px-6 md:px-8 py-4 md:py-6 rounded-t-2xl" style={{ background: 'linear-gradient(135deg, #174D5A 0%, #4C7A62 100%)', color: '#F2E4D6' }}>
+                <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                  <img src="/icons/add_item.png" alt="" className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" />
+                  <span className="break-words">{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</span>
                 </h2>
-                <p className="text-sm mt-1" style={{ color: '#F2E4D6', opacity: 0.9 }}>
+                <p className="text-xs md:text-sm mt-1" style={{ color: '#F2E4D6', opacity: 0.9 }}>
                   {editingItem ? 'Update the details below' : 'Fill in the details to create a new item'}
                 </p>
               </div>
@@ -527,13 +527,13 @@ function MenuContent() {
                   </button>
                   <button
                     type="submit"
-                    className="cursor-pointer px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95 font-bold shadow-lg hover:shadow-xl"
+                    className="cursor-pointer px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 active:scale-95 font-bold shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                     style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
                   >
-                    <img src="/icons/check-mark.png" alt="" className="w-6 h-6 inline mr-1" />
-                    {editingItem ? 'Update Item' : 'Add Item'}
+                    <img src="/icons/check-mark.png" alt="" className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
+                    <span>{editingItem ? 'Update Item' : 'Add Item'}</span>
                   </button>
                 </div>
               </form>

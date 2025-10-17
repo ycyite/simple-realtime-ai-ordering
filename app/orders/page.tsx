@@ -281,30 +281,30 @@ function OrdersContent() {
         <div className="flex-1 overflow-y-auto pr-2">
         {/* Customer Name */}
         <div className="mb-3">
-          <p className={`text-lg font-bold flex items-center gap-2 ${isErrorOrder ? 'text-red-700' : 'text-gray-900'}`}>
-            <img src="/icons/user.png" alt="" className="w-6 h-6" />
-            {isErrorOrder ? '⚠️ SYSTEM ERROR - CALLBACK NEEDED' : (order.customerName || `Customer ${order.customerPhone.slice(-4)}`)}
+          <p className={`text-base sm:text-lg font-bold flex items-start sm:items-center gap-2 ${isErrorOrder ? 'text-red-700' : 'text-gray-900'} break-words`}>
+            <img src="/icons/user.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 sm:mt-0" />
+            <span className="flex-1">{isErrorOrder ? '⚠️ SYSTEM ERROR - CALLBACK NEEDED' : (order.customerName || `Customer ${order.customerPhone.slice(-4)}`)}</span>
           </p>
         </div>
 
         {/* Pickup Time */}
-        <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
-          <img src="/icons/clock.png" alt="" className="w-6 h-6" />
+        <div className="mb-3 flex items-start sm:items-center gap-2 text-xs sm:text-sm text-gray-700 flex-wrap">
+          <img src="/icons/clock.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 sm:mt-0" />
           <span className="font-semibold">Pickup Time:</span>
-          <span className="font-bold" style={{ color: pickupTimeColor }}>
+          <span className="font-bold break-all" style={{ color: pickupTimeColor }}>
             {formatPickupTime(order.pickupTime, order.createdAt)}
           </span>
         </div>
 
         {/* Phone Number - Emphasized for error orders */}
-        <div className={`mb-3 flex items-center gap-2 text-sm ${isErrorOrder ? 'bg-yellow-100 p-3 rounded-lg border-2 border-yellow-400' : ''}`}>
-          <img src="/icons/phone.png" alt="" className="w-6 h-6" />
+        <div className={`mb-3 flex items-start sm:items-center gap-2 text-xs sm:text-sm ${isErrorOrder ? 'bg-yellow-100 p-3 rounded-lg border-2 border-yellow-400' : ''} flex-wrap`}>
+          <img src="/icons/phone.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 sm:mt-0" />
           <span className={`font-semibold ${isErrorOrder ? 'text-red-700' : 'text-gray-700'}`}>
             {isErrorOrder ? '📞 CALL NOW:' : 'Phone:'}
           </span>
           <a
             href={`tel:${order.customerPhone}`}
-            className={`font-bold ${isErrorOrder ? 'text-xl text-red-700 underline' : 'text-gray-700'}`}
+            className={`font-bold break-all ${isErrorOrder ? 'text-base sm:text-xl text-red-700 underline' : 'text-gray-700'}`}
           >
             {order.customerPhone}
           </a>
@@ -312,11 +312,11 @@ function OrdersContent() {
 
         {/* Notes */}
         {order.notes && (
-          <div className="mb-4 flex items-start gap-2 text-sm text-gray-700">
-            <img src="/icons/tips.png" alt="" className="w-6 h-6 flex-shrink-0" />
-            <div>
+          <div className="mb-4 flex items-start gap-2 text-xs sm:text-sm text-gray-700">
+            <img src="/icons/tips.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
               <span className="font-semibold">Notes:</span>
-              <p className="mt-1 text-gray-600 italic">{order.notes}</p>
+              <p className="mt-1 text-gray-600 italic break-words">{order.notes}</p>
             </div>
           </div>
         )}
@@ -427,11 +427,11 @@ function OrdersContent() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="glass-card p-8 mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2" style={{ color: '#F2E4D6' }}>
+        <div className="glass-card p-6 md:p-8 mb-8 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#F2E4D6' }}>
             Order Management
           </h1>
-          <p style={{ color: '#F2E4D6', opacity: 0.9 }}>Track current orders and view order history</p>
+          <p className="text-sm md:text-base" style={{ color: '#F2E4D6', opacity: 0.9 }}>Track current orders and view order history</p>
         </div>
 
         {/* Dashboard Stats */}

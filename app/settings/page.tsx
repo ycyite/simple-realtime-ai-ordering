@@ -146,14 +146,16 @@ function SettingsContent() {
         {/* Restaurant Status Toggle */}
         <div className="glass-white rounded-2xl shadow-2xl p-6 md:p-8 mb-6 border-2" style={{ borderColor: isOpen ? '#4C7A62' : '#dc2626' }}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-4 h-4 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold" style={{ color: '#174D5A' }}>
+            <div className="flex items-start md:items-center gap-3 md:gap-4 w-full md:w-auto">
+              <div className={`w-4 h-4 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-500'} animate-pulse mt-1 md:mt-0 flex-shrink-0`}></div>
+              <div className="flex-1">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold" style={{ color: '#174D5A' }}>
                   Restaurant Status
                 </h2>
-                <p className={`text-lg font-semibold mt-1 ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
-                  {isOpen ? '🟢 OPEN - Accepting Calls' : '🔴 CLOSED - Not Accepting Calls'}
+                <p className={`text-sm sm:text-base md:text-lg font-semibold mt-1 ${isOpen ? 'text-green-600' : 'text-red-600'} break-words`}>
+                  <span className="inline-block">{isOpen ? '🟢 OPEN' : '🔴 CLOSED'}</span>
+                  <span className="hidden sm:inline"> - </span>
+                  <span className="block sm:inline">{isOpen ? 'Accepting Calls' : 'Not Accepting Calls'}</span>
                 </p>
               </div>
             </div>
@@ -195,9 +197,9 @@ function SettingsContent() {
           <>
         <div className="glass-card p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
-            <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3" style={{ color: '#F2E4D6' }}>
-              <img src="/icons/settings.png" alt="" className="w-10 h-10 md:w-12 md:h-12" />
-              Restaurant Settings
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold flex items-center gap-2 md:gap-3" style={{ color: '#F2E4D6' }}>
+              <img src="/icons/settings.png" alt="" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex-shrink-0" />
+              <span className="break-words">Restaurant Settings</span>
             </h1>
             {!isEditing && (
               <button
@@ -312,13 +314,13 @@ function SettingsContent() {
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t" style={{ borderColor: '#174D5A' }}>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-bold shadow-lg hover:shadow-xl cursor-pointer"
+                  className="flex-1 px-6 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 font-bold shadow-lg hover:shadow-xl cursor-pointer flex items-center justify-center gap-2"
                   style={{ backgroundColor: '#FFB975', color: '#174D5A' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffa952'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFB975'}
                 >
-                  <img src="/icons/check-mark.png" alt="" className="w-6 h-6 inline mr-2" />
-                  Save Changes
+                  <img src="/icons/check-mark.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                  <span>Save Changes</span>
                 </button>
                 <button
                   type="button"
@@ -336,9 +338,9 @@ function SettingsContent() {
         ) : (
           <div className="space-y-6">
             <div className="glass-white rounded-2xl shadow-lg p-4 md:p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#174D5A' }}>
-                <img src="/icons/menu.png" alt="" className="w-6 h-6" />
-                Basic Information
+              <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#174D5A' }}>
+                <img src="/icons/menu.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                <span>Basic Information</span>
               </h2>
               <dl className="grid grid-cols-1 gap-4">
                 <div>
