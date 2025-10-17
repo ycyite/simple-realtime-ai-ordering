@@ -320,7 +320,7 @@ function OrdersContent() {
 
         {/* Order Created Time */}
         <div className="mb-3 flex items-start sm:items-center gap-2 text-xs sm:text-sm text-gray-600 flex-wrap">
-          <img src="/icons/calendar.png" alt="" className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 sm:mt-0" />
+          <span className="text-lg sm:text-xl flex-shrink-0">📅</span>
           <span className="font-semibold">Order Time:</span>
           <span className="break-all">
             {formatOrderTime(order.createdAt, order.timezone)}
