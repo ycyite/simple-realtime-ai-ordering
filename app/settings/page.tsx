@@ -192,16 +192,14 @@ function SettingsContent() {
           </div>
         </div>
 
-        {/* Only show settings section for owners */}
-        {userRole === 'owner' && (
-          <>
+        {/* Settings section - visible to all roles, editable only by owner and manager */}
         <div className="glass-card p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold flex items-center gap-2 md:gap-3" style={{ color: '#F2E4D6' }}>
               <img src="/icons/settings.png" alt="" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex-shrink-0" />
               <span className="break-words">Restaurant Settings</span>
             </h1>
-            {!isEditing && (
+            {!isEditing && (userRole === 'owner' || userRole === 'manager') && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="px-4 py-2 rounded-lg transition-all duration-200 font-semibold shadow-lg hover:shadow-xl cursor-pointer w-full md:w-auto"
@@ -213,7 +211,11 @@ function SettingsContent() {
               </button>
             )}
           </div>
-          <p style={{ color: '#F2E4D6', opacity: 0.9 }}>Configure your restaurant information and AI assistant</p>
+          <p style={{ color: '#F2E4D6', opacity: 0.9 }}>
+            {userRole === 'staff'
+              ? 'View restaurant information and AI assistant details'
+              : 'Configure your restaurant information and AI assistant'}
+          </p>
         </div>
 
         {isEditing ? (
@@ -381,8 +383,6 @@ function SettingsContent() {
               </div>
             </div>
           </div>
-        )}
-          </>
         )}
       </div>
 
