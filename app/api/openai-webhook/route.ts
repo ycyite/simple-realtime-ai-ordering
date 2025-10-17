@@ -80,10 +80,27 @@ export async function POST(request: Request) {
         }
       }
 
-
+      // If no active tenant found, reject the call immediately
       if (!tenant) {
-        console.log("❌ No active tenant found");
-        return NextResponse.json({ error: "No active restaurant" }, { status: 404 });
+        console.log("❌ No active tenant found - Rejecting call immediately");
+
+        setTimeout(async () => {
+          try {
+            await fetch(`https://api.openai.com/v1/realtime/calls/${call_id}/reject`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status_code: 404 })
+            });
+            console.log('✅ Call rejected with status code 404 (Not Found)');
+          } catch (error) {
+            console.error('❌ Error rejecting call:', error);
+          }
+        }, 8000);
+
+        return NextResponse.json({ success: true, message: 'No active restaurant, call will be rejected' });
       }
 
       const isOpen = tenant.is_open ?? true;
