@@ -80,20 +80,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // Fallback: if no Diversion header or no matching tenant, use first active tenant
-      if (!tenant) {
-        console.log("🔄 Falling back to first active tenant");
-        tenant = await prisma.tenants.findFirst({
-          where: { status: "active" },
-          select: {
-            id: true,
-            name: true,
-            twilio_phone_number: true,
-            is_open: true,
-            postal_code: true,
-            timezone: true
-          }
-        });
+  
       }
 
       if (!tenant) {

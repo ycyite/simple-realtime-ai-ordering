@@ -13,7 +13,9 @@
       "Bash(rm:*)",
       "Bash([ -n \"$DATABASE_URL\" ])",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
