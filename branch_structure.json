@@ -1,0 +1,27 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "development",
+    "eric-dev",
+    "main",
+    "phone-development",
+    "sip-server",
+    "stable"
+  ],
+  "parent": {
+    "development": "main",
+    "eric-dev": "main",
+    "main": null,
+    "phone-development": "main",
+    "sip-server": "main",
+    "stable": "main"
+  },
+  "order": [
+    "main",
+    "development",
+    "eric-dev",
+    "phone-development",
+    "sip-server",
+    "stable"
+  ]
+}
