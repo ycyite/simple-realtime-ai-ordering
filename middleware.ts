@@ -1,26 +1,19 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isProtectedRoute = createRouteMatcher([
-  '/restaurants(.*)',
-  '/orders(.*)',
-  '/menu(.*)',
-  '/settings(.*)',
-  '/api/orders(.*)',
-  '/api/menu(.*)',
-  '/api/restaurants(.*)',
-]);
-
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req) && isProtectedRoute(req)) {
-    await auth.protect();
+export default clerkMiddleware(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (auth: any, req: any) => {
+    if (!isPublicRoute(req)) {
+      auth.protect();
+    }
   }
-});
+);
 
 export const config = {
   matcher: [

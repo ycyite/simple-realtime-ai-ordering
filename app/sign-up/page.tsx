@@ -55,7 +55,6 @@ export default function RegisterPage() {
             path="/sign-up"
             signInUrl="/sign-in"
             afterSignUpUrl="/restaurants"
-            forceRedirectUrl="/restaurants"
           />
         </div>
 
