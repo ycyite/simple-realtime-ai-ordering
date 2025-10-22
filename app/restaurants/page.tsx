@@ -24,7 +24,7 @@ export default function RestaurantsPage() {
 
   const handleLogout = async () => {
     await signOut();
-    router.push('/signin');
+    router.push('/sign-in');
   };
 
   useEffect(() => {

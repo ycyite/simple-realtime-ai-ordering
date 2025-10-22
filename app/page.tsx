@@ -13,7 +13,7 @@ export default function Home() {
       if (isAuthenticated) {
         router.push('/restaurants');
       } else {
-        router.push('/signin');
+        router.push('/sign-in');
       }
     }
   }, [isAuthenticated, isLoading, router]);

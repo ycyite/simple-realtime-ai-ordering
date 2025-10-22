@@ -79,7 +79,7 @@ export default function Navigation() {
 
   const handleLogout = () => {
     logout();
-    router.push('/signin');
+    router.push('/sign-in');
   };
 
   const handleSwitchRestaurant = () => {
